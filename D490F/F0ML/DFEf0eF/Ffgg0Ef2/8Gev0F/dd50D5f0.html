@@ -11,15 +11,15 @@
         import { getFirestore, collection, query, orderBy, limit, getDocs, startAfter, getCountFromServer, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         
-        // Configuração do Firebase (MESMA do projeto)
-        const firebaseConfig = {
-            apiKey: "SUA_API_KEY",
-            authDomain: "seu-projeto.firebaseapp.com",
-            projectId: "seu-projeto-id",
-            storageBucket: "seu-projeto.appspot.com",
-            messagingSenderId: "seu-sender-id",
-            appId: "seu-app-id"
-        };
+// Configuração Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+    authDomain: "wzzm-ce3fc.firebaseapp.com",
+    projectId: "wzzm-ce3fc",
+    storageBucket: "wzzm-ce3fc.appspot.com",
+    messagingSenderId: "249427877153",
+    appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
         
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
