@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrador CheckUser</title>
+</head>
+<body>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        
+        // CONFIGURAÇÃO DO FIREBASE (SUBSTITUA PELOS SEUS DADOS)
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY_AQUI",
+            authDomain: "seu-projeto.firebaseapp.com",
+            projectId: "seu-projeto-id",
+            storageBucket: "seu-projeto.appspot.com",
+            messagingSenderId: "seu-sender-id",
+            appId: "seu-app-id"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Função para detectar navegador (precisa)
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            if (ua.includes("Chrome") && !ua.includes("Edg")) return "Chrome";
+            if (ua.includes("Firefox")) return "Firefox";
+            if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
+            if (ua.includes("Edg")) return "Edge";
+            if (ua.includes("Opera") || ua.includes("OPR")) return "Opera";
+            return "Outro";
+        }
+        
+        // Função para detectar sistema operacional (precisa)
+        function detectOS() {
+            const ua = navigator.userAgent;
+            if (ua.includes("Windows NT 10.0")) return "Windows 10/11";
+            if (ua.includes("Windows NT 6.3")) return "Windows 8.1";
+            if (ua.includes("Windows NT 6.2")) return "Windows 8";
+            if (ua.includes("Windows NT 6.1")) return "Windows 7";
+            if (ua.includes("Mac OS X")) return "macOS";
+            if (ua.includes("Android")) return "Android";
+            if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS";
+            if (ua.includes("Linux")) return "Linux";
+            return "Desconhecido";
+        }
+        
+        // Função com múltiplas APIs de fallback (essencial para redes móveis)
+        async function getIPAndLocation() {
+            // Lista de APIs gratuitas como fallback
+            const apis = [
+                {
+                    url: 'https://ipapi.co/json/',
+                    parser: (data) => ({
+                        ip: data.ip || 'Indisponível',
+                        city: data.city || 'Indisponível',
+                        region: data.region || 'Indisponível',
+                        country: data.country_name || 'Indisponível',
+                        latitude: data.latitude || null,
+                        longitude: data.longitude || null,
+                        isp: data.org || 'Indisponível'
+                    })
+                },
+                {
+                    url: 'https://ip-api.com/json/',
+                    parser: (data) => ({
+                        ip: data.query || 'Indisponível',
+                        city: data.city || 'Indisponível',
+                        region: data.regionName || 'Indisponível',
+                        country: data.country || 'Indisponível',
+                        latitude: data.lat || null,
+                        longitude: data.lon || null,
+                        isp: data.isp || 'Indisponível'
+                    })
+                },
+                {
+                    url: 'https://api.ipify.org?format=json',
+                    parser: (data) => ({
+                        ip: data.ip || 'Indisponível',
+                        city: 'Não obtido',
+                        region: 'Não obtido',
+                        country: 'Não obtido',
+                        latitude: null,
+                        longitude: null,
+                        isp: 'Não obtido'
+                    })
+                }
+            ];
+            
+            // Tenta cada API até uma funcionar
+            for (const api of apis) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    const response = await fetch(api.url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) continue;
+                    
+                    const data = await response.json();
+                    console.log(`✅ IP obtido via ${api.url.split('/')[2]}:`, data.ip || data.query);
+                    return api.parser(data);
+                    
+                } catch (error) {
+                    console.log(`⚠️ API ${api.url.split('/')[2]} falhou:`, error.message);
+                    continue;
+                }
+            }
+            
+            // Fallback final
+            return {
+                ip: 'Não disponível',
+                city: 'Erro na consulta',
+                region: 'Erro na consulta',
+                country: 'Erro na consulta',
+                latitude: null,
+                longitude: null,
+                isp: 'Erro'
+            };
+        }
+        
+        // Função com retry para salvar no Firebase
+        async function saveToFirebaseWithRetry(data, maxRetries = 3) {
+            for (let tentativa = 1; tentativa <= maxRetries; tentativa++) {
+                try {
+                    const docRef = await addDoc(collection(db, "checkuser"), data);
+                    return { success: true, docId: docRef.id, tentativa };
+                } catch (error) {
+                    console.log(`❌ Tentativa ${tentativa}/${maxRetries} falhou:`, error.message);
+                    
+                    if (tentativa === maxRetries) {
+                        throw error;
+                    }
+                    
+                    // Espera progressiva: 1s, 2s, 4s...
+                    const waitTime = 1000 * Math.pow(2, tentativa - 1);
+                    console.log(`⏳ Aguardando ${waitTime}ms antes de tentar novamente...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+            }
+        }
+        
+        // Função principal
+        async function registrarVisitante() {
+            const startTime = Date.now();
+            
+            try {
+                console.log('🚀 ===== INICIANDO REGISTRADOR CHECKUSER =====');
+                console.log('📱 Dispositivo:', navigator.userAgent);
+                console.log('🌐 Rede:', navigator.connection ? navigator.connection.effectiveType : 'desconhecida');
+                
+                // 1. Detectar navegador e SO
+                const browser = detectBrowser();
+                const os = detectOS();
+                console.log('🌐 Navegador:', browser);
+                console.log('💻 SO:', os);
+                
+                // 2. Obter IP e localização (com fallback)
+                console.log('📡 Obtendo IP e localização...');
+                const locationData = await getIPAndLocation();
+                console.log('🔍 IP obtido:', locationData.ip);
+                console.log('📍 Localização:', locationData.city, '-', locationData.country);
+                
+                // 3. Coletar informações da página
+                let pageUrl = 'Não disponível';
+                let pageTitle = 'Não disponível';
+                
+                try {
+                    if (window.parent && window.parent.location.href) {
+                        pageUrl = window.parent.location.href;
+                        pageTitle = window.parent.document.title;
+                    } else if (document.referrer) {
+                        pageUrl = document.referrer;
+                    } else {
+                        pageUrl = window.location.href;
+                    }
+                } catch (e) {
+                    pageUrl = document.referrer || 'Acesso direto (cross-origin)';
+                }
+                
+                // 4. Preparar dados completos
+                const dados = {
+                    // Informações do navegador
+                    browser: browser,
+                    browserVersion: navigator.userAgent.match(/(?:Chrome|Firefox|Safari|Edge)\/(\d+\.\d+)/)?.[1] || 'Desconhecida',
+                    operatingSystem: os,
+                    userAgent: navigator.userAgent,
+                    
+                    // Informações de IP e localização
+                    ip: locationData.ip,
+                    location: {
+                        city: locationData.city,
+                        region: locationData.region,
+                        country: locationData.country,
+                        latitude: locationData.latitude,
+                        longitude: locationData.longitude,
+                        isp: locationData.isp
+                    },
+                    
+                    // Informações da página
+                    pageUrl: pageUrl,
+                    pageTitle: pageTitle,
+                    referrer: document.referrer || 'Nenhum',
+                    
+                    // Informações do dispositivo
+                    screenResolution: `${screen.width}x${screen.height}`,
+                    screenColorDepth: screen.colorDepth,
+                    language: navigator.language,
+                    languages: navigator.languages ? navigator.languages.join(',') : navigator.language,
+                    platform: navigator.platform,
+                    cookiesEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack,
+                    
+                    // Informações de rede (útil para diagnóstico)
+                    networkType: navigator.connection ? navigator.connection.effectiveType : 'desconhecido',
+                    networkDownlink: navigator.connection ? navigator.connection.downlink : null,
+                    
+                    // Timestamp
+                    timestamp: serverTimestamp(),
+                    registeredAtISO: new Date().toISOString(),
+                    registeredAtLocal: new Date().toLocaleString('pt-BR'),
+                    
+                    // Identificadores únicos
+                    sessionId: 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    visitId: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 15),
+                    
+                    // Metadados
+                    registrationAttempts: 1,
+                    responseTimeMs: 0
+                };
+                
+                // 5. Salvar no Firebase com retry
+                console.log('📤 Enviando para Firebase - Coleção: checkuser');
+                const result = await saveToFirebaseWithRetry(dados);
+                
+                const responseTime = Date.now() - startTime;
+                
+                console.log('✅ ===== REGISTRO CONCLUÍDO COM SUCESSO! =====');
+                console.log(`📄 ID do documento: ${result.docId}`);
+                console.log(`🔁 Tentativas: ${result.tentativa}`);
+                console.log(`⏱️ Tempo total: ${responseTime}ms`);
+                console.log(`🌐 Navegador: ${browser}`);
+                console.log(`💻 SO: ${os}`);
+                console.log(`🔍 IP: ${locationData.ip}`);
+                console.log(`📍 Local: ${locationData.city}, ${locationData.country}`);
+                console.log(`📄 Página: ${pageUrl}`);
+                console.log(`📅 Data/Hora: ${new Date().toLocaleString('pt-BR')}`);
+                
+                // Enviar mensagem para a página pai (se estiver em iframe)
+                try {
+                    window.parent.postMessage({
+                        type: 'CHECKUSER_SUCCESS',
+                        documentId: result.docId,
+                        browser: browser,
+                        ip: locationData.ip,
+                        timestamp: Date.now()
+                    }, '*');
+                } catch (e) {
+                    console.log('Não foi possível enviar mensagem para a página pai');
+                }
+                
+                // Mostrar notificação visual (opcional - para debug)
+                if (window.self === window.top) {
+                    const notificacao = document.createElement('div');
+                    notificacao.style.cssText = `
+                        position: fixed;
+                        bottom: 10px;
+                        right: 10px;
+                        background: #28a745;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 8px;
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                        z-index: 99999;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        animation: fadeOut 5s ease forwards;
+                    `;
+                    notificacao.innerHTML = `✅ CheckUser: ${browser} | ${locationData.ip} | ${locationData.city}`;
+                    document.body.appendChild(notificacao);
+                    
+                    // Animação de fade
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes fadeOut {
+                            0% { opacity: 1; transform: translateY(0); }
+                            70% { opacity: 1; transform: translateY(0); }
+                            100% { opacity: 0; transform: translateY(-20px); visibility: hidden; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    setTimeout(() => notificacao.remove(), 5000);
+                }
+                
+                return { success: true, docId: result.docId };
+                
+            } catch (error) {
+                console.error('❌ ===== ERRO FATAL NO REGISTRO =====');
+                console.error('Erro:', error.message);
+                console.error('Código:', error.code);
+                console.error('Stack:', error.stack);
+                
+                // Mostrar erro visualmente
+                if (window.self === window.top) {
+                    const erroDiv = document.createElement('div');
+                    erroDiv.style.cssText = `
+                        position: fixed;
+                        bottom: 10px;
+                        right: 10px;
+                        background: #dc3545;
+                        color: white;
+                        padding: 10px 15px;
+                        border-radius: 8px;
+                        font-family: Arial, sans-serif;
+                        font-size: 11px;
+                        z-index: 99999;
+                        max-width: 300px;
+                        word-break: break-word;
+                    `;
+                    erroDiv.innerHTML = `❌ Erro CheckUser: ${error.message.substring(0, 100)}`;
+                    document.body.appendChild(erroDiv);
+                    setTimeout(() => erroDiv.remove(), 8000);
+                }
+                
+                // Enviar mensagem de erro
+                try {
+                    window.parent.postMessage({
+                        type: 'CHECKUSER_ERROR',
+                        error: error.message,
+                        code: error.code,
+                        timestamp: Date.now()
+                    }, '*');
+                } catch (e) {}
+                
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // Executar quando a página carregar completamente
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', registrarVisitante);
+        } else {
+            registrarVisitante();
+        }
+        
+        // Se estiver em iframe, também tenta registrar quando receber mensagem de prontidão
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'CHECKUSER_READY') {
+                console.log('📨 Recebido comando para registrar via postMessage');
+                registrarVisitante();
+            }
+        });
+    </script>
+    
+    <style>
+        /* Iframe completamente invisível */
+        body {
+            margin: 0;
+            padding: 0;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            opacity: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+    </style>
+</body>
+</html>
