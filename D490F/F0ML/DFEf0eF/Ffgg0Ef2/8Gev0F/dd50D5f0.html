@@ -8,8 +8,8 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getFirestore, collection, query, orderBy, limit, getDocs, startAfter, where, getCountFromServer, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { getFirestore, collection, query, orderBy, limit, getDocs, startAfter, getCountFromServer, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         
         // Configuração do Firebase (MESMA do projeto)
         const firebaseConfig = {
@@ -25,11 +25,21 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        // Lista de UIDs autorizados (administradores)
+        // Adicione aqui os UIDs do Google dos administradores
+        const ADMIN_UIDS = [
+            "sZxfMuOBPbXdR8nttVPXIN8QOOl1",  // UID admin específico das suas regras
+            // Adicione mais UIDs conforme necessário
+            // "outro-uid-google-aqui"
+        ];
         
         // Variáveis globais
         let currentUser = null;
         let lastDoc = null;
         let isLoading = false;
+        let allRecords = []; // Para armazenar todos os registros carregados
         let currentFilters = {
             search: '',
             country: '',
@@ -42,6 +52,8 @@
         const adminSection = document.getElementById('adminSection');
         const loginStatus = document.getElementById('loginStatus');
         const userEmailSpan = document.getElementById('userEmail');
+        const userUidSpan = document.getElementById('userUid');
+        const userPhotoSpan = document.getElementById('userPhoto');
         const recordsContainer = document.getElementById('recordsContainer');
         const loadingIndicator = document.getElementById('loadingIndicator');
         const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -52,25 +64,39 @@
         const filterBrowser = document.getElementById('filterBrowser');
         const filterDate = document.getElementById('filterDate');
         
-        // Função de login
-        async function login(email, password) {
+        // Função de login com Google
+        async function loginWithGoogle() {
             try {
                 loginStatus.className = 'status loading';
-                loginStatus.textContent = '🔄 Autenticando...';
+                loginStatus.innerHTML = '🔄 Fazendo login com Google...';
                 
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                currentUser = userCredential.user;
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
                 
-                // Verificar se é admin
-                const isAdmin = await checkIfAdmin(currentUser.uid);
-                
-                if (!isAdmin) {
+                // Verificar se o UID está na lista de administradores
+                if (!ADMIN_UIDS.includes(user.uid)) {
                     await signOut(auth);
-                    throw new Error('Acesso negado. Apenas administradores podem acessar.');
+                    throw new Error('Acesso negado. Seu UID não está autorizado como administrador.');
                 }
                 
+                // Verificar também na coleção users (opcional, como fallback)
+                const isAdminInDb = await checkIfAdminInDB(user.uid);
+                if (!isAdminInDb && !ADMIN_UIDS.includes(user.uid)) {
+                    await signOut(auth);
+                    throw new Error('Acesso negado. Você não é administrador.');
+                }
+                
+                currentUser = user;
+                
                 loginStatus.className = 'status success';
-                loginStatus.textContent = '✅ Login realizado com sucesso!';
+                loginStatus.innerHTML = '✅ Login realizado com sucesso! Redirecionando...';
+                
+                // Atualizar informações do usuário
+                userEmailSpan.textContent = user.email;
+                userUidSpan.textContent = user.uid;
+                if (user.photoURL) {
+                    userPhotoSpan.innerHTML = `<img src="${user.photoURL}" class="user-avatar" alt="Avatar">`;
+                }
                 
                 setTimeout(() => {
                     loginSection.style.display = 'none';
@@ -81,12 +107,12 @@
             } catch (error) {
                 console.error('Erro no login:', error);
                 loginStatus.className = 'status error';
-                loginStatus.textContent = `❌ Erro: ${error.message}`;
+                loginStatus.innerHTML = `❌ Erro: ${error.message}`;
             }
         }
         
-        // Verificar se usuário é admin
-        async function checkIfAdmin(userId) {
+        // Verificar se é admin na coleção users (fallback)
+        async function checkIfAdminInDB(userId) {
             try {
                 const userDoc = await getDoc(doc(db, 'users', userId));
                 if (userDoc.exists()) {
@@ -95,7 +121,7 @@
                 }
                 return false;
             } catch (error) {
-                console.error('Erro ao verificar admin:', error);
+                console.error('Erro ao verificar admin no DB:', error);
                 return false;
             }
         }
@@ -104,10 +130,11 @@
         async function logout() {
             await signOut(auth);
             currentUser = null;
-            loginSection.style.display = 'block';
+            loginSection.style.display = 'flex';
             adminSection.style.display = 'none';
-            document.getElementById('loginEmail').value = '';
-            document.getElementById('loginPassword').value = '';
+            recordsContainer.innerHTML = '';
+            lastDoc = null;
+            allRecords = [];
         }
         
         // Carregar dashboard
@@ -115,6 +142,7 @@
             await loadTotalCount();
             await loadStats();
             await loadRecords();
+            await loadFilterOptions();
         }
         
         // Carregar total de registros
@@ -138,7 +166,10 @@
                 const browsers = new Map();
                 const countries = new Map();
                 let today = 0;
+                let week = 0;
                 const todayStr = new Date().toISOString().split('T')[0];
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -157,9 +188,13 @@
                     if (data.registeredAtISO?.split('T')[0] === todayStr) {
                         today++;
                     }
+                    
+                    // Contar registros da semana
+                    if (data.registeredAtISO && new Date(data.registeredAtISO) > weekAgo) {
+                        week++;
+                    }
                 });
                 
-                // Atualizar estatísticas na UI
                 const topBrowser = Array.from(browsers.entries()).sort((a,b) => b[1] - a[1])[0];
                 const topCountry = Array.from(countries.entries()).sort((a,b) => b[1] - a[1])[0];
                 
@@ -185,10 +220,52 @@
                             <div class="stat-label">Visitas hoje</div>
                         </div>
                     </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-value">${week}</div>
+                            <div class="stat-label">Últimos 7 dias</div>
+                        </div>
+                    </div>
                 `;
                 
             } catch (error) {
                 console.error('Erro ao carregar estatísticas:', error);
+                statsContainer.innerHTML = '<div class="error-message">Erro ao carregar estatísticas</div>';
+            }
+        }
+        
+        // Carregar opções de filtro
+        async function loadFilterOptions() {
+            try {
+                const coll = collection(db, 'checkuser');
+                const snapshot = await getDocs(coll);
+                
+                const countries = new Set();
+                const browsers = new Set();
+                
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.location?.country) countries.add(data.location.country);
+                    if (data.browser) browsers.add(data.browser);
+                });
+                
+                // Preencher filtro de países
+                const countrySelect = document.getElementById('filterCountry');
+                countrySelect.innerHTML = '<option value="">Todos países</option>';
+                Array.from(countries).sort().forEach(country => {
+                    countrySelect.innerHTML += `<option value="${country}">${country}</option>`;
+                });
+                
+                // Preencher filtro de navegadores
+                const browserSelect = document.getElementById('filterBrowser');
+                browserSelect.innerHTML = '<option value="">Todos navegadores</option>';
+                Array.from(browsers).sort().forEach(browser => {
+                    browserSelect.innerHTML += `<option value="${browser}">${browser}</option>`;
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar filtros:', error);
             }
         }
         
@@ -199,6 +276,7 @@
             
             if (reset) {
                 lastDoc = null;
+                allRecords = [];
                 recordsContainer.innerHTML = '';
                 loadMoreBtn.style.display = 'none';
             }
@@ -221,15 +299,27 @@
                     return;
                 }
                 
-                lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                if (snapshot.docs.length > 0) {
+                    lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                }
                 
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const recordCard = createRecordCard(doc.id, data);
-                    recordsContainer.appendChild(recordCard);
+                    allRecords.push({ id: doc.id, ...data });
+                    
+                    // Aplicar filtros locais
+                    if (shouldShowRecord(data)) {
+                        const recordCard = createRecordCard(doc.id, data);
+                        recordsContainer.appendChild(recordCard);
+                    }
                 });
                 
-                loadMoreBtn.style.display = snapshot.docs.length === 20 ? 'block' : 'none';
+                // Esconder botão se não houver mais registros
+                if (snapshot.docs.length < 20) {
+                    loadMoreBtn.style.display = 'none';
+                } else {
+                    loadMoreBtn.style.display = 'block';
+                }
                 
             } catch (error) {
                 console.error('Erro ao carregar registros:', error);
@@ -238,6 +328,47 @@
                 loadingIndicator.style.display = 'none';
                 isLoading = false;
             }
+        }
+        
+        // Verificar se registro deve ser exibido com base nos filtros
+        function shouldShowRecord(record) {
+            // Filtro de busca
+            if (currentFilters.search) {
+                const searchTerm = currentFilters.search.toLowerCase();
+                const ip = (record.ip || '').toLowerCase();
+                const browser = (record.browser || '').toLowerCase();
+                const country = (record.location?.country || '').toLowerCase();
+                const city = (record.location?.city || '').toLowerCase();
+                
+                if (!ip.includes(searchTerm) && !browser.includes(searchTerm) && 
+                    !country.includes(searchTerm) && !city.includes(searchTerm)) {
+                    return false;
+                }
+            }
+            
+            // Filtro de país
+            if (currentFilters.country && record.location?.country !== currentFilters.country) {
+                return false;
+            }
+            
+            // Filtro de navegador
+            if (currentFilters.browser && record.browser !== currentFilters.browser) {
+                return false;
+            }
+            
+            // Filtro de data
+            if (currentFilters.date) {
+                const recordDate = record.registeredAtISO?.split('T')[0];
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+                
+                if (currentFilters.date === 'today' && recordDate !== today) return false;
+                if (currentFilters.date === 'yesterday' && recordDate !== yesterday) return false;
+                if (currentFilters.date === 'week' && recordDate < weekAgo) return false;
+            }
+            
+            return true;
         }
         
         // Criar card de registro
@@ -250,7 +381,7 @@
             
             card.innerHTML = `
                 <div class="record-header">
-                    <div class="record-id">ID: ${id.substring(0, 8)}...</div>
+                    <div class="record-id">🆔 ${id.substring(0, 8)}...</div>
                     <div class="record-date">📅 ${date}</div>
                 </div>
                 <div class="record-body">
@@ -284,7 +415,7 @@
                     </div>
                 </div>
                 <div class="record-footer">
-                    <button class="btn-details" onclick="showDetails('${id}')">Ver Detalhes</button>
+                    <button class="btn-details" onclick="window.showDetails('${id}')">📋 Ver Detalhes</button>
                 </div>
             `;
             
@@ -299,27 +430,126 @@
             return url;
         }
         
-        // Mostrar detalhes (popup)
-        window.showDetails = (id) => {
-            // Implementar modal de detalhes
-            alert(`Função de detalhes para ID: ${id}\n\nImplemente um modal para exibir todos os dados completos do registro.`);
+        // Mostrar detalhes (modal)
+        window.showDetails = async (id) => {
+            try {
+                const docRef = doc(db, 'checkuser', id);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const modal = document.getElementById('detailsModal');
+                    const modalContent = document.getElementById('modalContent');
+                    
+                    modalContent.innerHTML = `
+                        <div class="detail-row">
+                            <strong>🆔 Document ID:</strong> ${id}
+                        </div>
+                        <div class="detail-row">
+                            <strong>🌐 Navegador:</strong> ${data.browser || '?'} ${data.browserVersion || ''}
+                        </div>
+                        <div class="detail-row">
+                            <strong>💻 Sistema Operacional:</strong> ${data.operatingSystem || '?'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>🔍 Endereço IP:</strong> ${data.ip || '?'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>📍 Localização:</strong><br>
+                            Cidade: ${data.location?.city || '?'}<br>
+                            Região: ${data.location?.region || '?'}<br>
+                            País: ${data.location?.country || '?'}<br>
+                            Latitude: ${data.location?.latitude || '?'}<br>
+                            Longitude: ${data.location?.longitude || '?'}<br>
+                            ISP: ${data.location?.isp || '?'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>📄 Página Visitada:</strong><br>
+                            <a href="${data.pageUrl}" target="_blank">${data.pageUrl || '?'}</a>
+                        </div>
+                        <div class="detail-row">
+                            <strong>🖥️ Dispositivo:</strong><br>
+                            Resolução: ${data.screenResolution || '?'}<br>
+                            Idioma: ${data.language || '?'}<br>
+                            User Agent: ${data.userAgent || '?'}
+                        </div>
+                        <div class="detail-row">
+                            <strong>📅 Data/Hora:</strong> ${new Date(data.registeredAtISO).toLocaleString('pt-BR')}
+                        </div>
+                        <div class="detail-row">
+                            <strong>🆔 Sessão:</strong> ${data.sessionId || '?'}
+                        </div>
+                    `;
+                    
+                    modal.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Erro ao carregar detalhes:', error);
+                alert('Erro ao carregar detalhes do registro');
+            }
         };
         
-        // Filtrar registros
+        // Fechar modal
+        window.closeModal = () => {
+            const modal = document.getElementById('detailsModal');
+            modal.style.display = 'none';
+        };
+        
+        // Aplicar filtros
         function applyFilters() {
-            // Implementar filtros mais avançados
-            console.log('Filtros aplicados:', currentFilters);
-            loadRecords(true);
+            // Limpar container e recriar cards filtrados
+            recordsContainer.innerHTML = '';
+            
+            const filteredRecords = allRecords.filter(record => shouldShowRecord(record));
+            
+            if (filteredRecords.length === 0) {
+                recordsContainer.innerHTML = '<div class="no-records">Nenhum registro encontrado com os filtros aplicados</div>';
+                return;
+            }
+            
+            filteredRecords.forEach(record => {
+                const recordCard = createRecordCard(record.id, record);
+                recordsContainer.appendChild(recordCard);
+            });
+        }
+        
+        // Exportar dados (CSV)
+        function exportToCSV() {
+            const headers = ['ID', 'Data', 'Navegador', 'SO', 'IP', 'Cidade', 'País', 'Página', 'Sessão'];
+            const csvRows = [headers];
+            
+            const recordsToExport = allRecords.filter(record => shouldShowRecord(record));
+            
+            recordsToExport.forEach(record => {
+                const row = [
+                    record.id,
+                    record.registeredAtISO || '',
+                    `${record.browser || ''} ${record.browserVersion || ''}`,
+                    record.operatingSystem || '',
+                    record.ip || '',
+                    record.location?.city || '',
+                    record.location?.country || '',
+                    record.pageUrl || '',
+                    record.sessionId || ''
+                ];
+                csvRows.push(row.map(cell => `"${cell}"`));
+            });
+            
+            const csvContent = csvRows.map(row => row.join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `checkuser_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         }
         
         // Event Listeners
-        document.getElementById('loginForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            login(email, password);
-        });
-        
+        document.getElementById('googleLoginBtn').addEventListener('click', loginWithGoogle);
         document.getElementById('logoutBtn').addEventListener('click', logout);
         loadMoreBtn.addEventListener('click', () => loadRecords(false));
         
@@ -343,25 +573,28 @@
             applyFilters();
         });
         
+        document.getElementById('exportBtn').addEventListener('click', exportToCSV);
+        
         // Verificar estado de autenticação ao carregar
         onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const isAdmin = await checkIfAdmin(user.uid);
-                if (isAdmin) {
-                    currentUser = user;
-                    loginSection.style.display = 'none';
-                    adminSection.style.display = 'block';
-                    userEmailSpan.textContent = user.email;
-                    loadDashboard();
-                } else {
-                    await signOut(auth);
-                    loginSection.style.display = 'block';
-                    adminSection.style.display = 'none';
-                    loginStatus.className = 'status error';
-                    loginStatus.textContent = '❌ Acesso negado. Apenas administradores.';
+            if (user && ADMIN_UIDS.includes(user.uid)) {
+                currentUser = user;
+                loginSection.style.display = 'none';
+                adminSection.style.display = 'block';
+                userEmailSpan.textContent = user.email;
+                userUidSpan.textContent = user.uid;
+                if (user.photoURL) {
+                    userPhotoSpan.innerHTML = `<img src="${user.photoURL}" class="user-avatar" alt="Avatar">`;
                 }
+                loadDashboard();
+            } else if (user) {
+                await signOut(auth);
+                loginSection.style.display = 'flex';
+                adminSection.style.display = 'none';
+                loginStatus.className = 'status error';
+                loginStatus.innerHTML = '❌ Acesso negado. Seu UID não está autorizado.';
             } else {
-                loginSection.style.display = 'block';
+                loginSection.style.display = 'flex';
                 adminSection.style.display = 'none';
             }
         });
@@ -401,54 +634,46 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             width: 100%;
             max-width: 400px;
+            text-align: center;
         }
         
         .login-card h1 {
             text-align: center;
             color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .login-card p {
+            color: #666;
             margin-bottom: 30px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 500;
-        }
-        
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.3s;
         }
         
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn-login {
+        .btn-google {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
+            background: #fff;
+            color: #333;
+            border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
-        .btn-login:hover {
+        .btn-google:hover {
+            background: #f5f5f5;
+            border-color: #667eea;
             transform: translateY(-2px);
+        }
+        
+        .google-icon {
+            font-size: 20px;
         }
         
         /* Admin Section */
@@ -476,8 +701,26 @@
             gap: 15px;
         }
         
+        .user-details {
+            text-align: right;
+        }
+        
         .user-email {
+            font-size: 14px;
             color: #666;
+        }
+        
+        .user-uid {
+            font-size: 11px;
+            color: #999;
+            font-family: monospace;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
         }
         
         .btn-logout {
@@ -541,6 +784,7 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
         }
         
         .filters-bar input,
@@ -554,6 +798,20 @@
         .filters-bar input {
             flex: 1;
             min-width: 200px;
+        }
+        
+        .btn-export {
+            padding: 8px 16px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn-export:hover {
+            background: #218838;
         }
         
         /* Records */
@@ -711,6 +969,63 @@
             color: #0c5460;
         }
         
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .modal-header h2 {
+            color: #667eea;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .detail-row {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .detail-row strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
         @media (max-width: 768px) {
             .records-grid {
                 grid-template-columns: 1fr;
@@ -718,6 +1033,14 @@
             
             .admin-header {
                 flex-direction: column;
+                text-align: center;
+            }
+            
+            .user-info {
+                flex-direction: column;
+            }
+            
+            .user-details {
                 text-align: center;
             }
         }
@@ -729,17 +1052,11 @@
         <div id="loginSection" class="login-container">
             <div class="login-card">
                 <h1>🔐 Admin CheckUser</h1>
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="loginEmail" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Senha</label>
-                        <input type="password" id="loginPassword" required>
-                    </div>
-                    <button type="submit" class="btn-login">Entrar</button>
-                </form>
+                <p>Apenas administradores autorizados</p>
+                <button id="googleLoginBtn" class="btn-google">
+                    <span class="google-icon">G</span>
+                    Entrar com Google
+                </button>
                 <div id="loginStatus" class="status"></div>
             </div>
         </div>
@@ -749,7 +1066,11 @@
             <div class="admin-header">
                 <h1>📊 CheckUser Monitor</h1>
                 <div class="user-info">
-                    <span class="user-email" id="userEmail"></span>
+                    <div class="user-details">
+                        <div class="user-email" id="userEmail"></div>
+                        <div class="user-uid" id="userUid"></div>
+                    </div>
+                    <div id="userPhoto"></div>
                     <button id="logoutBtn" class="btn-logout">Sair</button>
                 </div>
             </div>
@@ -759,7 +1080,7 @@
             
             <!-- Filtros -->
             <div class="filters-bar">
-                <input type="text" id="searchInput" placeholder="🔍 Buscar por IP, navegador ou país...">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar por IP, navegador, país ou cidade...">
                 <select id="filterCountry">
                     <option value="">Todos países</option>
                 </select>
@@ -767,11 +1088,12 @@
                     <option value="">Todos navegadores</option>
                 </select>
                 <select id="filterDate">
-                    <option value="">Últimos 7 dias</option>
+                    <option value="">Todos períodos</option>
                     <option value="today">Hoje</option>
                     <option value="yesterday">Ontem</option>
-                    <option value="week">Esta semana</option>
+                    <option value="week">Últimos 7 dias</option>
                 </select>
+                <button id="exportBtn" class="btn-export">📥 Exportar CSV</button>
             </div>
             
             <!-- Lista de Registros -->
@@ -783,6 +1105,17 @@
             <div id="recordsContainer" class="records-grid"></div>
             <div id="loadingIndicator" class="loading-indicator">🔄 Carregando registros...</div>
             <button id="loadMoreBtn" class="btn-load-more" style="display: none;">Carregar mais</button>
+        </div>
+    </div>
+    
+    <!-- Modal de Detalhes -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Detalhes do Registro</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalContent"></div>
         </div>
     </div>
 </body>
