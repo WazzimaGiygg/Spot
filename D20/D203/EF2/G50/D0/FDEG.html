@@ -1,0 +1,2039 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wiki Zero - Login e Gerenciador de Páginas</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    
+    <style>
+        :root {
+            --primary-blue: #1a73e8;
+            --primary-dark: #0b5ec1;
+            --google-gray: #5f6368;
+            --google-light-gray: #f8f9fa;
+            --google-border: #dadce0;
+            --google-green: #34a853;
+            --google-red: #ea4335;
+            --text-color: #3c4043;
+            --light-text: #70757a;
+            --white: #ffffff;
+            --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --shadow-hover: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--text-color);
+        }
+
+        /* Container principal */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .main-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+            color: var(--white);
+            padding: 15px 30px;
+            box-shadow: var(--shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-container i {
+            font-size: 36px;
+        }
+
+        .logo-container h1 {
+            font-size: 24px;
+            font-weight: 400;
+        }
+
+        .logo-container span {
+            font-weight: 500;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        /* Botões de ação */
+        .action-buttons {
+            padding: 20px 30px;
+            background: var(--white);
+            border-bottom: 1px solid var(--google-border);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .action-button.secondary {
+            background: var(--google-light-gray);
+            color: var(--text-color);
+            border: 1px solid var(--google-border);
+        }
+
+        .action-button.secondary:hover {
+            background: var(--google-border);
+        }
+
+        .action-button.danger {
+            background: var(--google-red);
+        }
+
+        .action-button.danger:hover {
+            background: #d33426;
+        }
+
+        /* Conteúdo principal */
+        .content {
+            flex: 1;
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        /* Card de login */
+        .login-container {
+            max-width: 450px;
+            margin: 0 auto;
+            width: 100%;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .login-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .login-card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-dark));
+            padding: 40px 30px;
+            text-align: center;
+            color: var(--white);
+        }
+
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .login-logo i {
+            font-size: 40px;
+        }
+
+        .login-logo h1 {
+            font-size: 28px;
+            font-weight: 400;
+        }
+
+        .login-logo span {
+            font-weight: 500;
+        }
+
+        .login-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .login-body {
+            padding: 40px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--google-gray);
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid var(--google-border);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: var(--white);
+            color: var(--text-color);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.2);
+        }
+
+        .form-input.error {
+            border-color: var(--google-red);
+        }
+
+        .form-input.success {
+            border-color: var(--google-green);
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--light-text);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: -10px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .remember-me input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .forgot-password {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .forgot-password:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        .login-button {
+            background: var(--primary-blue);
+            color: var(--white);
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .login-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+
+        .login-button:disabled {
+            background: var(--google-border);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            color: var(--light-text);
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--google-border);
+        }
+
+        .divider span {
+            padding: 0 15px;
+        }
+
+        .social-login {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .social-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px;
+            border: 1px solid var(--google-border);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--text-color);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .social-button:hover {
+            background: var(--google-light-gray);
+            border-color: var(--primary-blue);
+            transform: translateY(-1px);
+        }
+
+        .social-button i {
+            font-size: 20px;
+        }
+
+        .google-button {
+            color: #db4437;
+        }
+
+        .github-button {
+            color: #333;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 14px;
+            color: var(--light-text);
+        }
+
+        .register-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 5px;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .terms {
+            font-size: 12px;
+            color: var(--light-text);
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .terms a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mensagens */
+        .error-message {
+            background: rgba(234, 67, 53, 0.1);
+            color: var(--google-red);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid var(--google-red);
+        }
+
+        .error-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .success-message {
+            background: rgba(52, 168, 83, 0.1);
+            color: var(--google-green);
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid var(--google-green);
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        /* Painel de páginas */
+        .pages-panel {
+            display: none;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .pages-panel.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .pages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--google-border);
+        }
+
+        .pages-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+
+        .pages-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .pages-list {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .page-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: var(--google-light-gray);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-blue);
+            transition: all 0.3s ease;
+        }
+
+        .page-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        .page-info {
+            flex: 1;
+        }
+
+        .page-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .page-name i {
+            color: var(--primary-blue);
+        }
+
+        .page-url {
+            font-size: 14px;
+            color: var(--light-text);
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .page-url a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+
+        .page-url a:hover {
+            text-decoration: underline;
+        }
+
+        .page-category {
+            display: inline-block;
+            background: #e8f0fe;
+            color: var(--primary-blue);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .page-action-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--google-border);
+            background: var(--white);
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .page-action-btn:hover {
+            background: var(--google-light-gray);
+            transform: scale(1.1);
+        }
+
+        .page-action-btn.edit:hover {
+            color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+
+        .page-action-btn.delete:hover {
+            color: var(--google-red);
+            border-color: var(--google-red);
+        }
+
+        /* Formulário de nova página */
+        .add-page-form {
+            background: var(--google-light-gray);
+            padding: 25px;
+            border-radius: 8px;
+            margin-top: 30px;
+            border: 2px dashed var(--google-border);
+        }
+
+        .add-page-form h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-field label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--google-gray);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-blue);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--google-light-gray);
+            color: var(--text-color);
+            border: 1px solid var(--google-border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--google-border);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--google-border);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-hover);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--google-border);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            color: var(--primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--google-gray);
+            transition: color 0.3s;
+        }
+
+        .modal-close:hover {
+            color: var(--text-color);
+        }
+
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .main-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                padding: 15px;
+            }
+
+            .action-buttons {
+                justify-content: center;
+                padding: 15px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .login-body {
+                padding: 30px 20px;
+            }
+
+            .login-header {
+                padding: 30px 20px;
+            }
+
+            .social-login {
+                grid-template-columns: 1fr;
+            }
+
+            .form-options {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .pages-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .pages-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .page-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .page-actions {
+                align-self: flex-end;
+            }
+        }
+
+        /* Dark mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --white: #202124;
+                --google-light-gray: #2d2e31;
+                --google-border: #5f6368;
+                --text-color: #e8eaed;
+                --light-text: #9aa0a6;
+            }
+            
+            body {
+                background: linear-gradient(135deg, #202124 0%, #3c4043 100%);
+            }
+            
+            .form-input {
+                background: #2d2e31;
+                color: var(--text-color);
+                border-color: var(--google-border);
+            }
+            
+            .social-button {
+                background: #2d2e31;
+                color: var(--text-color);
+            }
+
+            .page-item {
+                background: #2d2e31;
+            }
+
+            .add-page-form {
+                background: #2d2e31;
+            }
+
+            .btn-secondary {
+                background: #2d2e31;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <p id="loading-text">Carregando...</p>
+    </div>
+
+    <!-- Modal para adicionar/editar páginas -->
+    <div class="modal" id="page-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">
+                    <i class="material-icons">add_link</i>
+                    Nova Página
+                </h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="page-form">
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="page-name">Nome da Página *</label>
+                        <input type="text" id="page-name" class="form-input" required>
+                    </div>
+                    <div class="form-field">
+                        <label for="page-url">URL *</label>
+                        <input type="url" id="page-url" class="form-input" required placeholder="https://exemplo.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-field">
+                        <label for="page-category">Categoria</label>
+                        <input type="text" id="page-category" class="form-input" placeholder="Busca, Redes Sociais, etc.">
+                    </div>
+                    <div class="form-field">
+                        <label for="page-icon">Ícone</label>
+                        <select id="page-icon" class="form-input">
+                            <option value="search">search</option>
+                            <option value="link">link</option>
+                            <option value="home">home</option>
+                            <option value="public">public</option>
+                            <option value="language">language</option>
+                            <option value="web">web</option>
+                            <option value="bookmark">bookmark</option>
+                            <option value="star">star</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="page-description">Descrição</label>
+                    <textarea id="page-description" class="form-input" rows="3" placeholder="Descrição breve da página..."></textarea>
+                </div>
+                <div class="form-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="modal-submit-btn">
+                        <i class="material-icons">save</i>
+                        Salvar Página
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-container" id="main-container">
+        <!-- Header (visível apenas após login) -->
+        <header class="main-header" id="main-header" style="display: none;">
+            <div class="logo-container">
+                <i class="material-icons">school</i>
+                <h1>Wiki <span>Zero</span></h1>
+            </div>
+            <div class="user-info" id="user-info">
+                <!-- Preenchido dinamicamente -->
+            </div>
+        </header>
+
+        <!-- Botões de ação (visível apenas após login) -->
+        <div class="action-buttons" id="action-buttons" style="display: none;">
+            <button class="action-button" onclick="showAddPageModal()">
+                <i class="material-icons">add</i>
+                Adicionar Página
+            </button>
+            <button class="action-button secondary" onclick="exportPages()">
+                <i class="material-icons">download</i>
+                Exportar Lista
+            </button>
+            <button class="action-button secondary" onclick="importPages()">
+                <i class="material-icons">upload</i>
+                Importar Lista
+            </button>
+            <button class="action-button danger" onclick="logout()">
+                <i class="material-icons">logout</i>
+                Sair
+            </button>
+        </div>
+
+        <!-- Conteúdo principal -->
+        <div class="content">
+            <!-- Card de login (visível quando não autenticado) -->
+            <div class="login-container" id="login-container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="login-logo">
+                            <i class="material-icons">school</i>
+                            <h1>Wiki <span>Zero</span></h1>
+                        </div>
+                        <p class="login-subtitle">Gerenciador de Páginas de Busca</p>
+                    </div>
+
+                    <div class="login-body">
+                        <!-- Mensagens de erro/sucesso -->
+                        <div class="error-message" id="error-message"></div>
+                        <div class="success-message" id="success-message"></div>
+
+                        <!-- Formulário de login -->
+                        <form class="login-form" id="login-form">
+                            <div class="form-group">
+                                <label class="form-label" for="email">E-mail</label>
+                                <div class="input-with-icon">
+                                    <input type="email" 
+                                           id="email" 
+                                           class="form-input" 
+                                           placeholder="seu@email.com"
+                                           required
+                                           autocomplete="email">
+                                    <i class="material-icons input-icon">email</i>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="password">Senha</label>
+                                <div class="input-with-icon">
+                                    <input type="password" 
+                                           id="password" 
+                                           class="form-input" 
+                                           placeholder="••••••••"
+                                           required
+                                           autocomplete="current-password"
+                                           minlength="6">
+                                    <i class="material-icons input-icon" id="password-toggle">visibility</i>
+                                </div>
+                            </div>
+
+                            <div class="form-options">
+                                <label class="remember-me">
+                                    <input type="checkbox" id="remember-me">
+                                    <span>Lembrar de mim</span>
+                                </label>
+                                <a href="#" class="forgot-password" id="forgot-password">
+                                    Esqueceu a senha?
+                                </a>
+                            </div>
+
+                            <button type="submit" class="login-button" id="login-button">
+                                <i class="material-icons">login</i>
+                                Entrar
+                            </button>
+                        </form>
+
+                        <!-- Divisor -->
+                        <div class="divider">
+                            <span>ou entre com</span>
+                        </div>
+
+                        <!-- Login social -->
+                        <div class="social-login">
+                            <button class="social-button google-button" id="google-login">
+                                <i class="material-icons">google</i>
+                                Google
+                            </button>
+                            <button class="social-button github-button" id="github-login">
+                                <i class="material-icons">code</i>
+                                GitHub
+                            </button>
+                        </div>
+
+                        <!-- Link para registro -->
+                        <div class="register-link">
+                            Não tem uma conta?
+                            <a href="#" id="register-link">Cadastre-se gratuitamente</a>
+                        </div>
+
+                        <!-- Termos -->
+                        <div class="terms">
+                            Ao continuar, você concorda com nossos
+                            <a href="#">Termos de Uso</a> e
+                            <a href="#">Política de Privacidade</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel de páginas (visível após login) -->
+            <div class="pages-panel" id="pages-panel">
+                <div class="pages-header">
+                    <h2 class="pages-title">
+                        <i class="material-icons">bookmark</i>
+                        Minhas Páginas de Busca
+                    </h2>
+                    <div class="pages-actions">
+                        <button class="btn btn-primary" onclick="showAddPageModal()">
+                            <i class="material-icons">add</i>
+                            Nova Página
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de páginas -->
+                <div class="pages-list" id="pages-list">
+                    <!-- As páginas serão carregadas aqui dinamicamente -->
+                </div>
+
+                <!-- Formulário de adição rápida -->
+                <div class="add-page-form">
+                    <h3><i class="material-icons">bolt</i> Adição Rápida</h3>
+                    <form id="quick-add-form">
+                        <div class="form-row">
+                            <div class="form-field">
+                                <input type="text" id="quick-name" class="form-input" placeholder="Nome da página" required>
+                            </div>
+                            <div class="form-field">
+                                <input type="url" id="quick-url" class="form-input" placeholder="https://" required>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="material-icons">add_circle</i>
+                                    Adicionar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // ==============================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ==============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+            authDomain: "wzzm-ce3fc.firebaseapp.com",
+            projectId: "wzzm-ce3fc",
+            storageBucket: "wzzm-ce3fc.appspot.com",
+            messagingSenderId: "249427877153",
+            appId: "1:249427877153:web:0e4297294794a5aadeb260",
+            measurementId: "G-PLKNZNFCQ8"
+        };
+
+        // Inicializar Firebase
+        let app, auth, db;
+        try {
+            app = firebase.app();
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (e) {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        }
+
+        // ==============================================
+        // ELEMENTOS DOM
+        // ==============================================
+        const elements = {
+            // Elementos gerais
+            mainContainer: document.getElementById('main-container'),
+            mainHeader: document.getElementById('main-header'),
+            userInfo: document.getElementById('user-info'),
+            actionButtons: document.getElementById('action-buttons'),
+            loginContainer: document.getElementById('login-container'),
+            pagesPanel: document.getElementById('pages-panel'),
+            
+            // Elementos de login
+            loginForm: document.getElementById('login-form'),
+            emailInput: document.getElementById('email'),
+            passwordInput: document.getElementById('password'),
+            loginButton: document.getElementById('login-button'),
+            passwordToggle: document.getElementById('password-toggle'),
+            googleLogin: document.getElementById('google-login'),
+            githubLogin: document.getElementById('github-login'),
+            registerLink: document.getElementById('register-link'),
+            forgotPassword: document.getElementById('forgot-password'),
+            rememberMe: document.getElementById('remember-me'),
+            
+            // Elementos de mensagens
+            errorMessage: document.getElementById('error-message'),
+            successMessage: document.getElementById('success-message'),
+            
+            // Elementos de loading
+            loadingOverlay: document.getElementById('loading-overlay'),
+            loadingText: document.getElementById('loading-text'),
+            
+            // Elementos do painel de páginas
+            pagesList: document.getElementById('pages-list'),
+            quickAddForm: document.getElementById('quick-add-form'),
+            quickName: document.getElementById('quick-name'),
+            quickUrl: document.getElementById('quick-url'),
+            
+            // Elementos do modal
+            pageModal: document.getElementById('page-modal'),
+            modalTitle: document.getElementById('modal-title'),
+            pageForm: document.getElementById('page-form'),
+            pageName: document.getElementById('page-name'),
+            pageUrl: document.getElementById('page-url'),
+            pageCategory: document.getElementById('page-category'),
+            pageIcon: document.getElementById('page-icon'),
+            pageDescription: document.getElementById('page-description'),
+            modalSubmitBtn: document.getElementById('modal-submit-btn')
+        };
+
+        // ==============================================
+        // VARIÁVEIS GLOBAIS
+        // ==============================================
+        let currentUser = null;
+        let currentPages = [];
+        let editingPageId = null;
+
+        // ==============================================
+        // FUNÇÕES DE UTILIDADE
+        // ==============================================
+
+        // Mostrar/ocultar loading
+        function showLoading(show, text = 'Carregando...') {
+            if (show) {
+                elements.loadingText.textContent = text;
+                elements.loadingOverlay.classList.add('show');
+            } else {
+                elements.loadingOverlay.classList.remove('show');
+            }
+        }
+
+        // Mostrar mensagem de erro
+        function showError(message) {
+            elements.errorMessage.textContent = message;
+            elements.errorMessage.classList.add('show');
+            elements.successMessage.classList.remove('show');
+        }
+
+        // Mostrar mensagem de sucesso
+        function showSuccess(message) {
+            elements.successMessage.textContent = message;
+            elements.successMessage.classList.add('show');
+            elements.errorMessage.classList.remove('show');
+        }
+
+        // Limpar mensagens
+        function clearMessages() {
+            elements.errorMessage.classList.remove('show');
+            elements.successMessage.classList.remove('show');
+        }
+
+        // Verificar se é admin
+        async function isAdmin() {
+            if (!currentUser) return false;
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                return userDoc.exists && userDoc.data().isAdmin === true;
+            } catch (error) {
+                console.error('Erro ao verificar admin:', error);
+                return false;
+            }
+        }
+
+        // Verificar se é teacher
+        async function isTeacher() {
+            if (!currentUser) return false;
+            try {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                return userDoc.exists && userDoc.data().isTeatcher === true;
+            } catch (error) {
+                console.error('Erro ao verificar teacher:', error);
+                return false;
+            }
+        }
+
+        // Verificar se é admin ou teacher
+        async function isAdminOrTeacher() {
+            const admin = await isAdmin();
+            const teacher = await isTeacher();
+            return admin || teacher;
+        }
+
+        // ==============================================
+        // FUNÇÕES DE AUTENTICAÇÃO
+        // ==============================================
+
+        // Login com email/senha
+        async function loginWithEmail(email, password) {
+            try {
+                showLoading(true, 'Entrando...');
+                clearMessages();
+                
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                
+                // Salvar email se "lembrar de mim" estiver marcado
+                if (elements.rememberMe.checked) {
+                    localStorage.setItem('rememberedEmail', email);
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                }
+                
+                showSuccess('Login realizado com sucesso!');
+                updateUIAfterLogin();
+                
+            } catch (error) {
+                showLoading(false);
+                console.error('Erro no login:', error);
+                
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        showError('E-mail inválido.');
+                        break;
+                    case 'auth/user-disabled':
+                        showError('Conta desativada.');
+                        break;
+                    case 'auth/user-not-found':
+                        showError('Usuário não encontrado.');
+                        break;
+                    case 'auth/wrong-password':
+                        showError('Senha incorreta.');
+                        break;
+                    case 'auth/too-many-requests':
+                        showError('Muitas tentativas. Tente mais tarde.');
+                        break;
+                    default:
+                        showError('Erro ao fazer login: ' + error.message);
+                }
+            }
+        }
+
+        // Login com Google
+        async function loginWithGoogle() {
+            try {
+                showLoading(true, 'Conectando com Google...');
+                clearMessages();
+                
+                const provider = new firebase.auth.GoogleAuthProvider();
+                provider.addScope('email');
+                provider.addScope('profile');
+                provider.setCustomParameters({ prompt: 'select_account' });
+                
+                const result = await auth.signInWithPopup(provider);
+                currentUser = result.user;
+                
+                showSuccess('Login com Google realizado!');
+                updateUIAfterLogin();
+                
+            } catch (error) {
+                showLoading(false);
+                console.error('Erro no login Google:', error);
+                
+                switch (error.code) {
+                    case 'auth/popup-blocked':
+                        showError('Popup bloqueado. Permita popups.');
+                        break;
+                    case 'auth/popup-closed-by-user':
+                        showError('Login cancelado.');
+                        break;
+                    case 'auth/operation-not-allowed':
+                        showError('Login com Google não está habilitado.');
+                        break;
+                    default:
+                        showError('Erro no login Google: ' + error.message);
+                }
+            }
+        }
+
+        // Login com GitHub (placeholder)
+        async function loginWithGitHub() {
+            showError('Login com GitHub ainda não implementado.');
+        }
+
+        // Registrar novo usuário
+        async function registerUser(email, password) {
+            try {
+                showLoading(true, 'Criando conta...');
+                clearMessages();
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                
+                // Criar documento do usuário
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    displayName: currentUser.email.split('@')[0],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isAdmin: false,
+                    isTeatcher: false,
+                    isBanned: false
+                });
+                
+                showSuccess('Conta criada com sucesso!');
+                updateUIAfterLogin();
+                
+            } catch (error) {
+                showLoading(false);
+                
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        showError('E-mail já está em uso.');
+                        break;
+                    case 'auth/invalid-email':
+                        showError('E-mail inválido.');
+                        break;
+                    case 'auth/weak-password':
+                        showError('Senha muito fraca (mínimo 6 caracteres).');
+                        break;
+                    default:
+                        showError('Erro ao criar conta: ' + error.message);
+                }
+            }
+        }
+
+        // Redefinir senha
+        async function resetPassword(email) {
+            if (!email) {
+                showError('Digite seu e-mail.');
+                return;
+            }
+            
+            try {
+                showLoading(true, 'Enviando e-mail de redefinição...');
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('E-mail de redefinição enviado!');
+            } catch (error) {
+                showLoading(false);
+                showError('Erro ao enviar e-mail: ' + error.message);
+            }
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                showLoading(true, 'Saindo...');
+                await auth.signOut();
+                currentUser = null;
+                updateUIAfterLogout();
+                showSuccess('Logout realizado com sucesso!');
+            } catch (error) {
+                console.error('Erro no logout:', error);
+                showError('Erro ao sair: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ==============================================
+        // FUNÇÕES DE GERENCIAMENTO DE PÁGINAS
+        // ==============================================
+
+        // Salvar lista de páginas
+        async function savePagesList(pages) {
+            try {
+                if (!currentUser) {
+                    throw new Error('Usuário não autenticado');
+                }
+                
+                showLoading(true, 'Salvando páginas...');
+                
+                const pagesData = {
+                    "Lista de Páginas de Busca": pages,
+                    "configuracoes": {
+                        nome: "Minha Lista de Busca",
+                        totalPaginas: pages.length,
+                        ultimaAtualizacao: new Date().toISOString(),
+                        versao: "1.0"
+                    },
+                    "metadata": {
+                        criadorId: currentUser.uid,
+                        criadorEmail: currentUser.email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        tipo: "lista_paginas_busca"
+                    }
+                };
+                
+                // Usar a coleção paginasUsuario (que já tem regras configuradas)
+                await db.collection('paginasUsuario').doc(currentUser.uid).set(pagesData, { merge: true });
+                
+                console.log('✅ Páginas salvas em paginasUsuario/', currentUser.uid);
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Erro ao salvar páginas:', error);
+                showError('Erro ao salvar: ' + error.message);
+                throw error;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Carregar lista de páginas
+        async function loadPagesList() {
+            try {
+                if (!currentUser) {
+                    throw new Error('Usuário não autenticado');
+                }
+                
+                showLoading(true, 'Carregando páginas...');
+                
+                const docRef = db.collection('paginasUsuario').doc(currentUser.uid);
+                const doc = await docRef.get();
+                
+                if (!doc.exists) {
+                    console.log('📭 Nenhuma lista encontrada. Criando lista padrão...');
+                    // Criar lista com página inicial
+                    const defaultPages = [
+                        {
+                            id: generateId(),
+                            Nome: "Home Page",
+                            Link: "https://wazzimagiygg.com/index.html",
+                            categoria: "Principal",
+                            icone: "home",
+                            descricao: "Página inicial",
+                            criadoEm: new Date().toISOString(),
+                            ordem: 1
+                        }
+                    ];
+                    
+                    await savePagesList(defaultPages);
+                    currentPages = defaultPages;
+                } else {
+                    const data = doc.data();
+                    currentPages = data["Lista de Páginas de Busca"] || [];
+                    console.log('✅', currentPages.length, 'páginas carregadas');
+                }
+                
+                renderPagesList();
+                return currentPages;
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar páginas:', error);
+                showError('Erro ao carregar páginas: ' + error.message);
+                return [];
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Adicionar nova página
+        async function addPage(pageData) {
+            try {
+                const newPage = {
+                    id: generateId(),
+                    ...pageData,
+                    criadoEm: new Date().toISOString(),
+                    ordem: currentPages.length + 1
+                };
+                
+                currentPages.push(newPage);
+                await savePagesList(currentPages);
+                
+                showSuccess('Página adicionada com sucesso!');
+                renderPagesList();
+                closeModal();
+                resetQuickForm();
+                
+                return newPage;
+                
+            } catch (error) {
+                console.error('❌ Erro ao adicionar página:', error);
+                showError('Erro ao adicionar página: ' + error.message);
+                throw error;
+            }
+        }
+
+        // Editar página
+        async function editPage(pageId, updatedData) {
+            try {
+                const pageIndex = currentPages.findIndex(p => p.id === pageId);
+                if (pageIndex === -1) {
+                    throw new Error('Página não encontrada');
+                }
+                
+                currentPages[pageIndex] = {
+                    ...currentPages[pageIndex],
+                    ...updatedData,
+                    atualizadoEm: new Date().toISOString()
+                };
+                
+                await savePagesList(currentPages);
+                
+                showSuccess('Página atualizada com sucesso!');
+                renderPagesList();
+                closeModal();
+                
+                return currentPages[pageIndex];
+                
+            } catch (error) {
+                console.error('❌ Erro ao editar página:', error);
+                showError('Erro ao editar página: ' + error.message);
+                throw error;
+            }
+        }
+
+        // Remover página
+        async function removePage(pageId) {
+            if (!confirm('Tem certeza que deseja remover esta página?')) {
+                return;
+            }
+            
+            try {
+                currentPages = currentPages.filter(p => p.id !== pageId);
+                
+                // Reordenar
+                currentPages.forEach((page, index) => {
+                    page.ordem = index + 1;
+                });
+                
+                await savePagesList(currentPages);
+                
+                showSuccess('Página removida com sucesso!');
+                renderPagesList();
+                
+            } catch (error) {
+                console.error('❌ Erro ao remover página:', error);
+                showError('Erro ao remover página: ' + error.message);
+            }
+        }
+
+        // Renderizar lista de páginas
+        function renderPagesList() {
+            if (!currentPages || currentPages.length === 0) {
+                elements.pagesList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--light-text);">
+                        <i class="material-icons" style="font-size: 48px; margin-bottom: 20px;">bookmark_border</i>
+                        <h3 style="margin-bottom: 10px;">Nenhuma página cadastrada</h3>
+                        <p>Adicione sua primeira página usando o formulário abaixo.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar por ordem
+            const sortedPages = [...currentPages].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+            
+            elements.pagesList.innerHTML = sortedPages.map(page => `
+                <div class="page-item" data-id="${page.id}">
+                    <div class="page-info">
+                        <div class="page-name">
+                            <i class="material-icons">${page.icone || 'link'}</i>
+                            ${page.Nome}
+                        </div>
+                        <div class="page-url">
+                            <a href="${page.Link}" target="_blank" rel="noopener noreferrer">
+                                ${page.Link}
+                            </a>
+                        </div>
+                        ${page.categoria ? `<span class="page-category">${page.categoria}</span>` : ''}
+                        ${page.descricao ? `<div style="font-size: 13px; color: var(--light-text); margin-top: 5px;">${page.descricao}</div>` : ''}
+                    </div>
+                    <div class="page-actions">
+                        <button class="page-action-btn edit" onclick="editPageModal('${page.id}')" title="Editar">
+                            <i class="material-icons">edit</i>
+                        </button>
+                        <button class="page-action-btn delete" onclick="removePage('${page.id}')" title="Remover">
+                            <i class="material-icons">delete</i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Gerar ID único
+        function generateId() {
+            return 'page_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // ==============================================
+        // FUNÇÕES DE MODAL
+        // ==============================================
+
+        // Mostrar modal para adicionar página
+        function showAddPageModal() {
+            editingPageId = null;
+            elements.modalTitle.innerHTML = '<i class="material-icons">add_link</i> Nova Página';
+            elements.modalSubmitBtn.innerHTML = '<i class="material-icons">save</i> Salvar Página';
+            
+            // Limpar formulário
+            elements.pageForm.reset();
+            elements.pageIcon.value = 'link';
+            
+            // Mostrar modal
+            elements.pageModal.classList.add('show');
+            elements.pageName.focus();
+        }
+
+        // Mostrar modal para editar página
+        function editPageModal(pageId) {
+            const page = currentPages.find(p => p.id === pageId);
+            if (!page) return;
+            
+            editingPageId = pageId;
+            elements.modalTitle.innerHTML = '<i class="material-icons">edit</i> Editar Página';
+            elements.modalSubmitBtn.innerHTML = '<i class="material-icons">save</i> Atualizar Página';
+            
+            // Preencher formulário com dados da página
+            elements.pageName.value = page.Nome || '';
+            elements.pageUrl.value = page.Link || '';
+            elements.pageCategory.value = page.categoria || '';
+            elements.pageIcon.value = page.icone || 'link';
+            elements.pageDescription.value = page.descricao || '';
+            
+            // Mostrar modal
+            elements.pageModal.classList.add('show');
+            elements.pageName.focus();
+        }
+
+        // Fechar modal
+        function closeModal() {
+            elements.pageModal.classList.remove('show');
+            editingPageId = null;
+        }
+
+        // Resetar formulário rápido
+        function resetQuickForm() {
+            elements.quickAddForm.reset();
+        }
+
+        // ==============================================
+        // FUNÇÕES DE EXPORTAÇÃO/IMPORTAÇÃO
+        // ==============================================
+
+        // Exportar páginas como JSON
+        function exportPages() {
+            if (!currentPages || currentPages.length === 0) {
+                showError('Nenhuma página para exportar');
+                return;
+            }
+            
+            const exportData = {
+                "Lista de Páginas de Busca": currentPages,
+                "metadata": {
+                    exportadoEm: new Date().toISOString(),
+                    totalPaginas: currentPages.length,
+                    exportadoPor: currentUser?.email || 'Usuário'
+                }
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `paginas-busca-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showSuccess('Lista exportada com sucesso!');
+        }
+
+        // Importar páginas de JSON
+        function importPages() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    showLoading(true, 'Importando páginas...');
+                    
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    
+                    if (!data["Lista de Páginas de Busca"]) {
+                        throw new Error('Formato de arquivo inválido');
+                    }
+                    
+                    // Adicionar IDs às páginas importadas
+                    const importedPages = data["Lista de Páginas de Busca"].map((page, index) => ({
+                        ...page,
+                        id: page.id || generateId(),
+                        ordem: page.ordem || currentPages.length + index + 1,
+                        criadoEm: page.criadoEm || new Date().toISOString()
+                    }));
+                    
+                    // Combinar com páginas existentes
+                    currentPages = [...currentPages, ...importedPages];
+                    
+                    // Remover duplicados por URL
+                    const urlMap = new Map();
+                    currentPages = currentPages.filter(page => {
+                        if (urlMap.has(page.Link)) {
+                            return false;
+                        }
+                        urlMap.set(page.Link, true);
+                        return true;
+                    });
+                    
+                    // Reordenar
+                    currentPages.forEach((page, index) => {
+                        page.ordem = index + 1;
+                    });
+                    
+                    await savePagesList(currentPages);
+                    showSuccess(`${importedPages.length} páginas importadas com sucesso!`);
+                    
+                } catch (error) {
+                    console.error('❌ Erro ao importar:', error);
+                    showError('Erro ao importar: ' + error.message);
+                } finally {
+                    showLoading(false);
+                }
+            };
+            
+            input.click();
+        }
+
+        // ==============================================
+        // ATUALIZAÇÃO DA UI
+        // ==============================================
+
+        // Atualizar UI após login
+        function updateUIAfterLogin() {
+            // Mostrar elementos do usuário logado
+            elements.mainHeader.style.display = 'flex';
+            elements.actionButtons.style.display = 'flex';
+            elements.pagesPanel.classList.add('show');
+            
+            // Esconder login
+            elements.loginContainer.style.display = 'none';
+            
+            // Atualizar informações do usuário
+            updateUserInfo();
+            
+            // Carregar páginas
+            loadPagesList();
+            
+            showLoading(false);
+        }
+
+        // Atualizar UI após logout
+        function updateUIAfterLogout() {
+            // Esconder elementos do usuário logado
+            elements.mainHeader.style.display = 'none';
+            elements.actionButtons.style.display = 'none';
+            elements.pagesPanel.classList.remove('show');
+            
+            // Mostrar login
+            elements.loginContainer.style.display = 'block';
+            
+            // Limpar lista
+            currentPages = [];
+            renderPagesList();
+            
+            // Fechar modal se estiver aberto
+            closeModal();
+        }
+
+        // Atualizar informações do usuário
+        function updateUserInfo() {
+            if (!currentUser) return;
+            
+            const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+            const email = currentUser.email;
+            
+            elements.userInfo.innerHTML = `
+                <div class="user-avatar">
+                    <i class="material-icons">person</i>
+                </div>
+                <div>
+                    <div class="user-name">${displayName}</div>
+                    <div style="font-size: 12px; opacity: 0.8;">${email}</div>
+                </div>
+            `;
+        }
+
+        // ==============================================
+        // EVENT LISTENERS
+        // ==============================================
+
+        // Toggle visibilidade da senha
+        elements.passwordToggle.addEventListener('click', () => {
+            const type = elements.passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            elements.passwordInput.setAttribute('type', type);
+            elements.passwordToggle.textContent = type === 'password' ? 'visibility' : 'visibility_off';
+        });
+
+        // Formulário de login
+        elements.loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = elements.emailInput.value.trim();
+            const password = elements.passwordInput.value;
+            
+            if (!email || !password) {
+                showError('Preencha todos os campos');
+                return;
+            }
+            
+            await loginWithEmail(email, password);
+        });
+
+        // Login com Google
+        elements.googleLogin.addEventListener('click', loginWithGoogle);
+
+        // Login com GitHub
+        elements.githubLogin.addEventListener('click', loginWithGitHub);
+
+        // Link de registro
+        elements.registerLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const email = elements.emailInput.value.trim();
+            const password = elements.passwordInput.value;
+            
+            if (!email || !password) {
+                showError('Preencha e-mail e senha para se cadastrar');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('A senha deve ter pelo menos 6 caracteres');
+                return;
+            }
+            
+            if (confirm(`Deseja criar uma conta com o e-mail ${email}?`)) {
+                await registerUser(email, password);
+            }
+        });
+
+        // Esqueci a senha
+        elements.forgotPassword.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const email = elements.emailInput.value.trim();
+            if (!email) {
+                showError('Digite seu e-mail para redefinir a senha');
+                return;
+            }
+            
+            if (confirm(`Enviar link de redefinição para ${email}?`)) {
+                await resetPassword(email);
+            }
+        });
+
+        // Formulário de página (modal)
+        elements.pageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const pageData = {
+                Nome: elements.pageName.value.trim(),
+                Link: elements.pageUrl.value.trim(),
+                categoria: elements.pageCategory.value.trim(),
+                icone: elements.pageIcon.value,
+                descricao: elements.pageDescription.value.trim()
+            };
+            
+            if (!pageData.Nome || !pageData.Link) {
+                showError('Preencha pelo menos Nome e URL');
+                return;
+            }
+            
+            // Validar URL
+            try {
+                new URL(pageData.Link);
+            } catch {
+                showError('URL inválida');
+                return;
+            }
+            
+            if (editingPageId) {
+                await editPage(editingPageId, pageData);
+            } else {
+                await addPage(pageData);
+            }
+        });
+
+        // Formulário rápido de adição
+        elements.quickAddForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nome = elements.quickName.value.trim();
+            const url = elements.quickUrl.value.trim();
+            
+            if (!nome || !url) {
+                showError('Preencha nome e URL');
+                return;
+            }
+            
+            try {
+                new URL(url);
+            } catch {
+                showError('URL inválida');
+                return;
+            }
+            
+            await addPage({
+                Nome: nome,
+                Link: url,
+                categoria: 'Rápida',
+                icone: 'bolt'
+            });
+        });
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && elements.pageModal.classList.contains('show')) {
+                closeModal();
+            }
+        });
+
+        // Fechar modal clicando fora
+        elements.pageModal.addEventListener('click', (e) => {
+            if (e.target === elements.pageModal) {
+                closeModal();
+            }
+        });
+
+        // ==============================================
+        // INICIALIZAÇÃO
+        // ==============================================
+
+        // Verificar estado de autenticação
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                updateUIAfterLogin();
+                
+                // Carregar email lembrado
+                const rememberedEmail = localStorage.getItem('rememberedEmail');
+                if (rememberedEmail && rememberedEmail === user.email) {
+                    elements.rememberMe.checked = true;
+                }
+            } else {
+                currentUser = null;
+                updateUIAfterLogout();
+                
+                // Preencher email lembrado
+                const rememberedEmail = localStorage.getItem('rememberedEmail');
+                if (rememberedEmail) {
+                    elements.emailInput.value = rememberedEmail;
+                    elements.rememberMe.checked = true;
+                }
+            }
+        });
+
+        // Focar no campo de email após carregar
+        window.addEventListener('load', () => {
+            if (!currentUser) {
+                setTimeout(() => {
+                    if (elements.emailInput.value) {
+                        elements.passwordInput.focus();
+                    } else {
+                        elements.emailInput.focus();
+                    }
+                }, 500);
+            }
+        });
+
+        // Inicializar
+        console.log('✅ Sistema de Gerenciamento de Páginas inicializado');
+    </script>
+</body>
+</html>
