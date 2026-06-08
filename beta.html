@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WazzimaGiygg Search - Busca Inteligente</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #1a1a2e;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 32px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .logo span {
+            background: linear-gradient(135deg, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-name {
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* Área principal de busca */
+        .search-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .search-title {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .search-title h1 {
+            font-size: 56px;
+            background: linear-gradient(135deg, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .search-title p {
+            color: rgba(255,255,255,0.9);
+            font-size: 18px;
+        }
+
+        /* Barra de busca estilo Google */
+        .search-box {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            animation: fadeInUp 0.6s ease 0.1s backwards;
+        }
+
+        .search-input-wrapper {
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            padding: 4px 8px 4px 20px;
+        }
+
+        .search-input-wrapper:hover,
+        .search-input-wrapper:focus-within {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .search-icon {
+            color: #9aa0a6;
+            margin-right: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            padding: 16px 0;
+            font-size: 16px;
+            outline: none;
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .search-clear {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9aa0a6;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .search-clear:hover {
+            background: #f1f3f4;
+        }
+
+        .search-divider {
+            width: 1px;
+            height: 28px;
+            background: #dadce0;
+            margin: 0 8px;
+        }
+
+        .search-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 24px;
+            color: #1a73e8;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-button:hover {
+            background: #f1f3f4;
+        }
+
+        /* Botões de busca */
+        .search-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 30px;
+            animation: fadeInUp 0.6s ease 0.2s backwards;
+        }
+
+        .btn-search {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-search:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Sugestões de busca */
+        .suggestions {
+            max-width: 600px;
+            margin: 20px auto 0;
+            display: none;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .suggestions.show {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: #f8f9fa;
+        }
+
+        .suggestion-icon {
+            color: #9aa0a6;
+        }
+
+        .suggestion-text {
+            flex: 1;
+            color: #202124;
+        }
+
+        .suggestion-category {
+            font-size: 12px;
+            color: #1a73e8;
+            background: #e8f0fe;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        /* Resultados da busca */
+        .results-container {
+            margin-top: 40px;
+            display: none;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .results-container.show {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .results-count {
+            color: rgba(255,255,255,0.8);
+            font-size: 14px;
+        }
+
+        .results-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .results-close:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        /* Card de resultado */
+        .result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .card-icon i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .card-url {
+            font-size: 13px;
+            color: #1a73e8;
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+
+        .card-description {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .card-category {
+            display: inline-block;
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        /* Nenhum resultado */
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .no-results i {
+            font-size: 64px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 20px;
+        }
+
+        .no-results h3 {
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .no-results p {
+            color: rgba(255,255,255,0.7);
+        }
+
+        /* Modal de login */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 90%;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            color: #1a1a2e;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #9aa0a6;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .search-title h1 {
+                font-size: 36px;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 16px;
+            }
+            
+            .search-input-wrapper {
+                padding: 4px 8px 4px 16px;
+            }
+            
+            .search-input {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="#" class="logo" onclick="resetSearch()">
+                <i class="material-icons">search</i>
+                <span>WazzimaGiygg Search</span>
+            </a>
+            <div class="user-area" id="user-area">
+                <!-- Será preenchido dinamicamente -->
+            </div>
+        </div>
+
+        <div class="search-container">
+            <div class="search-title">
+                <h1>WazzimaGiygg</h1>
+                <p>Busca inteligente para seus produtos e serviços</p>
+            </div>
+
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <i class="material-icons search-icon">search</i>
+                    <input type="text" 
+                           id="search-input" 
+                           class="search-input" 
+                           placeholder="Pesquise produtos, serviços, páginas..."
+                           autocomplete="off">
+                    <button class="search-clear" id="clear-search" style="display: none;">
+                        <i class="material-icons">close</i>
+                    </button>
+                    <div class="search-divider"></div>
+                    <button class="search-button" id="search-button">
+                        <i class="material-icons">search</i>
+                        Buscar
+                    </button>
+                </div>
+
+                <div class="suggestions" id="suggestions"></div>
+            </div>
+
+            <div class="search-buttons">
+                <button class="btn-search" onclick="performSearch()">
+                    <i class="material-icons">search</i>
+                    Pesquisar
+                </button>
+                <button class="btn-search" onclick="showAllPages()">
+                    <i class="material-icons">view_list</i>
+                    Ver todas as páginas
+                </button>
+            </div>
+
+            <div class="results-container" id="results-container">
+                <div class="results-header">
+                    <div class="results-count" id="results-count"></div>
+                    <button class="results-close" onclick="hideResults()">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                <div class="results-grid" id="results-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Login</h2>
+                <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+            </div>
+            <form id="login-form-modal">
+                <input type="email" id="modal-email" class="modal-input" placeholder="E-mail" required>
+                <input type="password" id="modal-password" class="modal-input" placeholder="Senha" required>
+                <button type="submit" class="modal-btn">Entrar</button>
+            </form>
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="#" onclick="showRegister()" style="color: #667eea; text-decoration: none;">Criar conta</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuração do Firebase (mesma do código original)
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+            authDomain: "wzzm-ce3fc.firebaseapp.com",
+            projectId: "wzzm-ce3fc",
+            storageBucket: "wzzm-ce3fc.appspot.com",
+            messagingSenderId: "249427877153",
+            appId: "1:249427877153:web:0e4297294794a5aadeb260",
+            measurementId: "G-PLKNZNFCQ8"
+        };
+
+        // Inicializar Firebase
+        let app, auth, db;
+        try {
+            app = firebase.app();
+            auth = firebase.auth();
+            db = firebase.firestore();
+        } catch (e) {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+            db = firebase.firestore();
+        }
+
+        // Variáveis globais
+        let currentUser = null;
+        let allPages = [];
+        let searchTimeout = null;
+
+        // Elementos DOM
+        const searchInput = document.getElementById('search-input');
+        const clearBtn = document.getElementById('clear-search');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const resultsContainer = document.getElementById('results-container');
+        const resultsGrid = document.getElementById('results-grid');
+        const resultsCount = document.getElementById('results-count');
+        const userArea = document.getElementById('user-area');
+        const loginModal = document.getElementById('login-modal');
+
+        // ==============================================
+        // FUNÇÕES PRINCIPAIS
+        // ==============================================
+
+        // Carregar todas as páginas do Firebase
+        async function loadAllPages() {
+            try {
+                console.log('📚 Carregando páginas do Firebase...');
+                
+                // Buscar todos os documentos da coleção paginasUsuario
+                const querySnapshot = await db.collection('paginasUsuario').get();
+                
+                allPages = [];
+                
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const pages = data["Lista de Páginas de Busca"] || [];
+                    
+                    pages.forEach(page => {
+                        if (page.Nome && page.Link) {
+                            allPages.push({
+                                id: page.id || generateId(),
+                                nome: page.Nome,
+                                url: page.Link,
+                                categoria: page.categoria || 'Geral',
+                                icone: page.icone || 'link',
+                                descricao: page.descricao || '',
+                                usuarioId: doc.id,
+                                ordem: page.ordem || 0
+                            });
+                        }
+                    });
+                });
+                
+                // Remover duplicados por URL
+                const urlMap = new Map();
+                allPages = allPages.filter(page => {
+                    if (urlMap.has(page.url)) {
+                        return false;
+                    }
+                    urlMap.set(page.url, true);
+                    return true;
+                });
+                
+                console.log(`✅ ${allPages.length} páginas carregadas com sucesso!`);
+                return allPages;
+                
+            } catch (error) {
+                console.error('❌ Erro ao carregar páginas:', error);
+                return [];
+            }
+        }
+
+        // Buscar páginas
+        function searchPages(query) {
+            if (!query || query.trim() === '') {
+                return [];
+            }
+            
+            const lowerQuery = query.toLowerCase();
+            
+            return allPages.filter(page => {
+                return page.nome.toLowerCase().includes(lowerQuery) ||
+                       page.descricao.toLowerCase().includes(lowerQuery) ||
+                       page.categoria.toLowerCase().includes(lowerQuery) ||
+                       page.url.toLowerCase().includes(lowerQuery);
+            }).sort((a, b) => {
+                // Priorizar títulos que começam com a busca
+                const aStarts = a.nome.toLowerCase().startsWith(lowerQuery);
+                const bStarts = b.nome.toLowerCase().startsWith(lowerQuery);
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                return 0;
+            });
+        }
+
+        // Mostrar sugestões
+        function showSuggestions(query) {
+            if (!query || query.trim() === '') {
+                suggestionsDiv.classList.remove('show');
+                return;
+            }
+            
+            const results = searchPages(query).slice(0, 5);
+            
+            if (results.length === 0) {
+                suggestionsDiv.classList.remove('show');
+                return;
+            }
+            
+            suggestionsDiv.innerHTML = results.map(page => `
+                <div class="suggestion-item" onclick="selectSuggestion('${page.nome.replace(/'/g, "\\'")}')">
+                    <i class="material-icons suggestion-icon">${page.icone}</i>
+                    <div class="suggestion-text">
+                        <strong>${highlightText(page.nome, query)}</strong>
+                        <div style="font-size: 12px; color: #5f6368;">${page.url.substring(0, 50)}</div>
+                    </div>
+                    <span class="suggestion-category">${page.categoria}</span>
+                </div>
+            `).join('');
+            
+            suggestionsDiv.classList.add('show');
+        }
+
+        // Destacar texto da busca
+        function highlightText(text, query) {
+            if (!query) return text;
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<mark style="background: #fff3cd; padding: 0;">$1</mark>');
+        }
+
+        // Selecionar sugestão
+        function selectSuggestion(query) {
+            searchInput.value = query;
+            suggestionsDiv.classList.remove('show');
+            performSearch();
+        }
+
+        // Realizar busca
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                showAllPages();
+                return;
+            }
+            
+            const results = searchPages(query);
+            displayResults(results, query);
+        }
+
+        // Mostrar todas as páginas
+        async function showAllPages() {
+            const query = searchInput.value.trim();
+            if (query) {
+                searchInput.value = '';
+            }
+            displayResults(allPages, 'Todos os resultados');
+        }
+
+        // Exibir resultados
+        function displayResults(results, searchTerm) {
+            resultsCount.textContent = `📄 ${results.length} resultado${results.length !== 1 ? 's' : ''} para "${searchTerm}"`;
+            
+            if (results.length === 0) {
+                resultsGrid.innerHTML = `
+                    <div class="no-results" style="grid-column: 1/-1;">
+                        <i class="material-icons">search_off</i>
+                        <h3>Nenhum resultado encontrado</h3>
+                        <p>Tente buscar por outro termo ou verifique a ortografia.</p>
+                    </div>
+                `;
+            } else {
+                resultsGrid.innerHTML = results.map(page => `
+                    <div class="result-card" onclick="openLink('${page.url}')">
+                        <div class="card-icon">
+                            <i class="material-icons">${page.icone}</i>
+                        </div>
+                        <h3 class="card-title">${page.nome}</h3>
+                        <div class="card-url">${page.url}</div>
+                        ${page.descricao ? `<div class="card-description">${page.descricao.substring(0, 100)}${page.descricao.length > 100 ? '...' : ''}</div>` : ''}
+                        <span class="card-category">${page.categoria}</span>
+                    </div>
+                `).join('');
+            }
+            
+            resultsContainer.classList.add('show');
+            
+            // Scroll suave para os resultados
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Ocultar resultados
+        function hideResults() {
+            resultsContainer.classList.remove('show');
+        }
+
+        // Resetar busca
+        function resetSearch() {
+            searchInput.value = '';
+            hideResults();
+            suggestionsDiv.classList.remove('show');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Abrir link
+        function openLink(url) {
+            // Verificar se é produto WazzimaGiygg
+            if (url.includes('wazzimagiygg') || url.includes('wzzm')) {
+                window.open(url, '_blank');
+            } else {
+                window.open(url, '_blank');
+            }
+        }
+
+        // Gerar ID
+        function generateId() {
+            return 'page_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // ==============================================
+        // AUTENTICAÇÃO
+        // ==============================================
+
+        // Atualizar UI do usuário
+        function updateUserUI() {
+            if (currentUser) {
+                const displayName = currentUser.displayName || currentUser.email.split('@')[0];
+                userArea.innerHTML = `
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <i class="material-icons" style="font-size: 18px;">person</i>
+                        </div>
+                        <span class="user-name">${displayName}</span>
+                    </div>
+                    <button class="login-btn" onclick="logout()">
+                        <i class="material-icons" style="font-size: 18px;">logout</i>
+                        Sair
+                    </button>
+                `;
+            } else {
+                userArea.innerHTML = `
+                    <button class="login-btn" onclick="showLoginModal()">
+                        <i class="material-icons" style="font-size: 18px;">person</i>
+                        Entrar
+                    </button>
+                `;
+            }
+        }
+
+        // Mostrar modal de login
+        function showLoginModal() {
+            loginModal.classList.add('show');
+        }
+
+        // Fechar modal de login
+        function closeLoginModal() {
+            loginModal.classList.remove('show');
+        }
+
+        // Login
+        async function login(email, password) {
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                updateUserUI();
+                closeLoginModal();
+                console.log('✅ Login realizado com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro no login:', error);
+                alert('Erro ao fazer login: ' + error.message);
+            }
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                await auth.signOut();
+                currentUser = null;
+                updateUserUI();
+                console.log('✅ Logout realizado com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro no logout:', error);
+            }
+        }
+
+        // Mostrar registro
+        function showRegister() {
+            const email = prompt('Digite seu e-mail:');
+            if (!email) return;
+            
+            const password = prompt('Digite sua senha (mínimo 6 caracteres):');
+            if (!password || password.length < 6) {
+                alert('A senha deve ter pelo menos 6 caracteres');
+                return;
+            }
+            
+            registerUser(email, password);
+        }
+
+        // Registrar usuário
+        async function registerUser(email, password) {
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                currentUser = userCredential.user;
+                
+                // Criar documento do usuário
+                await db.collection('users').doc(currentUser.uid).set({
+                    email: currentUser.email,
+                    displayName: currentUser.email.split('@')[0],
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isAdmin: false,
+                    isTeatcher: false,
+                    isBanned: false
+                });
+                
+                updateUserUI();
+                closeLoginModal();
+                console.log('✅ Conta criada com sucesso!');
+                alert('Conta criada com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro ao criar conta:', error);
+                alert('Erro ao criar conta: ' + error.message);
+            }
+        }
+
+        // ==============================================
+        // EVENT LISTENERS
+        // ==============================================
+
+        // Evento de input na busca
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            
+            if (query) {
+                clearBtn.style.display = 'flex';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+            
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                showSuggestions(query);
+            }, 300);
+        });
+
+        // Limpar busca
+        clearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            suggestionsDiv.classList.remove('show');
+            searchInput.focus();
+        });
+
+        // Buscar ao pressionar Enter
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                suggestionsDiv.classList.remove('show');
+                performSearch();
+            }
+        });
+
+        // Botão de busca
+        document.getElementById('search-button').addEventListener('click', () => {
+            suggestionsDiv.classList.remove('show');
+            performSearch();
+        });
+
+        // Formulário de login
+        document.getElementById('login-form-modal').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('modal-email').value;
+            const password = document.getElementById('modal-password').value;
+            await login(email, password);
+        });
+
+        // Fechar modal ao clicar fora
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                closeLoginModal();
+            }
+        });
+
+        // ==============================================
+        // INICIALIZAÇÃO
+        // ==============================================
+
+        // Carregar páginas e verificar autenticação
+        async function init() {
+            await loadAllPages();
+            
+            auth.onAuthStateChanged((user) => {
+                currentUser = user;
+                updateUserUI();
+            });
+        }
+        
+        init();
+        
+        console.log('🚀 WazzimaGiygg Search inicializado!');
+    </script>
+</body>
+</html>
