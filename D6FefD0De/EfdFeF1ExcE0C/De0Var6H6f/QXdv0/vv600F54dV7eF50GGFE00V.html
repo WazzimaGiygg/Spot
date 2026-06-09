@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCKR - Controle de Acessos Irregulares</title>
+    <title>TCKR - Monitor de Acessos via IFRAME</title>
 </head>
 <body>
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-        import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         
         // CONFIGURAÇÃO DO FIREBASE
         const firebaseConfig = {
@@ -22,48 +22,6 @@
         
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
-        // ========== CONFIGURAÇÕES DE SEGURANÇA (AJUSTE CONFORME NECESSÁRIO) ==========
-        const SECURITY_RULES = {
-            // Lista de IPs bloqueados (pode ser lista negra)
-            blockedIPs: [
-                // '192.168.1.100',  // Exemplo
-                // '10.0.0.50'
-            ],
-            
-            // Países bloqueados (códigos ISO ou nomes)
-            blockedCountries: [
-                // 'Russia',
-                // 'China',
-                // 'North Korea'
-            ],
-            
-            // Horários bloqueados (formato 24h)
-            blockedHours: {
-                enabled: false,
-                start: 23,  // 23h
-                end: 6      // 6h
-            },
-            
-            // User Agents suspeitos (bots, scrapers, etc)
-            suspiciousUserAgents: [
-                'bot', 'crawler', 'scraper', 'spider', 'python', 'curl', 
-                'wget', 'headless', 'phantomjs', 'selenium'
-            ],
-            
-            // Navegadores não permitidos
-            blockedBrowsers: [
-                // 'Outro', 'Opera'
-            ],
-            
-            // Permitir apenas HTTPS (se for HTTP, considera irregular)
-            requireHTTPS: true,
-            
-            // Bloquear acessos com Referer suspeito
-            blockedReferers: [
-                // 'http://site-nao-autorizado.com'
-            ]
-        };
         
         // Função para detectar navegador
         function detectBrowser() {
@@ -118,6 +76,19 @@
                         longitude: data.lon || null,
                         isp: data.isp || 'Indisponível'
                     })
+                },
+                {
+                    url: 'https://api.ipify.org?format=json',
+                    parser: (data) => ({
+                        ip: data.ip || 'Indisponível',
+                        city: 'Não obtido',
+                        region: 'Não obtido',
+                        country: 'Não obtido',
+                        countryCode: 'Não obtido',
+                        latitude: null,
+                        longitude: null,
+                        isp: 'Não obtido'
+                    })
                 }
             ];
             
@@ -151,87 +122,58 @@
             };
         }
         
-        // ========== FUNÇÃO PARA VERIFICAR SE ACESSO É PERMITIDO ==========
-        async function verificarPermissaoAcesso(locationData, browser, userAgent, pageUrl, protocolo) {
-            const irregularidades = [];
-            
-            // 1. Verificar IP bloqueado
-            if (SECURITY_RULES.blockedIPs.includes(locationData.ip)) {
-                irregularidades.push(`IP bloqueado: ${locationData.ip}`);
-            }
-            
-            // 2. Verificar país bloqueado
-            if (SECURITY_RULES.blockedCountries.includes(locationData.country) || 
-                SECURITY_RULES.blockedCountries.includes(locationData.countryCode)) {
-                irregularidades.push(`País bloqueado: ${locationData.country} (${locationData.countryCode})`);
-            }
-            
-            // 3. Verificar horário bloqueado
-            if (SECURITY_RULES.blockedHours.enabled) {
-                const horaAtual = new Date().getHours();
-                const { start, end } = SECURITY_RULES.blockedHours;
-                
-                let horarioBloqueado = false;
-                if (start > end) {
-                    // Bloqueio noturno (ex: 23h até 6h)
-                    horarioBloqueado = horaAtual >= start || horaAtual < end;
-                } else {
-                    horarioBloqueado = horaAtual >= start && horaAtual < end;
-                }
-                
-                if (horarioBloqueado) {
-                    irregularidades.push(`Horário bloqueado: ${horaAtual}h (período ${start}h-${end}h)`);
-                }
-            }
-            
-            // 4. Verificar User Agent suspeito
-            const uaLower = userAgent.toLowerCase();
-            for (const suspeito of SECURITY_RULES.suspiciousUserAgents) {
-                if (uaLower.includes(suspeito.toLowerCase())) {
-                    irregularidades.push(`User Agent suspeito: contém "${suspeito}"`);
-                    break;
-                }
-            }
-            
-            // 5. Verificar navegador bloqueado
-            if (SECURITY_RULES.blockedBrowsers.includes(browser)) {
-                irregularidades.push(`Navegador bloqueado: ${browser}`);
-            }
-            
-            // 6. Verificar HTTPS (se exigido)
-            if (SECURITY_RULES.requireHTTPS && protocolo !== 'https:') {
-                irregularidades.push(`Protocolo inseguro: ${protocolo} (requer HTTPS)`);
-            }
-            
-            // 7. Verificar Referer bloqueado
-            const referer = document.referrer;
-            for (const refBloq of SECURITY_RULES.blockedReferers) {
-                if (referer && referer.includes(refBloq)) {
-                    irregularidades.push(`Referer bloqueado: ${referer}`);
-                    break;
-                }
-            }
-            
-            // 8. Verificar se veio de iframe não autorizado (opcional)
-            try {
-                const isInIframe = window.self !== window.top;
-                if (isInIframe) {
-                    const parentOrigin = document.referrer || 'desconhecido';
-                    // Adicione regras específicas para iframes não autorizados
-                    if (parentOrigin.includes('site-nao-autorizado.com')) {
-                        irregularidades.push(`Acesso via iframe não autorizado: ${parentOrigin}`);
-                    }
-                }
-            } catch (e) {
-                // Cross-origin - pode ser considerado irregular também
-                irregularidades.push('Acesso cross-origin detectado (iframe de domínio diferente)');
-            }
-            
-            return {
-                permitido: irregularidades.length === 0,
-                irregularidades: irregularidades,
-                motivo: irregularidades.length > 0 ? irregularidades.join('; ') : 'Acesso permitido'
+        // Função para obter informações detalhadas do iframe e página pai
+        async function getIframeInfo() {
+            const iframeInfo = {
+                isInIframe: false,
+                parentUrl: 'Não disponível',
+                parentOrigin: 'Não disponível',
+                parentTitle: 'Não disponível',
+                canAccessParent: false,
+                frameDepth: 0,
+                crossOrigin: false
             };
+            
+            try {
+                // Verificar se está em um iframe
+                iframeInfo.isInIframe = window.self !== window.top;
+                
+                if (iframeInfo.isInIframe) {
+                    // Tentar obter informações da página pai
+                    try {
+                        iframeInfo.parentUrl = window.parent.location.href;
+                        iframeInfo.parentOrigin = window.parent.location.origin;
+                        iframeInfo.parentTitle = window.parent.document.title;
+                        iframeInfo.canAccessParent = true;
+                        iframeInfo.crossOrigin = false;
+                    } catch (crossOriginError) {
+                        // Erro de cross-origin - não podemos acessar diretamente
+                        iframeInfo.parentUrl = document.referrer || 'Cross-Origin (não acessível)';
+                        iframeInfo.parentOrigin = new URL(document.referrer).origin || 'Cross-Origin';
+                        iframeInfo.parentTitle = 'Cross-Origin - Não acessível';
+                        iframeInfo.canAccessParent = false;
+                        iframeInfo.crossOrigin = true;
+                    }
+                    
+                    // Calcular profundidade do aninhamento de iframes
+                    let depth = 0;
+                    let current = window;
+                    while (current !== current.parent) {
+                        depth++;
+                        current = current.parent;
+                    }
+                    iframeInfo.frameDepth = depth;
+                } else {
+                    iframeInfo.parentUrl = 'Acesso direto (não está em iframe)';
+                    iframeInfo.parentOrigin = 'N/A';
+                }
+                
+            } catch (error) {
+                console.error('Erro ao obter informações do iframe:', error);
+                iframeInfo.parentUrl = `Erro: ${error.message}`;
+            }
+            
+            return iframeInfo;
         }
         
         // Função para salvar no Firebase com retry
@@ -253,58 +195,94 @@
             }
         }
         
-        // ========== FUNÇÃO PRINCIPAL ==========
-        async function verificarERegistrarAcesso() {
+        // ========== FUNÇÃO PRINCIPAL - REGISTRA TODOS OS ACESSOS ==========
+        async function registrarAcessoIframe() {
             const startTime = Date.now();
             
             try {
-                console.log('🚀 ===== INICIANDO VERIFICAÇÃO DE ACESSO =====');
+                console.log('🚀 ===== INICIANDO REGISTRO DE ACESSO VIA IFRAME =====');
+                
+                // Verificar se está em iframe
+                const isInIframe = window.self !== window.top;
+                console.log(`📦 Está em iframe? ${isInIframe ? 'SIM' : 'NÃO'}`);
                 
                 // Coletar informações básicas
                 const browser = detectBrowser();
                 const os = detectOS();
                 const userAgent = navigator.userAgent;
                 const protocolo = window.location.protocol;
+                const currentUrl = window.location.href;
                 
                 // Obter IP e localização
                 console.log('📡 Obtendo IP e localização...');
                 const locationData = await getIPAndLocation();
                 
-                // Obter URL da página
-                let pageUrl = 'Não disponível';
-                try {
-                    if (window.parent && window.parent.location.href) {
-                        pageUrl = window.parent.location.href;
-                    } else {
-                        pageUrl = window.location.href;
-                    }
-                } catch (e) {
-                    pageUrl = document.referrer || 'Acesso direto (cross-origin)';
-                }
+                // Obter informações do iframe
+                console.log('🔍 Obtendo informações do iframe...');
+                const iframeInfo = await getIframeInfo();
                 
-                // VERIFICAR SE ACESSO É PERMITIDO
-                const verificacao = await verificarPermissaoAcesso(
-                    locationData, browser, userAgent, pageUrl, protocolo
-                );
+                // Obter informações adicionais da página
+                let pageInfo = {
+                    title: document.title,
+                    url: currentUrl,
+                    referrer: document.referrer,
+                    protocol: protocolo,
+                    hostname: window.location.hostname,
+                    pathname: window.location.pathname
+                };
                 
-                console.log(`🔍 Resultado da verificação: ${verificacao.permitido ? '✅ PERMITIDO' : '❌ NEGADO'}`);
-                console.log(`📋 Motivo: ${verificacao.motivo}`);
+                // Informações de rede
+                let networkInfo = {
+                    connectionType: navigator.connection ? navigator.connection.effectiveType : 'desconhecido',
+                    downlink: navigator.connection ? navigator.connection.downlink : null,
+                    rtt: navigator.connection ? navigator.connection.rtt : null,
+                    saveData: navigator.connection ? navigator.connection.saveData : null
+                };
                 
-                // PREPARAR DADOS PARA REGISTRO
+                // Informações de tela
+                let screenInfo = {
+                    width: screen.width,
+                    height: screen.height,
+                    colorDepth: screen.colorDepth,
+                    pixelDepth: screen.pixelDepth,
+                    availWidth: screen.availWidth,
+                    availHeight: screen.availHeight
+                };
+                
+                // Informações de hardware (se disponível)
+                let hardwareInfo = {
+                    cores: navigator.hardwareConcurrency || 'Desconhecido',
+                    memory: navigator.deviceMemory || 'Desconhecido',
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    languages: navigator.languages ? navigator.languages.join(',') : navigator.language,
+                    cookiesEnabled: navigator.cookieEnabled,
+                    doNotTrack: navigator.doNotTrack
+                };
+                
+                // PREPARAR DADOS COMPLETOS PARA REGISTRO
                 const dadosRegistro = {
                     // Tipo de registro
-                    tipo: verificacao.permitido ? 'acesso_permitido' : 'acesso_irregular',
-                    acessoPermitido: verificacao.permitido,
+                    tipo: 'acesso_iframe',
+                    acessoViaIframe: isInIframe,
                     
-                    // Irregularidades (se houver)
-                    irregularidades: verificacao.irregularidades,
-                    motivoIrregularidade: verificacao.motivo,
+                    // Informações do iframe
+                    iframe: {
+                        isInIframe: iframeInfo.isInIframe,
+                        parentUrl: iframeInfo.parentUrl,
+                        parentOrigin: iframeInfo.parentOrigin,
+                        parentTitle: iframeInfo.parentTitle,
+                        canAccessParent: iframeInfo.canAccessParent,
+                        frameDepth: iframeInfo.frameDepth,
+                        crossOrigin: iframeInfo.crossOrigin
+                    },
                     
                     // Informações do navegador
                     browser: browser,
                     browserVersion: navigator.userAgent.match(/(?:Chrome|Firefox|Safari|Edge)\/(\d+\.\d+)/)?.[1] || 'Desconhecida',
                     operatingSystem: os,
                     userAgent: userAgent,
+                    userAgentHash: await hashUserAgent(userAgent),
                     
                     // IP e localização
                     ip: locationData.ip,
@@ -316,110 +294,120 @@
                     longitude: locationData.longitude,
                     isp: locationData.isp,
                     
-                    // Informações da página
-                    pageUrl: pageUrl,
-                    pageTitle: document.title || 'Sem título',
-                    referrer: document.referrer || 'Nenhum',
-                    protocol: protocolo,
+                    // Informações da página atual
+                    page: pageInfo,
                     
-                    // Informações do dispositivo
-                    screenResolution: `${screen.width}x${screen.height}`,
-                    language: navigator.language,
-                    platform: navigator.platform,
-                    cookiesEnabled: navigator.cookieEnabled,
+                    // Informações da página de origem (referrer)
+                    referrerInfo: {
+                        referrer: document.referrer,
+                        referrerOrigin: document.referrer ? new URL(document.referrer).origin : 'Nenhum',
+                        referrerHost: document.referrer ? new URL(document.referrer).hostname : 'Nenhum'
+                    },
+                    
+                    // Informações de rede
+                    network: networkInfo,
+                    
+                    // Informações de tela
+                    screen: screenInfo,
+                    
+                    // Informações de hardware
+                    hardware: hardwareInfo,
                     
                     // Timestamp
                     timestamp: serverTimestamp(),
                     registeredAtISO: new Date().toISOString(),
                     registeredAtLocal: new Date().toLocaleString('pt-BR'),
+                    timestampUnix: Date.now(),
                     
                     // Identificadores únicos
                     sessionId: 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                     visitId: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substr(2, 15),
                     
                     // Metadados
-                    responseTimeMs: 0
+                    responseTimeMs: 0,
+                    registrationAttempts: 1,
+                    
+                    // Status (sempre permitido para este registrador)
+                    status: 'registrado'
                 };
                 
-                // DECIDIR ONDE SALVAR BASEADO NO TIPO DE ACESSO
-                let colecaoDestino = 'checkuser'; // Coleção padrão para acessos normais
+                // SALVAR NO FIRESTORE - Sempre na coleção principal
+                const colecaoDestino = 'checkuser_iframe';
+                console.log(`💾 Salvando na coleção: ${colecaoDestino}`);
                 
-                if (!verificacao.permitido) {
-                    // ACESSO NÃO PERMITIDO - SALVAR NA COLEÇÃO ESPECÍFICA
-                    colecaoDestino = 'irregularacesscheckuser';
-                    console.log(`⚠️ ACESSO IRREGULAR DETECTADO! Salvando na coleção: ${colecaoDestino}`);
-                    
-                    // Adicionar informações extras para acessos irregulares
-                    dadosRegistro.severidade = determinarSeveridade(verificacao.irregularidades);
-                    dadosRegistro.acaoRecomendada = determinarAcaoRecomendada(verificacao.irregularidades);
-                    dadosRegistro.userAgentHash = await hashUserAgent(userAgent);
-                } else {
-                    console.log(`✅ Acesso permitido. Salvando na coleção: ${colecaoDestino}`);
-                }
-                
-                // Salvar no Firebase
                 const result = await saveToFirebaseWithRetry(colecaoDestino, dadosRegistro);
                 
                 const responseTime = Date.now() - startTime;
                 dadosRegistro.responseTimeMs = responseTime;
                 
-                console.log('✅ ===== REGISTRO CONCLUÍDO =====');
+                console.log('✅ ===== REGISTRO CONCLUÍDO COM SUCESSO! =====');
                 console.log(`📄 Coleção: ${colecaoDestino}`);
                 console.log(`📄 ID do documento: ${result.docId}`);
                 console.log(`🔁 Tentativas: ${result.tentativa}`);
                 console.log(`⏱️ Tempo total: ${responseTime}ms`);
+                console.log(`📦 Em iframe: ${isInIframe ? 'SIM' : 'NÃO'}`);
+                if (isInIframe) {
+                    console.log(`🔗 URL da página pai: ${iframeInfo.parentUrl}`);
+                    console.log(`🎯 Profundidade do iframe: ${iframeInfo.frameDepth}`);
+                }
+                console.log(`🌐 Navegador: ${browser}`);
+                console.log(`💻 SO: ${os}`);
+                console.log(`🔍 IP: ${locationData.ip}`);
+                console.log(`📍 Local: ${locationData.city}, ${locationData.country}`);
                 
-                // Se for acesso irregular, pode tomar ações adicionais
-                if (!verificacao.permitido) {
-                    await executarAcoesSeguranca(verificacao, locationData, browser);
+                // Enviar mensagem para a página pai (se estiver em iframe)
+                if (isInIframe) {
+                    try {
+                        window.parent.postMessage({
+                            type: 'IFRAME_REGISTER_SUCCESS',
+                            documentId: result.docId,
+                            browser: browser,
+                            ip: locationData.ip,
+                            timestamp: Date.now()
+                        }, '*');
+                        console.log('📨 Mensagem de sucesso enviada para a página pai');
+                    } catch (e) {
+                        console.log('Não foi possível enviar mensagem para a página pai');
+                    }
                 }
                 
-                // Notificação visual
-                mostrarNotificacao(verificacao.permitido, verificacao.motivo, locationData.ip);
+                // Mostrar notificação visual (apenas se não estiver em iframe ou para debug)
+                mostrarNotificacao(true, `Registrado: ${browser} | ${locationData.ip}`, locationData.ip, isInIframe);
                 
                 return { 
                     success: true, 
-                    permitido: verificacao.permitido,
-                    colecao: colecaoDestino,
                     docId: result.docId,
-                    motivo: verificacao.motivo
+                    isInIframe: isInIframe,
+                    parentUrl: iframeInfo.parentUrl
                 };
                 
             } catch (error) {
-                console.error('❌ ===== ERRO FATAL =====');
+                console.error('❌ ===== ERRO FATAL NO REGISTRO =====');
                 console.error('Erro:', error.message);
+                console.error('Stack:', error.stack);
                 
-                mostrarNotificacao(false, `Erro na verificação: ${error.message}`, 'Sistema');
+                // Tentar salvar erro no Firebase também
+                try {
+                    const erroRegistro = {
+                        tipo: 'erro_registro',
+                        erro: error.message,
+                        userAgent: navigator.userAgent,
+                        timestamp: serverTimestamp(),
+                        registeredAtISO: new Date().toISOString()
+                    };
+                    await addDoc(collection(db, "erros_registro"), erroRegistro);
+                } catch (e) {
+                    console.error('Erro ao salvar log de erro:', e);
+                }
+                
+                mostrarNotificacao(false, `Erro: ${error.message.substring(0, 100)}`, 'Sistema', false);
                 
                 return { success: false, error: error.message };
             }
         }
         
-        // Funções auxiliares
-        function determinarSeveridade(irregularidades) {
-            const temBloqueioIP = irregularidades.some(i => i.includes('IP bloqueado'));
-            const temPaisBloqueado = irregularidades.some(i => i.includes('País bloqueado'));
-            
-            if (temBloqueioIP || temPaisBloqueado) return 'ALTA';
-            if (irregularidades.some(i => i.includes('User Agent suspeito'))) return 'MEDIA';
-            return 'BAIXA';
-        }
-        
-        function determinarAcaoRecomendada(irregularidades) {
-            if (irregularidades.some(i => i.includes('IP bloqueado'))) {
-                return 'Bloquear permanentemente este IP no firewall';
-            }
-            if (irregularidades.some(i => i.includes('País bloqueado'))) {
-                return 'Monitorar acessos deste país e considerar bloqueio regional';
-            }
-            if (irregularidades.some(i => i.includes('User Agent suspeito'))) {
-                return 'Provavelmente é um bot/scraper - considerar bloqueio por rate limiting';
-            }
-            return 'Revisar logs e monitorar próximos acessos';
-        }
-        
+        // Função auxiliar para hash do User Agent
         async function hashUserAgent(userAgent) {
-            // Simples hash para identificar mesmo user agent sem armazenar o texto completo
             let hash = 0;
             for (let i = 0; i < userAgent.length; i++) {
                 const char = userAgent.charCodeAt(i);
@@ -429,29 +417,15 @@
             return Math.abs(hash).toString(16);
         }
         
-        async function executarAcoesSeguranca(verificacao, locationData, browser) {
-            console.log('🛡️ Executando ações de segurança para acesso irregular...');
-            
-            // Aqui você pode adicionar ações como:
-            // - Redirecionar para página de bloqueio
-            // - Exibir alerta de segurança
-            // - Adicionar cookie de bloqueio temporário
-            // - Enviar email de alerta (via backend)
-            
-            // Exemplo: redirecionar se severidade alta
-            if (determinarSeveridade(verificacao.irregularidades) === 'ALTA') {
-                console.log('⚠️ Severidade ALTA - Redirecionando para página de bloqueio');
-                // window.location.href = '/acesso-negado.html';
-            }
-        }
-        
-        function mostrarNotificacao(permitido, motivo, ip) {
-            if (window.self !== window.top) return;
+        // Função para mostrar notificação
+        function mostrarNotificacao(sucesso, mensagem, ip, isInIframe) {
+            // Só mostra notificação se não estiver em iframe OU se for erro
+            if (isInIframe && sucesso) return;
             
             const notificacao = document.createElement('div');
-            const cor = permitido ? '#28a745' : '#dc3545';
-            const icone = permitido ? '✅' : '❌';
-            const texto = permitido ? 'Acesso Permitido' : 'Acesso Irregular Detectado';
+            const cor = sucesso ? '#28a745' : '#dc3545';
+            const icone = sucesso ? '✅' : '❌';
+            const titulo = sucesso ? 'Acesso Registrado' : 'Erro no Registro';
             
             notificacao.style.cssText = `
                 position: fixed;
@@ -469,7 +443,7 @@
                 word-break: break-word;
                 animation: fadeOut 8s ease forwards;
             `;
-            notificacao.innerHTML = `${icone} ${texto}<br>IP: ${ip}<br>${motivo.substring(0, 80)}`;
+            notificacao.innerHTML = `${icone} ${titulo}<br>IP: ${ip}<br>${mensagem.substring(0, 80)}`;
             document.body.appendChild(notificacao);
             
             const style = document.createElement('style');
@@ -485,23 +459,45 @@
             setTimeout(() => notificacao.remove(), 8000);
         }
         
-        // Executar verificação quando a página carregar
+        // Executar registro quando a página carregar
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', verificarERegistrarAcesso);
+            document.addEventListener('DOMContentLoaded', registrarAcessoIframe);
         } else {
-            verificarERegistrarAcesso();
+            registrarAcessoIframe();
         }
         
-        // Escutar mensagens para verificação remota
+        // Escutar mensagens para registro remoto
         window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'VERIFICAR_ACESSO') {
-                console.log('📨 Recebido comando para verificar acesso');
-                verificarERegistrarAcesso();
+            if (event.data && event.data.type === 'REGISTRAR_ACESSO_IFRAME') {
+                console.log('📨 Recebido comando para registrar acesso via postMessage');
+                registrarAcessoIframe();
+            }
+            
+            // Responder com informações se solicitado
+            if (event.data && event.data.type === 'GET_IFRAME_STATUS') {
+                try {
+                    window.parent.postMessage({
+                        type: 'IFRAME_STATUS_RESPONSE',
+                        isReady: true,
+                        timestamp: Date.now()
+                    }, '*');
+                } catch (e) {
+                    console.log('Não foi possível responder à solicitação de status');
+                }
             }
         });
+        
+        // Registrar também quando a página ganhar foco (útil para iframes)
+        window.addEventListener('focus', () => {
+            console.log('🔄 Página ganhou foco - re-registrando acesso');
+            registrarAcessoIframe();
+        });
+        
+        console.log('🚀 Monitor de iframe carregado e pronto para registrar acessos!');
     </script>
     
     <style>
+        /* Iframe completamente invisível */
         body {
             margin: 0;
             padding: 0;
@@ -511,6 +507,11 @@
             opacity: 0;
             position: absolute;
             pointer-events: none;
+        }
+        
+        /* Esconde qualquer conteúdo */
+        * {
+            visibility: hidden;
         }
     </style>
 </body>
