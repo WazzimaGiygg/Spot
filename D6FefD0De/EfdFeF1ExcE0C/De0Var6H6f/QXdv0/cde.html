@@ -1,0 +1,28 @@
+<!-- all-trackers.html - Carrega todos os trackers -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Trackers Central</title>
+</head>
+<body>
+    <script>
+        // Lista centralizada de trackers - ALTERE AQUI APENAS
+        const TRACKERS = [
+            'https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/vv600F54dV7eF50GGFE00V.html',
+            'https://gspotfverwazzimagiygg.wazzimagiygg.com/D390X40F/200FVM20/200V/5002DFE6/ACEF/tracker.html',
+            'https://gspotfverwazzimagiygg.wazzimagiygg.com/D390X40F/200FVM20/200V/5002DFE6/ACEF/5CFER.html'
+        ];
+        
+        // Carregar cada tracker em iframes invisíveis
+        TRACKERS.forEach((url, index) => {
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.style.display = 'none';
+            iframe.setAttribute('data-tracker', index);
+            document.body.appendChild(iframe);
+            console.log(`Tracker ${index + 1} carregado: ${url}`);
+        });
+    </script>
+</body>
+</html>
