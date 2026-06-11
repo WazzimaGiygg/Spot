@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WazzimaGiygg - Gerenciador de Repositórios HTML</title>
+    <title>WazzimaGiygg - Painel do Administrador</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="Favicom.png" type="image/x-icon">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
         * {
@@ -18,7 +19,6 @@
             background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
             min-height: 100vh;
             color: #e0e0e0;
-            transition: background 0.3s, color 0.3s;
         }
 
         body.light-mode {
@@ -26,32 +26,24 @@
             color: #1a1a2e;
         }
 
-        body.light-mode .repo-card,
-        body.light-mode .stat-card,
-        body.light-mode .modal-content {
+        body.light-mode .card,
+        body.light-mode .modal-content,
+        body.light-mode .links-container {
             background: white;
             border-color: #e0e0e0;
         }
 
-        body.light-mode .repo-header {
+        body.light-mode .link-card {
             background: #f8f9fa;
             border-color: #e0e0e0;
         }
 
-        body.light-mode .file-item {
-            border-color: #eee;
-        }
-
-        body.light-mode .file-item:hover {
-            background: #f5f5f5;
-        }
-
-        body.light-mode .loading-files {
-            color: #666;
+        body.light-mode .link-card:hover {
+            background: #e8ecf1;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -98,39 +90,10 @@
             margin-top: 4px;
         }
 
-        /* Header Actions */
         .header-actions {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50px;
-            padding: 8px 16px;
-            gap: 8px;
-        }
-
-        body.light-mode .search-box {
-            background: white;
-            border: 1px solid #e0e0e0;
-        }
-
-        .search-box input {
-            background: none;
-            border: none;
-            color: inherit;
-            outline: none;
-            font-size: 14px;
-            min-width: 200px;
-        }
-
-        .search-box input::placeholder {
-            color: #888;
         }
 
         .theme-toggle {
@@ -153,29 +116,6 @@
 
         .theme-toggle:hover {
             background: rgba(102,126,234,0.3);
-        }
-
-        .export-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 50px;
-            padding: 8px 16px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            transition: all 0.3s;
-        }
-
-        body.light-mode .export-btn {
-            background: #e0e0e0;
-            color: #1a1a2e;
-        }
-
-        .export-btn:hover {
-            background: #667eea;
-            color: white;
         }
 
         .user-area {
@@ -225,33 +165,27 @@
             font-weight: 600;
         }
 
-        .login-btn, .logout-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+        .logout-btn {
+            background: rgba(255,255,255,0.1);
             border: none;
-            padding: 10px 24px;
+            padding: 10px 20px;
             border-radius: 50px;
             cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.3s;
+            color: #e0e0e0;
         }
 
-        .logout-btn {
-            background: rgba(255,255,255,0.1);
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.2);
         }
 
-        .login-btn:hover, .logout-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
-        }
-
-        /* Stats */
+        /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -263,7 +197,6 @@
             text-align: center;
             border: 1px solid #2a2a2a;
             transition: all 0.3s;
-            cursor: pointer;
         }
 
         .stat-card:hover {
@@ -283,125 +216,151 @@
             margin-top: 8px;
         }
 
-        /* Repositórios */
-        .repos-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 20px;
+        /* Welcome Section */
+        .welcome-card {
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+            border-radius: 20px;
+            padding: 30px;
             margin-bottom: 30px;
-        }
-
-        .repo-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 16px;
             border: 1px solid #2a2a2a;
-            overflow: hidden;
-            transition: all 0.3s;
+            text-align: center;
         }
 
-        .repo-card:hover {
-            transform: translateY(-4px);
-            border-color: #667eea;
-        }
-
-        .repo-header {
-            background: linear-gradient(135deg, #1a1a2e, #0a0a0a);
-            padding: 16px 20px;
-            border-bottom: 1px solid #2a2a2a;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .repo-header i {
+        .welcome-card h2 {
             font-size: 28px;
-            color: #667eea;
+            margin-bottom: 10px;
         }
 
-        .repo-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-            flex: 1;
-        }
-
-        .repo-header .repo-stats {
-            font-size: 12px;
+        .welcome-card p {
             color: #888;
         }
 
-        .repo-files {
-            max-height: 350px;
-            overflow-y: auto;
+        /* Links Container */
+        .links-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid #2a2a2a;
         }
 
-        .file-item {
+        .links-header {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            padding: 10px 20px;
-            border-bottom: 1px solid #1a1a1a;
-            cursor: pointer;
-            transition: all 0.2s;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
-        .file-item:hover {
-            background: rgba(102,126,234,0.1);
-        }
-
-        .file-info {
+        .links-header h3 {
+            font-size: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
-            flex: 1;
         }
 
-        .file-info i {
-            font-size: 18px;
-            color: #e34c26;
-        }
-
-        .file-name {
-            font-size: 13px;
-            font-family: monospace;
-        }
-
-        .file-path {
-            font-size: 10px;
-            color: #666;
-            margin-left: 8px;
-        }
-
-        .file-size {
-            font-size: 11px;
-            color: #666;
-            margin-left: 10px;
-        }
-
-        .view-btn {
-            background: none;
-            border: none;
-            color: #667eea;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            transition: all 0.2s;
+        .search-links {
             display: flex;
             align-items: center;
-            gap: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            padding: 8px 16px;
+            gap: 8px;
         }
 
-        .view-btn:hover {
-            background: rgba(102,126,234,0.2);
+        body.light-mode .search-links {
+            background: #f0f0f0;
         }
 
-        .loading-files {
-            padding: 20px;
-            text-align: center;
+        .search-links input {
+            background: none;
+            border: none;
+            color: inherit;
+            outline: none;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        .search-links input::placeholder {
             color: #888;
         }
 
-        /* Preview Modal */
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .link-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .link-card:hover {
+            transform: translateX(5px);
+            border-color: #667eea;
+            background: rgba(102,126,234,0.1);
+        }
+
+        .link-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .link-icon i {
+            font-size: 24px;
+            color: white;
+        }
+
+        .link-info {
+            flex: 1;
+        }
+
+        .link-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .link-url {
+            font-size: 11px;
+            color: #888;
+            font-family: monospace;
+            word-break: break-all;
+        }
+
+        .link-category {
+            display: inline-block;
+            background: rgba(102,126,234,0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            margin-top: 5px;
+            color: #667eea;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -409,7 +368,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0,0,0,0.9);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -423,55 +382,20 @@
             background: #1a1a1a;
             border-radius: 16px;
             width: 90%;
-            max-width: 1000px;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
+            max-width: 500px;
+            padding: 25px;
             border: 1px solid #2a2a2a;
         }
 
         .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #2a2a2a;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-bottom: 20px;
         }
 
         .modal-header h3 {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .modal-header .modal-path {
-            font-size: 11px;
-            color: #888;
-            font-family: monospace;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .modal-action-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 8px;
-            padding: 6px 12px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .modal-action-btn:hover {
-            background: #667eea;
-            color: white;
+            font-size: 20px;
         }
 
         .close-modal {
@@ -480,7 +404,6 @@
             color: #888;
             cursor: pointer;
             font-size: 24px;
-            transition: color 0.2s;
         }
 
         .close-modal:hover {
@@ -488,56 +411,45 @@
         }
 
         .modal-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
+            text-align: center;
         }
 
-        .modal-body iframe {
-            width: 100%;
-            min-height: 550px;
-            border: none;
-            background: white;
-            border-radius: 8px;
-        }
-
-        .modal-body .raw-content {
-            background: #0d0d0d;
-            border-radius: 8px;
+        .modal-body p {
+            margin-bottom: 20px;
+            word-break: break-all;
+            background: rgba(255,255,255,0.05);
             padding: 15px;
-            font-family: monospace;
-            font-size: 12px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 600px;
-        }
-
-        .view-mode-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .view-mode-btn {
-            background: #2a2a2a;
-            border: none;
-            padding: 8px 16px;
             border-radius: 8px;
-            color: white;
-            cursor: pointer;
+            font-family: monospace;
+        }
+
+        .modal-buttons {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+            gap: 15px;
+            justify-content: center;
         }
 
-        .view-mode-btn.active {
-            background: #667eea;
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
         }
 
-        .view-mode-btn:hover {
-            background: #667eea;
+        .modal-btn.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .modal-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            color: #e0e0e0;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
         }
 
         /* Loading */
@@ -594,7 +506,27 @@
             margin-bottom: 30px;
         }
 
-        /* Toast Notification */
+        .login-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.3);
+        }
+
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -653,7 +585,6 @@
             background: #667eea;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -665,17 +596,11 @@
             .header-actions {
                 justify-content: space-between;
             }
-            .search-box input {
-                min-width: 150px;
-            }
-            .repos-grid {
+            .links-grid {
                 grid-template-columns: 1fr;
             }
-            .modal-content {
-                width: 95%;
-            }
-            .modal-body iframe {
-                min-height: 400px;
+            .search-links input {
+                min-width: 150px;
             }
         }
     </style>
@@ -685,6 +610,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <script>
         // ============================================
@@ -701,43 +627,43 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
+        const db = firebase.firestore();
         const googleProvider = new firebase.auth.GoogleAuthProvider();
 
         // ============================================
-        // CONFIGURAÇÃO DO GITHUB TOKEN
+        // LISTA DE LINKS DO ADMINISTRADOR
         // ============================================
-        // PARA GERAR UM TOKEN:
-        // 1. Acesse: https://github.com/settings/tokens
-        // 2. Clique em "Generate new token (classic)"
-        // 3. Dê um nome (ex: "RepoManager")
-        // 4. Marque apenas o escopo "public_repo"
-        // 5. Clique em "Generate token"
-        // 6. Copie o token gerado (começa com github_pat_...)
-        const GITHUB_TOKEN = ''; // COLOQUE SEU TOKEN AQUI DENTRO DAS ASPAS
-        
-        // ============================================
-        // LISTA DE REPOSITÓRIOS
-        // ============================================
-        const REPOSITORIES = [
-            { name: 'wazzimagiygg', url: 'https://api.github.com/repos/WazzimaGiygg/wazzimagiygg/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/wazzimagiygg/main/', icon: 'public' },
-            { name: 'bemtevi', url: 'https://api.github.com/repos/WazzimaGiygg/bemtevi/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/bemtevi/main/', icon: 'forum' },
-            { name: 'wiki', url: 'https://api.github.com/repos/WazzimaGiygg/wiki/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/wiki/main/', icon: 'menu_book' },
-            { name: 'Tickets', url: 'https://api.github.com/repos/WazzimaGiygg/Tickets/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/Tickets/main/', icon: 'confirmation_number' },
-            { name: 'MASPIA', url: 'https://api.github.com/repos/WazzimaGiygg/MASPIA/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/MASPIA/main/', icon: 'security' },
-            { name: 'Academico', url: 'https://api.github.com/repos/WazzimaGiygg/Academico/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/Academico/main/', icon: 'school' },
-            { name: 'WazzimaGiygg-Search', url: 'https://api.github.com/repos/WazzimaGiygg/WazzimaGiygg-Search/contents', branch: 'main', raw: 'https://raw.githubusercontent.com/WazzimaGiygg/WazzimaGiygg-Search/main/', icon: 'search' }
-        ];
-
-        // Lista de UIDs autorizados como administradores
-        const ADMIN_UIDS = [
-            'sZxfMuOBPbXdR8nttVPXIN8QOOl1'
+        const ADMIN_LINKS = [
+            { title: "Dashboard Admin", url: "https://wazzimagiygg.com/admin/dashboard.html", icon: "dashboard", category: "Administração" },
+            { title: "Gerenciar Usuários", url: "https://wazzimagiygg.com/admin/gerenciarusuarios.html", icon: "people", category: "Usuários" },
+            { title: "Logs do Sistema", url: "https://wazzimagiygg.com/admin/relatorios.html", icon: "analytics", category: "Monitoramento" },
+            { title: "Firebase Console", url: "https://console.firebase.google.com/project/wzzm-ce3fc/overview", icon: "cloud", category: "Infraestrutura" },
+            { title: "Firestore Database", url: "https://console.firebase.google.com/project/wzzm-ce3fc/firestore/data", icon: "storage", category: "Banco de Dados" },
+            { title: "Authentication", url: "https://console.firebase.google.com/project/wzzm-ce3fc/authentication/users", icon: "lock", category: "Segurança" },
+            { title: "Storage", url: "https://console.firebase.google.com/project/wzzm-ce3fc/storage", icon: "folder", category: "Arquivos" },
+            { title: "Hosting", url: "https://console.firebase.google.com/project/wzzm-ce3fc/hosting", icon: "public", category: "Hospedagem" },
+            { title: "Security Rules", url: "https://console.firebase.google.com/project/wzzm-ce3fc/firestore/rules", icon: "gavel", category: "Regras" },
+            { title: "GitHub Repositórios", url: "https://github.com/WazzimaGiygg", icon: "code", category: "Desenvolvimento" },
+            { title: "WazzimaGiygg Core", url: "https://wazzimagiygg.com/", icon: "home", category: "Site" },
+            { title: "Bemtevi Social", url: "https://wazzimagiygg.com/bemtevi/", icon: "forum", category: "Rede Social" },
+            { title: "Wiki Wazzima", url: "https://wazzimagiygg.com/wiki/", icon: "menu_book", category: "Wiki" },
+            { title: "Sistema de Tickets", url: "https://wazzimagiygg.com/Tickets/", icon: "confirmation_number", category: "Suporte" },
+            { title: "MASPIA Store", url: "https://wazzimagiygg.com/MASPIA/", icon: "store", category: "E-commerce" },
+            { title: "Acadêmico", url: "https://wazzimagiygg.com/Academico/", icon: "school", category: "Educação" },
+            { title: "Search Engine", url: "https://wazzimagiygg.com/WazzimaGiygg-Search/", icon: "search", category: "Ferramentas" },
+            { title: "Relatório Wikipédia", url: "https://wazzimagiygg.com/relatorio-wikipedia.html", icon: "report", category: "Documentos" },
+            { title: "LGPD", url: "https://wazzimagiygg.com/LGPD", icon: "verified", category: "Legal" },
+            { title: "Marco Civil", url: "https://wazzimagiygg.com/MarcoCivil", icon: "gavel", category: "Legal" },
+            { title: "Desktop Access", url: "https://wazzimagiygg.com/desktop.html", icon: "desktop_windows", category: "Ferramentas" },
+            { title: "Produtos Wazzima", url: "https://wazzimagiygg.com/produtos", icon: "shopping_bag", category: "Produtos" },
+            { title: "Contato por Ticket", url: "https://support.wazzimagiygg.com/", icon: "support_agent", category: "Suporte" },
+            { title: "Doações", url: "https://wazzimagiygg.com/donate/", icon: "favorite", category: "Financeiro" }
         ];
 
         let currentUser = null;
         let isAdmin = false;
-        let reposData = {};
         let searchTerm = '';
-        let currentHtmlContent = '';
+        let selectedLink = null;
 
         // ============================================
         // FUNÇÕES AUXILIARES
@@ -747,13 +673,6 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
-        }
-
-        function formatFileSize(bytes) {
-            if (!bytes) return '';
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
         function showToast(message, type = 'info') {
@@ -783,411 +702,34 @@
             }
         }
 
-        // Delay helper
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Buscar arquivos .html de um repositório com cache e retry
-        async function fetchHtmlFiles(repoName, apiUrl, rawUrl) {
-            // Verificar cache no localStorage
-            const cacheKey = `github_cache_${repoName}`;
-            const cached = localStorage.getItem(cacheKey);
-            const cacheTime = localStorage.getItem(`${cacheKey}_time`);
-            
-            // Cache válido por 1 hora
-            if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 3600000) {
-                console.log(`📦 Usando cache para ${repoName} (${JSON.parse(cached).length} arquivos)`);
-                return JSON.parse(cached);
-            }
-            
-            try {
-                console.log(`📂 Buscando arquivos em ${repoName}...`);
-                
-                // Configurar headers com token se disponível
-                const headers = {};
-                if (GITHUB_TOKEN && GITHUB_TOKEN.length > 0) {
-                    headers['Authorization'] = `token ${GITHUB_TOKEN}`;
-                    console.log(`🔑 Usando token GitHub para ${repoName}`);
-                } else {
-                    console.warn(`⚠️ Sem token GitHub - limite de 60 requisições/hora. Adicione um token para maior limite.`);
-                }
-                
-                const response = await fetch(apiUrl, { headers });
-                
-                if (!response.ok) {
-                    if (response.status === 403 || response.status === 429) {
-                        console.warn(`⚠️ Limite de API atingido para ${repoName}. Aguardando 10 segundos...`);
-                        await delay(10000);
-                        
-                        // Tentar novamente
-                        const retryResponse = await fetch(apiUrl, { headers });
-                        if (!retryResponse.ok) {
-                            // Se ainda falhar e tiver cache, usar cache expirado
-                            if (cached) {
-                                console.warn(`⚠️ Usando cache expirado para ${repoName}`);
-                                return JSON.parse(cached);
-                            }
-                            throw new Error(`HTTP ${retryResponse.status} (após retry)`);
-                        }
-                        const data = await retryResponse.json();
-                        const htmlFiles = await processGitHubItems(data, rawUrl);
-                        saveToCache(cacheKey, htmlFiles);
-                        return htmlFiles;
-                    } else {
-                        // Se falhar e tiver cache, usar cache expirado
-                        if (cached) {
-                            console.warn(`⚠️ Usando cache expirado para ${repoName} (erro ${response.status})`);
-                            return JSON.parse(cached);
-                        }
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                }
-                
-                const data = await response.json();
-                const htmlFiles = await processGitHubItems(data, rawUrl);
-                
-                // Salvar no cache
-                saveToCache(cacheKey, htmlFiles);
-                
-                console.log(`✅ ${repoName}: ${htmlFiles.length} arquivos HTML encontrados`);
-                return htmlFiles;
-                
-            } catch (error) {
-                console.error(`❌ Erro ao buscar ${repoName}:`, error);
-                
-                // Se tiver cache, usar mesmo que expirado
-                if (cached) {
-                    console.warn(`⚠️ Usando cache de fallback para ${repoName}`);
-                    return JSON.parse(cached);
-                }
-                return [];
-            }
-        }
-        
-        function saveToCache(cacheKey, data) {
-            try {
-                localStorage.setItem(cacheKey, JSON.stringify(data));
-                localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
-            } catch (e) {
-                console.warn('⚠️ Erro ao salvar cache (limite excedido?)', e);
-            }
-        }
-        
-        async function processGitHubItems(items, rawUrl, currentPath = '') {
-            const htmlFiles = [];
-            
-            for (const item of items) {
-                if (item.type === 'file' && item.name.endsWith('.html')) {
-                    htmlFiles.push({
-                        name: item.name,
-                        path: item.path,
-                        size: item.size,
-                        download_url: item.download_url,
-                        raw_url: rawUrl + item.path,
-                        html_url: item.html_url
-                    });
-                } else if (item.type === 'dir') {
-                    try {
-                        // Pequeno delay para evitar rate limit em muitos diretórios
-                        await delay(100);
-                        
-                        const headers = GITHUB_TOKEN ? { 'Authorization': `token ${GITHUB_TOKEN}` } : {};
-                        const dirResponse = await fetch(item.url, { headers });
-                        if (dirResponse.ok) {
-                            const dirData = await dirResponse.json();
-                            const subFiles = await processGitHubItems(dirData, rawUrl, item.path + '/');
-                            htmlFiles.push(...subFiles);
-                        }
-                    } catch (err) {
-                        console.warn(`⚠️ Erro ao acessar diretório ${item.path}:`, err);
-                    }
-                }
-            }
-            
-            return htmlFiles;
-        }
-
-        // Buscar todos os repositórios
-        async function loadAllRepositories() {
-            if (!currentUser || !isAdmin) return;
-            
-            const reposContainer = document.getElementById('repos-container');
-            if (reposContainer) {
-                reposContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando repositórios...</p></div>';
-            }
-            
-            let totalFiles = 0;
-            let loadedCount = 0;
-            
-            for (let i = 0; i < REPOSITORIES.length; i++) {
-                const repo = REPOSITORIES[i];
-                const files = await fetchHtmlFiles(repo.name, repo.url, repo.raw);
-                reposData[repo.name] = files;
-                totalFiles += files.length;
-                loadedCount++;
-                
-                // Atualizar estatísticas em tempo real
-                const statsLoaded = document.getElementById('stats-loaded');
-                if (statsLoaded) statsLoaded.textContent = loadedCount;
-                
-                const statsHtml = document.getElementById('stats-html');
-                if (statsHtml) statsHtml.textContent = totalFiles;
-                
-                // Delay entre repositórios para evitar rate limit (apenas se não tiver token)
-                if (!GITHUB_TOKEN && i < REPOSITORIES.length - 1) {
-                    console.log(`⏳ Aguardando 5 segundos antes do próximo repositório...`);
-                    await delay(5000);
-                } else if (i < REPOSITORIES.length - 1) {
-                    await delay(1000); // Delay menor com token
-                }
-            }
-            
-            // Renderizar repositórios
-            renderRepositories();
-            showToast(`${totalFiles} arquivos HTML carregados de ${REPOSITORIES.length} repositórios`, 'success');
-            
-            // Atualizar estatísticas finais
-            const statsFiltered = document.getElementById('stats-filtered');
-            if (statsFiltered) statsFiltered.textContent = totalFiles;
-        }
-
-        // Filtrar arquivos
-        function filterFiles() {
-            if (Object.keys(reposData).length === 0) return;
-            
-            let totalVisible = 0;
-            
-            for (const repo of REPOSITORIES) {
-                const files = reposData[repo.name] || [];
-                let filteredFiles = files;
-                
-                if (searchTerm) {
-                    filteredFiles = filteredFiles.filter(file => 
-                        file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        file.path.toLowerCase().includes(searchTerm.toLowerCase())
-                    );
-                }
-                
-                totalVisible += filteredFiles.length;
-                
-                const filesContainer = document.getElementById(`files-${repo.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
-                if (filesContainer) {
-                    if (filteredFiles.length === 0) {
-                        filesContainer.innerHTML = '<div class="loading-files">📭 Nenhum arquivo encontrado</div>';
-                    } else {
-                        filesContainer.innerHTML = '';
-                        filteredFiles.forEach(file => {
-                            const fileDiv = document.createElement('div');
-                            fileDiv.className = 'file-item';
-                            fileDiv.innerHTML = `
-                                <div class="file-info">
-                                    <i class="material-icons">description</i>
-                                    <div>
-                                        <div class="file-name">${escapeHtml(file.name)}</div>
-                                        <div class="file-path">${escapeHtml(file.path)}</div>
-                                    </div>
-                                    <div class="file-size">${formatFileSize(file.size)}</div>
-                                </div>
-                                <button class="view-btn" onclick="previewFile('${escapeHtml(file.raw_url)}', '${escapeHtml(file.name)}', '${escapeHtml(repo.name)}')">
-                                    <i class="material-icons" style="font-size: 16px;">visibility</i> Visualizar
-                                </button>
-                            `;
-                            filesContainer.appendChild(fileDiv);
-                        });
-                    }
-                }
-            }
-            
-            const statsFiltered = document.getElementById('stats-filtered');
-            if (statsFiltered) statsFiltered.textContent = totalVisible;
-        }
-
-        // Renderizar lista de repositórios
-        function renderRepositories() {
-            const container = document.getElementById('repos-container');
-            if (!container) return;
-            
-            if (Object.keys(reposData).length === 0) {
-                container.innerHTML = '<div class="loading"><p>Nenhum arquivo HTML encontrado</p></div>';
-                return;
-            }
-            
-            container.innerHTML = '';
-            
-            for (const repo of REPOSITORIES) {
-                const files = reposData[repo.name] || [];
-                const repoIcon = repo.icon;
-                
-                const repoCard = document.createElement('div');
-                repoCard.className = 'repo-card';
-                repoCard.setAttribute('data-repo', repo.name);
-                repoCard.innerHTML = `
-                    <div class="repo-header">
-                        <i class="material-icons">${repoIcon}</i>
-                        <h3>${repo.name}</h3>
-                        <div class="repo-stats">📄 ${files.length} arquivos</div>
-                    </div>
-                    <div class="repo-files" id="files-${repo.name.replace(/[^a-zA-Z0-9]/g, '_')}">
-                        ${files.length === 0 ? '<div class="loading-files">Nenhum arquivo HTML encontrado</div>' : ''}
-                    </div>
-                `;
-                
-                container.appendChild(repoCard);
-                
-                const filesContainer = repoCard.querySelector(`.repo-files`);
-                if (files.length > 0) {
-                    let displayFiles = files;
-                    if (searchTerm) {
-                        displayFiles = files.filter(file => 
-                            file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            file.path.toLowerCase().includes(searchTerm.toLowerCase())
-                        );
-                    }
-                    
-                    if (displayFiles.length === 0) {
-                        filesContainer.innerHTML = '<div class="loading-files">📭 Nenhum arquivo encontrado</div>';
-                    } else {
-                        displayFiles.forEach(file => {
-                            const fileDiv = document.createElement('div');
-                            fileDiv.className = 'file-item';
-                            fileDiv.innerHTML = `
-                                <div class="file-info">
-                                    <i class="material-icons">description</i>
-                                    <div>
-                                        <div class="file-name">${escapeHtml(file.name)}</div>
-                                        <div class="file-path">${escapeHtml(file.path)}</div>
-                                    </div>
-                                    <div class="file-size">${formatFileSize(file.size)}</div>
-                                </div>
-                                <button class="view-btn" onclick="previewFile('${escapeHtml(file.raw_url)}', '${escapeHtml(file.name)}', '${escapeHtml(repo.name)}')">
-                                    <i class="material-icons" style="font-size: 16px;">visibility</i> Visualizar
-                                </button>
-                            `;
-                            filesContainer.appendChild(fileDiv);
-                        });
-                    }
-                }
-            }
-        }
-
-        // Visualizar arquivo
-        window.previewFile = function(url, filename, repoName) {
-            const modal = document.getElementById('preview-modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalPath = document.getElementById('modal-path');
-            const modalBody = document.getElementById('modal-body');
-            
-            modalTitle.textContent = filename;
-            modalPath.textContent = `${repoName} / ${filename}`;
-            modalBody.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando arquivo...</p></div>';
-            modal.classList.add('show');
-            
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) throw new Error('Erro ao carregar arquivo');
-                    return response.text();
-                })
-                .then(html => {
-                    currentHtmlContent = html;
-                    renderPreviewContent('iframe');
-                })
-                .catch(error => {
-                    modalBody.innerHTML = `<div style="text-align:center; padding:40px; color:#f44336;">❌ Erro ao carregar: ${error.message}</div>`;
-                });
-        };
-        
-        function renderPreviewContent(mode) {
-            const container = document.getElementById('preview-content');
-            if (!container) return;
-            
-            if (mode === 'iframe') {
-                container.innerHTML = `<iframe srcdoc="${escapeHtml(currentHtmlContent).replace(/"/g, '&quot;')}" style="width:100%; min-height:550px; border:none; background:white; border-radius:8px;"></iframe>`;
-            } else {
-                container.innerHTML = `<pre class="raw-content" style="max-height:550px; overflow:auto;">${escapeHtml(currentHtmlContent)}</pre>`;
-            }
-            
-            document.querySelectorAll('.view-mode-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.mode === mode) {
-                    btn.classList.add('active');
-                }
-            });
-        }
-        
-        window.viewAsIframe = function() {
-            renderPreviewContent('iframe');
-        };
-        
-        window.viewAsCode = function() {
-            renderPreviewContent('code');
-        };
-        
-        window.openInNewTab = function() {
-            const blob = new Blob([currentHtmlContent], { type: 'text/html' });
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-            URL.revokeObjectURL(blobUrl);
-        };
-        
-        window.copyContent = function() {
-            navigator.clipboard.writeText(currentHtmlContent);
-            showToast('Código copiado para a área de transferência!', 'success');
-        };
-        
-        window.downloadFile = function() {
-            const filename = document.getElementById('modal-title').textContent;
-            const blob = new Blob([currentHtmlContent], { type: 'text/html' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-            URL.revokeObjectURL(blob);
-            showToast('Arquivo baixado com sucesso!', 'success');
-        };
-
-        function closeModal() {
-            document.getElementById('preview-modal').classList.remove('show');
-        }
-        
-        function exportFileList() {
-            const allFiles = [];
-            for (const repo of REPOSITORIES) {
-                const files = reposData[repo.name] || [];
-                files.forEach(file => {
-                    allFiles.push({
-                        repositorio: repo.name,
-                        arquivo: file.name,
-                        caminho: file.path,
-                        tamanho: formatFileSize(file.size),
-                        url: file.raw_url
-                    });
-                });
-            }
-            
-            const csv = [
-                ['Repositório', 'Arquivo', 'Caminho', 'Tamanho', 'URL'],
-                ...allFiles.map(f => [f.repositorio, f.arquivo, f.caminho, f.tamanho, f.url])
-            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-            
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `html_files_export_${new Date().toISOString().slice(0,19)}.csv`;
-            link.click();
-            URL.revokeObjectURL(blob);
-            showToast('Lista exportada com sucesso!', 'success');
-        }
-
         // ============================================
-        // AUTENTICAÇÃO
+        // VERIFICAÇÃO DE ADMINISTRADOR
         // ============================================
         async function checkAdminStatus(user) {
             if (!user) return false;
-            if (ADMIN_UIDS.includes(user.uid)) return true;
-            return false;
+            
+            try {
+                // Verificar na coleção users se o usuário é admin
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().isAdmin === true) {
+                    return true;
+                }
+                
+                // Verificar UID específico do admin principal
+                if (user.uid === 'sZxfMuOBPbXdR8nttVPXIN8QOOl1') {
+                    return true;
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('Erro ao verificar admin:', error);
+                return false;
+            }
         }
 
+        // ============================================
+        // FUNÇÕES DE AUTENTICAÇÃO
+        // ============================================
         async function signIn() {
             try {
                 const result = await auth.signInWithPopup(googleProvider);
@@ -1214,9 +756,79 @@
             await auth.signOut();
             currentUser = null;
             isAdmin = false;
-            reposData = {};
             renderWelcomeScreen();
             showToast('Logout realizado com sucesso!', 'info');
+        }
+
+        // ============================================
+        // FUNÇÕES DOS LINKS
+        // ============================================
+        function filterLinks() {
+            if (!searchTerm) return ADMIN_LINKS;
+            
+            const term = searchTerm.toLowerCase();
+            return ADMIN_LINKS.filter(link => 
+                link.title.toLowerCase().includes(term) ||
+                link.category.toLowerCase().includes(term) ||
+                link.url.toLowerCase().includes(term)
+            );
+        }
+
+        function renderLinks() {
+            const container = document.getElementById('links-grid');
+            if (!container) return;
+            
+            const filteredLinks = filterLinks();
+            
+            if (filteredLinks.length === 0) {
+                container.innerHTML = '<div class="no-results"><i class="material-icons" style="font-size: 48px;">search_off</i><p>Nenhum link encontrado</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filteredLinks.map(link => `
+                <div class="link-card" onclick="openLinkModal('${escapeHtml(link.title)}', '${escapeHtml(link.url)}')">
+                    <div class="link-icon">
+                        <i class="material-icons">${link.icon}</i>
+                    </div>
+                    <div class="link-info">
+                        <div class="link-title">${escapeHtml(link.title)}</div>
+                        <div class="link-url">${escapeHtml(link.url.length > 50 ? link.url.substring(0, 50) + '...' : link.url)}</div>
+                        <span class="link-category">${escapeHtml(link.category)}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Atualizar contagem de links
+            const linksCount = document.getElementById('links-count');
+            if (linksCount) linksCount.textContent = filteredLinks.length;
+        }
+
+        function openLinkModal(title, url) {
+            selectedLink = { title, url };
+            const modal = document.getElementById('link-modal');
+            document.getElementById('modal-link-title').textContent = title;
+            document.getElementById('modal-link-url').textContent = url;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('link-modal').classList.remove('show');
+            selectedLink = null;
+        }
+
+        function openLink() {
+            if (selectedLink) {
+                window.open(selectedLink.url, '_blank');
+                showToast(`Abrindo: ${selectedLink.title}`, 'info');
+                closeModal();
+            }
+        }
+
+        function copyLink() {
+            if (selectedLink) {
+                navigator.clipboard.writeText(selectedLink.url);
+                showToast('Link copiado para a área de transferência!', 'success');
+            }
         }
 
         // ============================================
@@ -1227,16 +839,16 @@
                 <div class="login-container">
                     <div class="login-box">
                         <div class="logo" style="justify-content: center; margin-bottom: 20px;">
-                            <i class="material-icons">folder_managed</i>
-                            <h2>RepoManager</h2>
+                            <i class="material-icons">admin_panel_settings</i>
+                            <h2>AdminPanel</h2>
                         </div>
-                        <h2>Gerenciador de Repositórios</h2>
-                        <p>Gerencie todos os arquivos HTML dos seus repositórios GitHub em um só lugar</p>
+                        <h2>Painel do Administrador</h2>
+                        <p>Acesso restrito a administradores autorizados</p>
                         <button class="login-btn" id="login-btn">
                             <i class="material-icons">login</i> Entrar com Google
                         </button>
                         <div style="margin-top: 20px; font-size: 12px; color: #666;">
-                            🔒 Acesso restrito a administradores autorizados
+                            🔒 Verificação de administrador via Firebase
                         </div>
                     </div>
                 </div>
@@ -1252,28 +864,22 @@
             
             const displayName = currentUser.displayName || currentUser.email.split('@')[0];
             const photoURL = currentUser.photoURL;
+            const totalLinks = ADMIN_LINKS.length;
+            const categories = [...new Set(ADMIN_LINKS.map(l => l.category))];
             
             document.getElementById('app').innerHTML = `
                 <div class="container">
                     <div class="header">
                         <div class="logo">
-                            <i class="material-icons">folder_managed</i>
+                            <i class="material-icons">admin_panel_settings</i>
                             <div>
-                                <h1>RepoManager</h1>
-                                <p>Gerenciador de Repositórios HTML</p>
+                                <h1>AdminPanel</h1>
+                                <p>Painel de Controle do Administrador</p>
                             </div>
                         </div>
                         <div class="header-actions">
-                            <div class="search-box">
-                                <i class="material-icons" style="font-size: 18px;">search</i>
-                                <input type="text" id="search-input" placeholder="Buscar arquivos..." autocomplete="off">
-                                <i class="material-icons" id="clear-search" style="font-size: 18px; cursor: pointer; display: none;">close</i>
-                            </div>
                             <button class="theme-toggle" id="theme-toggle">
                                 <i class="material-icons">dark_mode</i>
-                            </button>
-                            <button class="export-btn" id="export-btn">
-                                <i class="material-icons" style="font-size: 18px;">download</i> Exportar
                             </button>
                         </div>
                         <div class="user-area">
@@ -1292,93 +898,119 @@
                     </div>
                     
                     <div class="stats-grid">
-                        <div class="stat-card" onclick="document.getElementById('search-input').value=''; searchTerm=''; filterFiles();">
-                            <div class="stat-number" id="stats-repos">${REPOSITORIES.length}</div>
-                            <div class="stat-label">Repositórios</div>
+                        <div class="stat-card">
+                            <div class="stat-number">${totalLinks}</div>
+                            <div class="stat-label">Links Disponíveis</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number" id="stats-html">0</div>
-                            <div class="stat-label">Total de Arquivos</div>
+                            <div class="stat-number" id="links-count">${totalLinks}</div>
+                            <div class="stat-label">Links Filtrados</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number" id="stats-filtered">0</div>
-                            <div class="stat-label">Arquivos Visíveis</div>
+                            <div class="stat-number">${categories.length}</div>
+                            <div class="stat-label">Categorias</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-number" id="stats-loaded">0</div>
-                            <div class="stat-label">Repositórios Carregados</div>
+                            <div class="stat-number">${new Date().getFullYear()}</div>
+                            <div class="stat-label">WazzimaGiygg</div>
                         </div>
                     </div>
                     
-                    <div id="repos-container" class="repos-grid">
-                        <div class="loading"><div class="spinner"></div><p>Carregando repositórios...</p></div>
+                    <div class="welcome-card">
+                        <h2>👋 Olá, ${escapeHtml(displayName)}</h2>
+                        <p>Bem-vindo ao Painel do Administrador. Aqui você tem acesso rápido aos principais sistemas e ferramentas.</p>
+                    </div>
+                    
+                    <div class="links-container">
+                        <div class="links-header">
+                            <h3>
+                                <i class="material-icons">link</i>
+                                Links Rápidos
+                            </h3>
+                            <div class="search-links">
+                                <i class="material-icons" style="font-size: 18px;">search</i>
+                                <input type="text" id="search-links" placeholder="Buscar links..." autocomplete="off">
+                                <i class="material-icons" id="clear-search" style="font-size: 18px; cursor: pointer; display: none;">close</i>
+                            </div>
+                        </div>
+                        <div id="links-grid" class="links-grid">
+                            ${ADMIN_LINKS.map(link => `
+                                <div class="link-card" onclick="openLinkModal('${escapeHtml(link.title)}', '${escapeHtml(link.url)}')">
+                                    <div class="link-icon">
+                                        <i class="material-icons">${link.icon}</i>
+                                    </div>
+                                    <div class="link-info">
+                                        <div class="link-title">${escapeHtml(link.title)}</div>
+                                        <div class="link-url">${escapeHtml(link.url.length > 50 ? link.url.substring(0, 50) + '...' : link.url)}</div>
+                                        <span class="link-category">${escapeHtml(link.category)}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 </div>
                 
-                <div id="preview-modal" class="modal">
+                <div id="link-modal" class="modal">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <div>
-                                <h3 id="modal-title">Visualizando arquivo</h3>
-                                <div class="modal-path" id="modal-path"></div>
-                            </div>
-                            <div class="modal-actions">
-                                <button class="modal-action-btn" onclick="openInNewTab()">
-                                    <i class="material-icons" style="font-size: 16px;">open_in_new</i> Nova Guia
-                                </button>
-                                <button class="modal-action-btn" onclick="copyContent()">
-                                    <i class="material-icons" style="font-size: 16px;">content_copy</i> Copiar
-                                </button>
-                                <button class="modal-action-btn" onclick="downloadFile()">
-                                    <i class="material-icons" style="font-size: 16px;">download</i> Baixar
-                                </button>
-                                <button class="close-modal" onclick="closeModal()">&times;</button>
-                            </div>
+                            <h3 id="modal-link-title">Abrir Link</h3>
+                            <button class="close-modal" onclick="closeModal()">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <div class="view-mode-buttons">
-                                <button class="view-mode-btn active" data-mode="iframe" onclick="viewAsIframe()">
-                                    <i class="material-icons" style="font-size: 16px;">web</i> Visualizar Página
+                            <p id="modal-link-url"></p>
+                            <div class="modal-buttons">
+                                <button class="modal-btn primary" onclick="openLink()">
+                                    <i class="material-icons">open_in_new</i> Abrir
                                 </button>
-                                <button class="view-mode-btn" data-mode="code" onclick="viewAsCode()">
-                                    <i class="material-icons" style="font-size: 16px;">code</i> Ver Código
+                                <button class="modal-btn secondary" onclick="copyLink()">
+                                    <i class="material-icons">content_copy</i> Copiar
                                 </button>
-                            </div>
-                            <div id="preview-content">
-                                <div class="loading"><div class="spinner"></div><p>Carregando...</p></div>
+                                <button class="modal-btn secondary" onclick="closeModal()">
+                                    <i class="material-icons">close</i> Cancelar
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
             
+            // Event Listeners
             document.getElementById('logout-btn')?.addEventListener('click', signOut);
             document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
-            document.getElementById('export-btn')?.addEventListener('click', exportFileList);
             
-            const searchInput = document.getElementById('search-input');
+            const searchInput = document.getElementById('search-links');
             const clearBtn = document.getElementById('clear-search');
             
-            searchInput?.addEventListener('input', (e) => {
-                searchTerm = e.target.value;
-                if (searchTerm) {
-                    clearBtn.style.display = 'flex';
-                } else {
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchTerm = e.target.value;
+                    if (searchTerm) {
+                        clearBtn.style.display = 'flex';
+                    } else {
+                        clearBtn.style.display = 'none';
+                    }
+                    renderLinks();
+                });
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    searchTerm = '';
                     clearBtn.style.display = 'none';
-                }
-                filterFiles();
-            });
-            
-            clearBtn?.addEventListener('click', () => {
-                searchInput.value = '';
-                searchTerm = '';
-                clearBtn.style.display = 'none';
-                filterFiles();
-            });
-            
-            loadAllRepositories();
+                    renderLinks();
+                });
+            }
         }
 
+        // ============================================
+        // EXPOR FUNÇÕES GLOBAIS
+        // ============================================
+        window.openLinkModal = openLinkModal;
+        window.closeModal = closeModal;
+        window.openLink = openLink;
+        window.copyLink = copyLink;
+        
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
@@ -1399,7 +1031,5 @@
             }
         });
     </script>
-            <!-- Iframe do verificador/logs (mantido como você tinha) -->
-<script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
 </body>
 </html>
