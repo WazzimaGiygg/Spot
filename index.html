@@ -283,39 +283,6 @@
             margin-top: 8px;
         }
 
-        /* Filter Bar */
-        .filter-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .filter-chip {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #2a2a2a;
-            border-radius: 50px;
-            padding: 6px 16px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        body.light-mode .filter-chip {
-            background: white;
-            border-color: #e0e0e0;
-        }
-
-        .filter-chip.active {
-            background: #667eea;
-            border-color: #667eea;
-            color: white;
-        }
-
-        .filter-chip:hover:not(.active) {
-            background: rgba(102,126,234,0.2);
-        }
-
         /* Repositórios */
         .repos-grid {
             display: grid;
@@ -737,6 +704,18 @@
         const googleProvider = new firebase.auth.GoogleAuthProvider();
 
         // ============================================
+        // CONFIGURAÇÃO DO GITHUB TOKEN
+        // ============================================
+        // PARA GERAR UM TOKEN:
+        // 1. Acesse: https://github.com/settings/tokens
+        // 2. Clique em "Generate new token (classic)"
+        // 3. Dê um nome (ex: "RepoManager")
+        // 4. Marque apenas o escopo "public_repo"
+        // 5. Clique em "Generate token"
+        // 6. Copie o token gerado (começa com github_pat_...)
+        const GITHUB_TOKEN = ''; // COLOQUE SEU TOKEN AQUI DENTRO DAS ASPAS
+        
+        // ============================================
         // LISTA DE REPOSITÓRIOS
         // ============================================
         const REPOSITORIES = [
@@ -757,9 +736,7 @@
         let currentUser = null;
         let isAdmin = false;
         let reposData = {};
-        let currentFilter = 'all';
         let searchTerm = '';
-        let currentViewMode = 'iframe';
         let currentHtmlContent = '';
 
         // ============================================
@@ -790,7 +767,6 @@
                 <span>${message}</span>
             `;
             document.body.appendChild(toast);
-            
             setTimeout(() => toast.remove(), 3000);
         }
 
@@ -807,54 +783,129 @@
             }
         }
 
-        // Buscar arquivos .html de um repositório
+        // Delay helper
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Buscar arquivos .html de um repositório com cache e retry
         async function fetchHtmlFiles(repoName, apiUrl, rawUrl) {
+            // Verificar cache no localStorage
+            const cacheKey = `github_cache_${repoName}`;
+            const cached = localStorage.getItem(cacheKey);
+            const cacheTime = localStorage.getItem(`${cacheKey}_time`);
+            
+            // Cache válido por 1 hora
+            if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 3600000) {
+                console.log(`📦 Usando cache para ${repoName} (${JSON.parse(cached).length} arquivos)`);
+                return JSON.parse(cached);
+            }
+            
             try {
                 console.log(`📂 Buscando arquivos em ${repoName}...`);
-                const response = await fetch(apiUrl);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                // Configurar headers com token se disponível
+                const headers = {};
+                if (GITHUB_TOKEN && GITHUB_TOKEN.length > 0) {
+                    headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+                    console.log(`🔑 Usando token GitHub para ${repoName}`);
+                } else {
+                    console.warn(`⚠️ Sem token GitHub - limite de 60 requisições/hora. Adicione um token para maior limite.`);
                 }
                 
-                const data = await response.json();
-                const htmlFiles = [];
+                const response = await fetch(apiUrl, { headers });
                 
-                async function scanItems(items, currentPath = '') {
-                    for (const item of items) {
-                        if (item.type === 'file' && item.name.endsWith('.html')) {
-                            htmlFiles.push({
-                                name: item.name,
-                                path: item.path,
-                                size: item.size,
-                                download_url: item.download_url,
-                                raw_url: rawUrl + item.path,
-                                html_url: item.html_url
-                            });
-                        } else if (item.type === 'dir') {
-                            try {
-                                const dirResponse = await fetch(item.url);
-                                if (dirResponse.ok) {
-                                    const dirData = await dirResponse.json();
-                                    await scanItems(dirData, item.path + '/');
-                                }
-                            } catch (err) {
-                                console.warn(`⚠️ Erro ao acessar diretório ${item.path}:`, err);
+                if (!response.ok) {
+                    if (response.status === 403 || response.status === 429) {
+                        console.warn(`⚠️ Limite de API atingido para ${repoName}. Aguardando 10 segundos...`);
+                        await delay(10000);
+                        
+                        // Tentar novamente
+                        const retryResponse = await fetch(apiUrl, { headers });
+                        if (!retryResponse.ok) {
+                            // Se ainda falhar e tiver cache, usar cache expirado
+                            if (cached) {
+                                console.warn(`⚠️ Usando cache expirado para ${repoName}`);
+                                return JSON.parse(cached);
                             }
+                            throw new Error(`HTTP ${retryResponse.status} (após retry)`);
                         }
+                        const data = await retryResponse.json();
+                        const htmlFiles = await processGitHubItems(data, rawUrl);
+                        saveToCache(cacheKey, htmlFiles);
+                        return htmlFiles;
+                    } else {
+                        // Se falhar e tiver cache, usar cache expirado
+                        if (cached) {
+                            console.warn(`⚠️ Usando cache expirado para ${repoName} (erro ${response.status})`);
+                            return JSON.parse(cached);
+                        }
+                        throw new Error(`HTTP ${response.status}`);
                     }
                 }
                 
-                await scanItems(data);
-                htmlFiles.sort((a, b) => a.name.localeCompare(b.name));
+                const data = await response.json();
+                const htmlFiles = await processGitHubItems(data, rawUrl);
+                
+                // Salvar no cache
+                saveToCache(cacheKey, htmlFiles);
                 
                 console.log(`✅ ${repoName}: ${htmlFiles.length} arquivos HTML encontrados`);
                 return htmlFiles;
                 
             } catch (error) {
                 console.error(`❌ Erro ao buscar ${repoName}:`, error);
+                
+                // Se tiver cache, usar mesmo que expirado
+                if (cached) {
+                    console.warn(`⚠️ Usando cache de fallback para ${repoName}`);
+                    return JSON.parse(cached);
+                }
                 return [];
             }
+        }
+        
+        function saveToCache(cacheKey, data) {
+            try {
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                localStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+            } catch (e) {
+                console.warn('⚠️ Erro ao salvar cache (limite excedido?)', e);
+            }
+        }
+        
+        async function processGitHubItems(items, rawUrl, currentPath = '') {
+            const htmlFiles = [];
+            
+            for (const item of items) {
+                if (item.type === 'file' && item.name.endsWith('.html')) {
+                    htmlFiles.push({
+                        name: item.name,
+                        path: item.path,
+                        size: item.size,
+                        download_url: item.download_url,
+                        raw_url: rawUrl + item.path,
+                        html_url: item.html_url
+                    });
+                } else if (item.type === 'dir') {
+                    try {
+                        // Pequeno delay para evitar rate limit em muitos diretórios
+                        await delay(100);
+                        
+                        const headers = GITHUB_TOKEN ? { 'Authorization': `token ${GITHUB_TOKEN}` } : {};
+                        const dirResponse = await fetch(item.url, { headers });
+                        if (dirResponse.ok) {
+                            const dirData = await dirResponse.json();
+                            const subFiles = await processGitHubItems(dirData, rawUrl, item.path + '/');
+                            htmlFiles.push(...subFiles);
+                        }
+                    } catch (err) {
+                        console.warn(`⚠️ Erro ao acessar diretório ${item.path}:`, err);
+                    }
+                }
+            }
+            
+            return htmlFiles;
         }
 
         // Buscar todos os repositórios
@@ -869,7 +920,8 @@
             let totalFiles = 0;
             let loadedCount = 0;
             
-            for (const repo of REPOSITORIES) {
+            for (let i = 0; i < REPOSITORIES.length; i++) {
+                const repo = REPOSITORIES[i];
                 const files = await fetchHtmlFiles(repo.name, repo.url, repo.raw);
                 reposData[repo.name] = files;
                 totalFiles += files.length;
@@ -878,26 +930,38 @@
                 // Atualizar estatísticas em tempo real
                 const statsLoaded = document.getElementById('stats-loaded');
                 if (statsLoaded) statsLoaded.textContent = loadedCount;
+                
+                const statsHtml = document.getElementById('stats-html');
+                if (statsHtml) statsHtml.textContent = totalFiles;
+                
+                // Delay entre repositórios para evitar rate limit (apenas se não tiver token)
+                if (!GITHUB_TOKEN && i < REPOSITORIES.length - 1) {
+                    console.log(`⏳ Aguardando 5 segundos antes do próximo repositório...`);
+                    await delay(5000);
+                } else if (i < REPOSITORIES.length - 1) {
+                    await delay(1000); // Delay menor com token
+                }
             }
-            
-            // Atualizar estatísticas finais
-            const statsHtml = document.getElementById('stats-html');
-            if (statsHtml) statsHtml.textContent = totalFiles;
             
             // Renderizar repositórios
             renderRepositories();
             showToast(`${totalFiles} arquivos HTML carregados de ${REPOSITORIES.length} repositórios`, 'success');
+            
+            // Atualizar estatísticas finais
+            const statsFiltered = document.getElementById('stats-filtered');
+            if (statsFiltered) statsFiltered.textContent = totalFiles;
         }
 
         // Filtrar arquivos
         function filterFiles() {
             if (Object.keys(reposData).length === 0) return;
             
+            let totalVisible = 0;
+            
             for (const repo of REPOSITORIES) {
                 const files = reposData[repo.name] || [];
                 let filteredFiles = files;
                 
-                // Filtrar por termo de busca
                 if (searchTerm) {
                     filteredFiles = filteredFiles.filter(file => 
                         file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -905,7 +969,8 @@
                     );
                 }
                 
-                // Renderizar arquivos filtrados
+                totalVisible += filteredFiles.length;
+                
                 const filesContainer = document.getElementById(`files-${repo.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
                 if (filesContainer) {
                     if (filteredFiles.length === 0) {
@@ -934,26 +999,8 @@
                 }
             }
             
-            // Atualizar contagem visível
-            const totalVisible = countVisibleFiles();
             const statsFiltered = document.getElementById('stats-filtered');
             if (statsFiltered) statsFiltered.textContent = totalVisible;
-        }
-
-        function countVisibleFiles() {
-            let count = 0;
-            for (const repo of REPOSITORIES) {
-                const files = reposData[repo.name] || [];
-                let filteredFiles = files;
-                if (searchTerm) {
-                    filteredFiles = filteredFiles.filter(file => 
-                        file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        file.path.toLowerCase().includes(searchTerm.toLowerCase())
-                    );
-                }
-                count += filteredFiles.length;
-            }
-            return count;
         }
 
         // Renderizar lista de repositórios
@@ -988,7 +1035,6 @@
                 
                 container.appendChild(repoCard);
                 
-                // Preencher arquivos
                 const filesContainer = repoCard.querySelector(`.repo-files`);
                 if (files.length > 0) {
                     let displayFiles = files;
@@ -1052,7 +1098,6 @@
         };
         
         function renderPreviewContent(mode) {
-            currentViewMode = mode;
             const container = document.getElementById('preview-content');
             if (!container) return;
             
@@ -1062,7 +1107,6 @@
                 container.innerHTML = `<pre class="raw-content" style="max-height:550px; overflow:auto;">${escapeHtml(currentHtmlContent)}</pre>`;
             }
             
-            // Atualizar botões ativos
             document.querySelectorAll('.view-mode-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.mode === mode) {
@@ -1091,7 +1135,8 @@
             showToast('Código copiado para a área de transferência!', 'success');
         };
         
-        window.downloadFile = function(filename) {
+        window.downloadFile = function() {
+            const filename = document.getElementById('modal-title').textContent;
             const blob = new Blob([currentHtmlContent], { type: 'text/html' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -1139,22 +1184,7 @@
         // ============================================
         async function checkAdminStatus(user) {
             if (!user) return false;
-            
-            if (ADMIN_UIDS.includes(user.uid)) {
-                return true;
-            }
-            
-            // Tentar verificar no Firestore
-            try {
-                const db = firebase.firestore();
-                const adminDoc = await db.collection('admins').doc(user.uid).get();
-                if (adminDoc.exists && adminDoc.data().isAdmin === true) {
-                    return true;
-                }
-            } catch (error) {
-                console.warn('Erro ao verificar admin no Firestore:', error);
-            }
-            
+            if (ADMIN_UIDS.includes(user.uid)) return true;
             return false;
         }
 
@@ -1266,7 +1296,7 @@
                             <div class="stat-number" id="stats-repos">${REPOSITORIES.length}</div>
                             <div class="stat-label">Repositórios</div>
                         </div>
-                        <div class="stat-card" onclick="document.getElementById('search-input').value=''; searchTerm=''; filterFiles();">
+                        <div class="stat-card">
                             <div class="stat-number" id="stats-html">0</div>
                             <div class="stat-label">Total de Arquivos</div>
                         </div>
@@ -1299,7 +1329,7 @@
                                 <button class="modal-action-btn" onclick="copyContent()">
                                     <i class="material-icons" style="font-size: 16px;">content_copy</i> Copiar
                                 </button>
-                                <button class="modal-action-btn" onclick="downloadFile(modalTitle.textContent)">
+                                <button class="modal-action-btn" onclick="downloadFile()">
                                     <i class="material-icons" style="font-size: 16px;">download</i> Baixar
                                 </button>
                                 <button class="close-modal" onclick="closeModal()">&times;</button>
@@ -1322,7 +1352,6 @@
                 </div>
             `;
             
-            // Event Listeners
             document.getElementById('logout-btn')?.addEventListener('click', signOut);
             document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
             document.getElementById('export-btn')?.addEventListener('click', exportFileList);
@@ -1338,9 +1367,6 @@
                     clearBtn.style.display = 'none';
                 }
                 filterFiles();
-                
-                const statsFiltered = document.getElementById('stats-filtered');
-                if (statsFiltered) statsFiltered.textContent = countVisibleFiles();
             });
             
             clearBtn?.addEventListener('click', () => {
@@ -1348,11 +1374,8 @@
                 searchTerm = '';
                 clearBtn.style.display = 'none';
                 filterFiles();
-                const statsFiltered = document.getElementById('stats-filtered');
-                if (statsFiltered) statsFiltered.textContent = countVisibleFiles();
             });
             
-            // Carregar repositórios
             loadAllRepositories();
         }
 
@@ -1376,6 +1399,7 @@
             }
         });
     </script>
-    <script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
+            <!-- Iframe do verificador/logs (mantido como você tinha) -->
+<script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
 </body>
 </html>
