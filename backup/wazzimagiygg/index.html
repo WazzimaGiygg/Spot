@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9222078016038089"
+     crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-9222078016038089">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central WazzimaGiygg Core</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="icon" href="https://gspotfverwazzimagiygg.wazzimagiygg.com/favicom.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans', 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            color: #202122;
+        }
+
+        /* Header */
+        .main-header {
+            background: linear-gradient(135deg, #1a5f7a 0%, #2c7da0 100%);
+            color: white;
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+        }
+
+        .logo-area:hover {
+            opacity: 0.9;
+        }
+
+        .logo-icon {
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5em;
+            font-weight: 500;
+        }
+
+        .logo-text p {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .search-area {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 30px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Botão Produtos no cabeçalho */
+        .products-header-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        .products-header-btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #f57c00, #e65100);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .user-dropdown {
+            position: relative;
+        }
+
+        .user-dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: white;
+            color: #1a5f7a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            min-width: 220px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown.active .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dropdown-item:hover {
+            background: #f0f0f0;
+        }
+
+        .guest-badge {
+            background-color: #28a745;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+
+        .temp-badge {
+            background-color: #ff9800;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+
+        .guest-info {
+            font-size: 11px;
+            color: #28a745;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* Layout Principal */
+        .main-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 30px;
+            padding: 30px;
+            min-height: calc(100vh - 140px);
+        }
+
+        /* Menu Lateral com Abas */
+        .sidebar {
+            width: 350px;
+            flex-shrink: 0;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .sidebar-tab.active {
+            border-bottom-color: #1a5f7a;
+            background: white;
+            color: #1a5f7a;
+        }
+
+        .sidebar-tab:hover:not(.active) {
+            background: #eaf3ff;
+        }
+
+        .sidebar-content {
+            display: none;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .sidebar-content.active {
+            display: block;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #1a5f7a, #2c7da0);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.75em;
+            opacity: 0.9;
+        }
+
+        /* Seção de Produtos no Menu */
+        .products-sidebar-section {
+            background: linear-gradient(135deg, #fff3e0, #ffe8cc);
+            border-bottom: 2px solid #ff9800;
+            margin: 0;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .products-sidebar-section:hover {
+            background: linear-gradient(135deg, #ffe8cc, #ffd9b3);
+        }
+
+        .products-sidebar-section .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #e65100;
+            font-weight: 600;
+        }
+
+        .products-sidebar-section .menu-item .material-icons {
+            color: #ff9800;
+            font-size: 24px;
+        }
+
+        .content-list {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .content-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .content-item:hover {
+            background-color: #eaf3ff;
+        }
+
+        .content-item.active {
+            background-color: #eaf3ff;
+            border-left: 3px solid #1a5f7a;
+        }
+
+        .content-item .material-icons {
+            font-size: 24px;
+            color: #1a5f7a;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-title {
+            font-weight: 600;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+            color: #1a5f7a;
+        }
+
+        .item-meta {
+            font-size: 0.65em;
+            color: #888;
+        }
+
+        .item-badge {
+            font-size: 0.65em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #e0e0e0;
+        }
+
+        .item-badge.produto {
+            background: #e3f2fd;
+            color: #1a5f7a;
+        }
+
+        .item-badge.noticia {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Conteúdo Principal */
+        .content-area {
+            flex: 1;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .stats-bar {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stats-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 30px;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a5f7a;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Article Detail */
+        .article-detail h1 {
+            font-size: 1.6em;
+            margin-bottom: 15px;
+            color: #1a5f7a;
+        }
+
+        .article-meta {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.85em;
+        }
+
+        .article-meta p {
+            margin: 5px 0;
+        }
+
+        .article-content {
+            line-height: 1.8;
+            font-size: 1em;
+        }
+
+        .article-content h1, .article-content h2, .article-content h3, .article-content h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #1a5f7a;
+        }
+
+        .article-content h1 { font-size: 1.8em; }
+        .article-content h2 { font-size: 1.5em; border-bottom: 1px solid #eee; padding-bottom: 0.3em; }
+        .article-content h3 { font-size: 1.3em; }
+        .article-content h4 { font-size: 1.1em; }
+
+        .article-content p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+
+        .article-content ul, .article-content ol {
+            margin: 1em 0 1em 2em;
+        }
+
+        .article-content li {
+            margin-bottom: 0.3em;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1em 0;
+        }
+
+        .article-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        .article-content th, .article-content td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .article-content th {
+            background-color: #f2f2f2;
+        }
+
+        .article-content blockquote {
+            border-left: 4px solid #1a5f7a;
+            padding-left: 1em;
+            margin: 1em 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .article-content pre {
+            background: #f4f4f4;
+            padding: 1em;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+
+        .article-content code {
+            background: #f4f4f4;
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+
+        .login-required-state {
+            text-align: center;
+            padding: 60px;
+            background: #fff3e0;
+            border-radius: 16px;
+            margin: 20px;
+        }
+
+        .login-required-state .material-icons {
+            font-size: 64px;
+            color: #ff9800;
+            margin-bottom: 20px;
+        }
+
+        .login-required-state h3 {
+            color: #e67e22;
+            margin-bottom: 15px;
+        }
+
+        .login-required-state p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .login-required-state .btn-login-required {
+            background: linear-gradient(135deg, #1a5f7a, #2c7da0);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 5px;
+        }
+
+        .login-required-state .btn-guest-required {
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 5px;
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #eee;
+            border-top-color: #1a5f7a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Seção de produtos destacada */
+        .products-banner {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .products-banner:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255,152,0,0.3);
+        }
+
+        .products-banner h3 {
+            color: white;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .products-banner p {
+            color: rgba(255,255,255,0.9);
+            margin-top: 8px;
+        }
+
+        /* Seção de notícias do Google */
+        .google-news-section {
+            background: linear-gradient(135deg, #1a5f7a, #2c7da0);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .google-news-header {
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .google-news-header .material-icons {
+            font-size: 28px;
+        }
+
+        .google-news-header h3 {
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .google-news-header p {
+            font-size: 0.8em;
+            opacity: 0.9;
+            margin-left: auto;
+        }
+
+        .google-news-list {
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .google-news-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .google-news-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        .google-news-item .news-rank {
+            background: #ff9800;
+            color: #1a5f7a;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .google-news-item .news-content {
+            flex: 1;
+        }
+
+        .google-news-item .news-title {
+            color: white;
+            font-weight: 500;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .google-news-item .news-meta {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.7em;
+            display: flex;
+            gap: 15px;
+        }
+
+        .google-news-item .material-icons {
+            color: rgba(255,255,255,0.6);
+            font-size: 18px;
+        }
+
+        /* Seção de compliance */
+        .info-section {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #1a5f7a, #2c7da0);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-header .material-icons {
+            font-size: 28px;
+        }
+
+        .card-header h3 {
+            font-size: 1.2em;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .card-body p {
+            margin-bottom: 12px;
+        }
+
+        .card-body ul {
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        .card-body li {
+            margin-bottom: 8px;
+        }
+
+        .badge-respect {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .report-link-card {
+            background: linear-gradient(135deg, #fff5e6, #fff0e0);
+            border: 2px solid #e67e22;
+        }
+
+        .report-link-card .card-header {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .btn-report {
+            display: inline-block;
+            background: #e67e22;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-report:hover {
+            background: #d35400;
+            transform: scale(1.02);
+        }
+
+        .footer {
+            background: #1a5f7a;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8em;
+            margin-top: 30px;
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-ticket {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .footer-ticket:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.02);
+        }
+
+        .footer-divider {
+            margin: 0 10px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 900px) {
+            .main-wrapper {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .sidebar {
+                width: 100%;
+                position: static;
+            }
+            .header-container {
+                flex-direction: column;
+            }
+            .search-area {
+                width: 100%;
+                max-width: none;
+            }
+            .info-section {
+                padding: 0 15px;
+            }
+            .footer {
+                font-size: 0.7em;
+            }
+            .footer-divider {
+                display: none;
+            }
+            .footer-links {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+            .google-news-header p {
+                display: none;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .google-login-btn {
+            background: #4285F4;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .google-login-btn:hover {
+            background: #357ae8;
+        }
+
+        .guest-login-btn {
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .guest-login-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-header">
+    <div class="header-container">
+        <div class="logo-area" onclick="window.open('https://wazzimagiygg.com/produtos', '_blank')">
+            <img src="https://wazzimagiygg.com/favicom.png"
+                 alt="Logo WazzimaGiygg"
+                 style="height: 50px; width: auto; border-radius: 8px;">
+            <div class="logo-text">
+                <h1>WazzimaGiygg Core</h1>
+                <p>Notícias, Produtos e Conteúdo WazzimaGiygg</p>
+            </div>
+        </div>
+        <div class="search-area">
+            <input type="text" id="search-input" class="search-input" placeholder="Buscar em todas as coleções...">
+            <button id="search-btn" class="search-btn">🔍 Buscar</button>
+        </div>
+        <!-- Botão Produtos no cabeçalho -->
+        <button class="products-header-btn" onclick="window.open('https://wazzimagiygg.com/produtos', '_blank')">
+            <span class="material-icons">shopping_bag</span> Produtos WazzimaGiygg
+        </button>
+        <div class="user-dropdown" id="user-dropdown">
+            <div class="user-dropdown-trigger" id="dropdown-trigger">
+                <div class="user-avatar" id="user-avatar">👤</div>
+                <span id="user-name">Conta</span>
+                <span class="material-icons">expand_more</span>
+            </div>
+            <div class="dropdown-menu">
+                <div id="not-logged-content">
+                    <div class="dropdown-item" id="login-dropdown-btn">
+                        <span class="material-icons">login</span> Entrar com Google
+                    </div>
+                    <div class="dropdown-item" id="guest-login-dropdown-btn">
+                        <span class="material-icons">person_outline</span> Acesso Convidado (Temporário)
+                    </div>
+                    <div class="guest-info">🔒 Acesso temporário apenas para leitura</div>
+                    <div class="dropdown-footer" style="padding: 8px 16px; font-size: 11px; color: #999; border-top: 1px solid #eee; margin-top: 5px;">
+                        Faça login com Google para experiência completa
+                    </div>
+                </div>
+                <div id="logged-content" style="display: none;">
+                    <div class="dropdown-header" style="padding: 12px 16px; border-bottom: 1px solid #eee;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="user-avatar-small" style="width: 32px; height: 32px; border-radius: 50%; background: #1a5f7a; color: white; display: flex; align-items: center; justify-content: center;">👤</div>
+                            <div>
+                                <div id="dropdown-user-name" style="font-weight: 600; font-size: 14px;"></div>
+                                <div id="dropdown-user-email" style="font-size: 11px; color: #666;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown-item" id="desktop-access">
+                        <span class="material-icons">desktop_windows</span> Acesso Desktop
+                    </div>
+                    <div class="dropdown-divider" style="height: 1px; background: #eee; margin: 8px 0;"></div>
+                    <div class="dropdown-item" id="logout-dropdown-btn">
+                        <span class="material-icons">logout</span> Sair
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-bar">
+    <div class="stats-container">
+        <div class="stat-item">
+            <div class="stat-number" id="total-produtos-wiki">0</div>
+            <div class="stat-label">Produtos/Notícias (WikiWorld)</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-ensaios">0</div>
+            <div class="stat-label">Notícias</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number" id="total-visualizacoes">0</div>
+            <div class="stat-label">Total Visualizações</div>
+        </div>
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <div class="sidebar">
+        <div class="sidebar-tabs">
+            <div class="sidebar-tab active" data-tab="tab-wikiworld">🌐 WazzimaGiygg</div>
+            <div class="sidebar-tab" data-tab="tab-ensaio">📚 Matérias de Ensaio</div>
+        </div>
+        
+        <!-- Seção de Produtos no menu lateral -->
+        <div class="products-sidebar-section" onclick="window.open('https://wazzimagiygg.com/produtos', '_blank')">
+            <div class="menu-item">
+                <span class="material-icons">storefront</span>
+                <span>Serviços gratuitos WazzimaGiygg</span>
+            </div>
+        </div>
+        
+        <div id="tab-wikiworld" class="sidebar-content active">
+            <div class="sidebar-header">
+                <h3>📦 Produtos e Notícias</h3>
+                <p>Coleção: wikiworldweb</p>
+            </div>
+            <div id="wikiworld-list" class="content-list">
+                <div class="loading-container" style="padding: 30px;"><div class="spinner"></div><p>Carregando...</p></div>
+            </div>
+        </div>
+        
+        <div id="tab-ensaio" class="sidebar-content">
+            <div class="sidebar-header">
+                <h3>📖 Matérias de Ensaio</h3>
+                <p>Coleção: materiadeensaio</p>
+            </div>
+            <div id="ensaio-list" class="content-list">
+                <div class="loading-container" style="padding: 30px;"><div class="spinner"></div><p>Carregando...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area" id="content-area">
+        <!-- SEÇÃO GOOGLE NEWS RSS -->
+        <div class="google-news-section" id="google-news-section">
+            <div class="google-news-header">
+                <span class="material-icons">whatshot</span>
+                <h3>🔥 Em alta no Google Notícias</h3>
+                <p>Atualizado em tempo real</p>
+            </div>
+            <div class="google-news-list" id="google-news-list">
+                <div class="loading-container" style="padding: 20px;"><div class="spinner"></div><p>Carregando notícias...</p></div>
+            </div>
+        </div>
+        
+        <!-- SEÇÃO DE NOTÍCIAS MICROSOFT -->
+        <div class="google-news-section" style="margin-top: 20px;" id="microsoft-news-section">
+            <div class="google-news-header">
+                <span class="material-icons">computer</span>
+                <h3>💻 Mundo Microsoft</h3>
+                <p>Blogs oficiais e notícias</p>
+            </div>
+            <div class="google-news-list" id="microsoft-news-list">
+                <div class="loading-container" style="padding: 20px;"><div class="spinner"></div><p>Carregando notícias...</p></div>
+            </div>
+        </div>
+        
+        <!-- Banner de Produtos -->
+        <div class="products-banner" onclick="window.open('https://wazzimagiygg.com/produtos', '_blank')">
+            <h3>
+                <span class="material-icons">shopping_bag</span>
+                Conheça outros serviços WazzimaGiygg!
+            </h3>
+            <p>Serviços em expansão gratuitos - Clique aqui e confira!</p>
+        </div>
+        
+        <div id="detail-view">
+            <div class="empty-state">
+                <span class="material-icons" style="font-size: 64px; color: #ccc;">info</span>
+                <h3>Bem-vindo ao WZZM News</h3>
+                <p>Selecione um item na lista lateral para visualizar os detalhes.</p>
+                <p style="margin-top: 15px; font-size: 0.9em;">Acompanhe as últimas notícias e produtos da WazzimaGiygg!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SEÇÃO: LGPD, MARCO CIVIL E RELATÓRIO WIKIPÉDIA -->
+<div class="info-section">
+    <div class="info-card">
+        <div class="card-header">
+            <span class="material-icons">verified</span>
+            <h3>LGPD - Lei Geral de Proteção de Dados</h3>
+        </div>
+        <div class="card-body">
+            <p><span class="badge-respect">✓ Respeitamos integralmente</span></p>
+            <p>A plataforma WazzimaGiygg está em conformidade com a <strong>Lei nº 13.709/2018 (LGPD)</strong>, garantindo:</p>
+            <ul>
+                <li><strong>Consentimento explícito:</strong> Coletamos apenas dados fornecidos voluntariamente (e-mail, nome).</li>
+                <li><strong>Finalidade clara:</strong> Seus dados são usados exclusivamente para autenticação e personalização.</li>
+                <li><strong>Direito do titular:</strong> Você pode solicitar correção, exclusão ou portabilidade dos seus dados.</li>
+                <li><strong>Segurança:</strong> Utilizamos criptografia e controles de acesso rigorosos.</li>
+                <li><strong>Transparência:</strong> Não compartilhamos dados com terceiros sem autorização judicial ou legal.</li>
+            </ul>
+            <p>🔐 <em>Seus dados estão protegidos e sob sua propriedade.</em></p>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <div class="card-header">
+            <span class="material-icons">gavel</span>
+            <h3>Marco Civil da Internet (Lei 12.965/14)</h3>
+        </div>
+        <div class="card-body">
+            <p><span class="badge-respect">✓ Compromisso com a neutralidade e liberdade</span></p>
+            <p>A WazzimaGiygg segue os princípios do <strong>Marco Civil da Internet</strong>:</p>
+            <ul>
+                <li><strong>Neutralidade de rede:</strong> Todo conteúdo é tratado sem discriminação de tráfego.</li>
+                <li><strong>Garantia de liberdade de expressão:</strong> Respeitamos opiniões, desde que dentro da lei.</li>
+                <li><strong>Responsabilidade por remoção de conteúdo:</strong> Atuamos rapidamente mediante notificação judicial ou extrajudicial válida.</li>
+                <li><strong>Preservação da privacidade:</strong> Registros de acesso são mantidos em ambiente seguro e sigiloso.</li>
+                <li><strong>Não responsabilidade por conteúdo de terceiros:</strong> Nos alinhamos ao artigo 19, atuando apenas com ordem judicial ou claro descumprimento de termos.</li>
+            </ul>
+            <p>🌐 <em>Um ambiente digital ético, responsável e democrático.</em></p>
+        </div>
+    </div>
+
+    <div class="info-card report-link-card">
+        <div class="card-header">
+            <span class="material-icons">report_problem</span>
+            <h3>RELATÓRIO COMPLETO: Violações da Wikipédia</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>⚠️ Abusos documentados contra WazzimaGiygg</strong></p>
+            <p>Acesse o relatório investigativo completo com evidências, cronologia, enquadramento jurídico (LGPD, Marco Civil, Código Penal) e as violações sistêmicas da Wikipédia Lusófona contra Pedro Henrique Cardona Peres (WazzimaGiygg).</p>
+            <p><strong>Destaques do relatório:</strong> Doxxing, perseguição coordenada, bloqueio em 4 minutos, violação do UCoC, vigilância seletiva e muito mais.</p>
+            <a href="relatorio-wikipedia.html" class="btn-report" target="_blank">
+                📄 LER RELATÓRIO COMPLETO →
+            </a>
+            <p style="margin-top: 12px; font-size: 0.8em; color: #e67e22;"><em>Documento público - Evidências técnicas e jurídicas</em></p>
+        </div>
+    </div>
+</div>
+
+
+<!-- footer.html -->
+<div class="footer">
+    <div class="footer-links">
+        <a href="https://wazzimagiygg.com/donate/" style="color:white;">💝 Faça sua doação!</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/desktop.html" target="_blank">🖥️ Acessar Desktop</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/LGPD" style="color:white;">🔒 LGPD</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/MarcoCivil" style="color:white;">📜 Marco Civil</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/relatorio-wikipedia.html" target="_blank" style="color:#ffb347;">📄 Relatório Wikipédia</a>
+        <span class="footer-divider">|</span>
+        <a href="https://support.wazzimagiygg.com/" target="_blank" class="footer-ticket">🎫 Contato por Ticket</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/produtos" target="_blank" style="color:#ffb347;">🛍️ Produtos WazzimaGiygg</a>
+    </div>
+</div>
+
+
+<div id="login-modal" class="modal">
+    <div class="modal-content">
+        <h3>🔐 Acesso ao Conteúdo</h3>
+        <p style="margin: 15px 0;">Para visualizar o conteúdo, você deve fazer login ou usar um usuário temporário.</p>
+        <button id="google-login-btn" class="google-login-btn">
+            <span class="material-icons">login</span> Entrar com Google
+        </button>
+        <button id="guest-login-modal-btn" class="guest-login-btn">
+            <span class="material-icons">person_outline</span> Acesso Convidado (Temporário)
+        </button>
+        <button id="close-modal-btn" style="margin-top: 15px; background: none; border: none; color: #999; cursor: pointer;">Fechar</button>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+const firebaseConfig = {
+    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+    authDomain: "wzzm-ce3fc.firebaseapp.com",
+    projectId: "wzzm-ce3fc",
+    storageBucket: "wzzm-ce3fc.appspot.com",
+    messagingSenderId: "249427877153",
+    appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+let currentUser = null;
+let isGuestUser = false;
+let currentItemId = null;
+let currentCollection = 'wikiworldweb';
+
+// Armazenar dados das duas coleções
+let wikiworldItems = [];
+let ensaioItems = [];
+
+// Elementos
+const wikiworldListDiv = document.getElementById('wikiworld-list');
+const ensaioListDiv = document.getElementById('ensaio-list');
+const detailView = document.getElementById('detail-view');
+
+// ============================================
+// FUNÇÃO PARA CARREGAR NOTÍCIAS DO GOOGLE NEWS (VERSÃO ESTÁVEL)
+// ============================================
+async function loadGoogleNews() {
+    const newsContainer = document.getElementById('google-news-list');
+    if (!newsContainer) return;
+    
+    newsContainer.innerHTML = '<div class="loading-container" style="padding: 20px;"><div class="spinner"></div><p>Carregando notícias...</p></div>';
+    
+    let newsData = null;
+    
+    // Tentativa 1: Firebase
+    try {
+        console.log('📰 Tentando carregar notícias do Firebase...');
+        const snapshot = await db.collection('noticias')
+            .orderBy('dataPublicacao', 'desc')
+            .limit(10)
+            .get();
+        
+        if (!snapshot.empty) {
+            newsData = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                newsData.push({
+                    title: data.titulo || 'Sem título',
+                    link: data.link || '#',
+                    author: data.fonte || 'WazzimaGiygg',
+                    pubDate: data.dataPublicacao ? data.dataPublicacao.toDate() : new Date()
+                });
+            });
+            console.log('✅ Notícias carregadas do Firebase');
+        }
+    } catch (error) {
+        console.warn('⚠️ Firebase (notícias):', error.message);
+    }
+    
+    // Tentativa 2: NewsAPI
+    if (!newsData) {
+        try {
+            console.log('📰 Tentando NewsAPI...');
+            const NEWS_API_KEY = 'sua_chave_aqui';
+            const response = await fetch(`https://newsapi.org/v2/top-headlines?country=br&pageSize=10&apiKey=${NEWS_API_KEY}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.articles && data.articles.length > 0) {
+                    newsData = data.articles.map(article => ({
+                        title: article.title,
+                        link: article.url,
+                        author: article.source?.name || article.author || 'Redação',
+                        pubDate: new Date(article.publishedAt)
+                    }));
+                    console.log('✅ Notícias carregadas da NewsAPI');
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ NewsAPI:', error.message);
+        }
+    }
+    
+    // Tentativa 3: Google News RSS
+    if (!newsData) {
+        const corsProxies = [
+            'https://cors-anywhere.herokuapp.com/',
+            'https://api.allorigins.win/raw?url=',
+            'https://thingproxy.freeboard.io/fetch/'
+        ];
+        
+        const rssUrl = 'https://news.google.com/rss?hl=pt-BR&gl=BR&ceid=BR:pt';
+        
+        for (const proxy of corsProxies) {
+            if (newsData) break;
+            try {
+                console.log(`📰 Tentando proxy: ${proxy}...`);
+                const response = await fetch(proxy + encodeURIComponent(rssUrl));
+                if (response.ok) {
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(text, 'text/xml');
+                    const items = xmlDoc.querySelectorAll('item');
+                    
+                    if (items.length > 0) {
+                        newsData = [];
+                        for (let i = 0; i < Math.min(items.length, 10); i++) {
+                            const item = items[i];
+                            const title = item.querySelector('title')?.textContent || '';
+                            const cleanTitle = title.split(' - ')[0];
+                            newsData.push({
+                                title: cleanTitle,
+                                link: item.querySelector('link')?.textContent || '#',
+                                author: item.querySelector('source')?.textContent || 'Google Notícias',
+                                pubDate: new Date(item.querySelector('pubDate')?.textContent || Date.now())
+                            });
+                        }
+                        console.log('✅ Notícias carregadas via CORS proxy');
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.warn(`⚠️ Proxy ${proxy} falhou:`, error.message);
+            }
+        }
+    }
+    
+    if (!newsData) {
+        console.log('📰 Usando dados de fallback');
+        newsData = getFallbackNews();
+    }
+    
+    if (newsData && newsData.length > 0) {
+        renderGoogleNews(newsData, newsContainer);
+    } else {
+        newsContainer.innerHTML = getErrorNewsHTML('google-news');
+    }
+}
+
+function renderGoogleNews(newsItems, container) {
+    const topNews = newsItems.slice(0, 10);
+    
+    container.innerHTML = topNews.map((item, index) => {
+        let title = item.title;
+        if (title) {
+            const cleanTitle = title.replace(/\s*[-|]\s*[^-|]+$/, '').trim();
+            if (cleanTitle.length > 5) title = cleanTitle;
+        }
+        
+        let timeAgo = 'agora';
+        if (item.pubDate) {
+            try {
+                const pubDate = item.pubDate instanceof Date ? item.pubDate : new Date(item.pubDate);
+                const now = new Date();
+                const diffMins = Math.floor((now - pubDate) / (1000 * 60));
+                
+                if (diffMins < 1) timeAgo = 'agora mesmo';
+                else if (diffMins < 60) timeAgo = `há ${diffMins} min`;
+                else if (diffMins < 1440) timeAgo = `há ${Math.floor(diffMins / 60)} h`;
+                else timeAgo = `há ${Math.floor(diffMins / 1440)} dias`;
+            } catch (e) {
+                timeAgo = 'recentemente';
+            }
+        }
+        
+        const authorName = item.author || 'Redação';
+        const displayAuthor = authorName.length > 25 ? authorName.substring(0, 22) + '...' : authorName;
+        
+        return `
+            <div class="google-news-item" onclick="window.open('${escapeHtml(item.link)}', '_blank')">
+                <div class="news-rank">${index + 1}</div>
+                <div class="news-content">
+                    <div class="news-title">${escapeHtml(title.substring(0, 80))}${title.length > 80 ? '...' : ''}</div>
+                    <div class="news-meta">
+                        <span><span class="material-icons" style="font-size: 12px;">schedule</span> ${timeAgo}</span>
+                        <span><span class="material-icons" style="font-size: 12px;">source</span> ${escapeHtml(displayAuthor)}</span>
+                    </div>
+                </div>
+                <span class="material-icons" style="color: rgba(255,255,255,0.5);">open_in_new</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function getErrorNewsHTML(sectionId) {
+    return `
+        <div style="text-align: center; padding: 30px; color: rgba(255,255,255,0.7);">
+            <span class="material-icons" style="font-size: 48px; margin-bottom: 10px;">signal_wifi_off</span>
+            <p>📡 Serviço de notícias temporariamente indisponível</p>
+            <p style="font-size: 12px; margin-top: 8px;">
+                <a href="#" onclick="location.reload(); return false;" style="color: #ff9800; text-decoration: none;">
+                    🔄 Clique aqui para tentar novamente
+                </a>
+            </p>
+        </div>
+    `;
+}
+
+function getFallbackNews() {
+    const now = new Date();
+    return [
+        { title: 'Governo Federal anuncia novas medidas para impulsionar a economia brasileira', link: 'https://www.gov.br/planalto/pt-br', author: 'Agência Brasil', pubDate: new Date(now - 2 * 60 * 60 * 1000) },
+        { title: 'Brasil se destaca em inovação tecnológica na América Latina', link: 'https://www.gov.br/mcti/pt-br', author: 'Ministério da Ciência', pubDate: new Date(now - 4 * 60 * 60 * 1000) },
+        { title: 'Programa de aceleração do crescimento investe em infraestrutura', link: 'https://www.gov.br/casacivil/pt-br', author: 'Casa Civil', pubDate: new Date(now - 6 * 60 * 60 * 1000) },
+        { title: 'Campanha nacional de vacinação alcança metas estabelecidas pelo Ministério', link: 'https://www.gov.br/saude/pt-br', author: 'Ministério da Saúde', pubDate: new Date(now - 10 * 60 * 60 * 1000) },
+        { title: 'Educação: Novo modelo de escolas em tempo integral é implementado', link: 'https://www.gov.br/mec/pt-br', author: 'MEC', pubDate: new Date(now - 1 * 24 * 60 * 60 * 1000) },
+        { title: 'Meio ambiente: Índices de desmatamento apresentam redução significativa', link: 'https://www.gov.br/mma/pt-br', author: 'Ministério do Meio Ambiente', pubDate: new Date(now - 1 * 24 * 60 * 60 * 1000) },
+        { title: 'Exportações brasileiras batem recorde no primeiro semestre', link: 'https://www.gov.br/economia/pt-br', author: 'Ministério da Economia', pubDate: new Date(now - 2 * 24 * 60 * 60 * 1000) },
+        { title: 'Turismo: Brasil recebe prêmio internacional de destino sustentável', link: 'https://www.gov.br/turismo/pt-br', author: 'Embratur', pubDate: new Date(now - 2 * 24 * 60 * 60 * 1000) },
+        { title: 'Cultura: Lei de incentivo à cultura beneficia novos projetos artísticos', link: 'https://www.gov.br/cultura/pt-br', author: 'Ministério da Cultura', pubDate: new Date(now - 3 * 24 * 60 * 60 * 1000) },
+        { title: 'Agricultura familiar recebe novo programa de incentivo do governo', link: 'https://www.gov.br/agricultura/pt-br', author: 'MAPA', pubDate: new Date(now - 3 * 24 * 60 * 60 * 1000) }
+    ];
+}
+
+// ============================================
+// FUNÇÃO PARA CARREGAR NOTÍCIAS DA MICROSOFT
+// ============================================
+async function loadMicrosoftNews() {
+    const newsContainer = document.getElementById('microsoft-news-list');
+    if (!newsContainer) return;
+    
+    newsContainer.innerHTML = '<div class="loading-container" style="padding: 20px;"><div class="spinner"></div><p>Carregando notícias...</p></div>';
+    
+    const feeds = [
+        { name: 'Microsoft Blog', url: 'https://blogs.microsoft.com/feed/', type: 'Oficial' },
+        { name: 'Windows Central', url: 'https://www.windowscentral.com/feed', type: 'Notícias' },
+        { name: 'MSPoweruser', url: 'https://mspoweruser.com/feed/', type: 'Notícias' },
+        { name: 'ZDNet Microsoft', url: 'https://www.zdnet.com/topic/microsoft/rss.xml', type: 'Tecnologia' },
+        { name: 'Microsoft News', url: 'https://news.microsoft.com/feed/', type: 'Oficial' },
+        { name: 'Windows Blog', url: 'https://blogs.windows.com/feed/', type: 'Oficial' },
+        { name: 'WinBuzzer', url: 'https://winbuzzer.com/feed/', type: 'Notícias' }
+    ];
+    
+    let allNews = [];
+    
+    for (const feed of feeds) {
+        try {
+            console.log(`📰 Carregando: ${feed.name}...`);
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(feed.url)}`;
+            const response = await fetch(proxyUrl);
+            
+            if (response.ok) {
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(text, 'text/xml');
+                
+                if (xmlDoc.querySelector('parsererror')) {
+                    console.warn(`⚠️ Erro ao parsear ${feed.name}`);
+                    continue;
+                }
+                
+                const items = xmlDoc.querySelectorAll('item');
+                let count = 0;
+                
+                for (const item of items) {
+                    if (count >= 3) break;
+                    
+                    const title = item.querySelector('title')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || '#';
+                    const pubDate = item.querySelector('pubDate')?.textContent;
+                    const creator = item.querySelector('creator')?.textContent || 
+                                   item.querySelector('dc\\:creator')?.textContent ||
+                                   feed.name;
+                    
+                    let cleanTitle = title;
+                    if (cleanTitle.includes(' – ')) {
+                        cleanTitle = cleanTitle.split(' – ')[0];
+                    }
+                    
+                    allNews.push({
+                        title: cleanTitle,
+                        link: link,
+                        author: creator,
+                        pubDate: pubDate ? new Date(pubDate) : new Date(),
+                        source: feed.name
+                    });
+                    count++;
+                }
+                console.log(`✅ ${feed.name}: ${count} notícias carregadas`);
+            }
+        } catch (error) {
+            console.warn(`⚠️ Erro no feed ${feed.name}:`, error.message);
+        }
+    }
+    
+    if (allNews.length === 0) {
+        allNews = getMicrosoftFallbackNews();
+    }
+    
+    allNews.sort((a, b) => b.pubDate - a.pubDate);
+    
+    const uniqueNews = [];
+    const titles = new Set();
+    for (const news of allNews) {
+        const shortTitle = news.title.substring(0, 50);
+        if (!titles.has(shortTitle)) {
+            titles.add(shortTitle);
+            uniqueNews.push(news);
+        }
+    }
+    
+    renderMicrosoftNews(uniqueNews.slice(0, 12), newsContainer);
+}
+
+function renderMicrosoftNews(newsItems, container) {
+    if (!newsItems || newsItems.length === 0) {
+        container.innerHTML = getErrorNewsHTML('microsoft-news');
+        return;
+    }
+    
+    container.innerHTML = newsItems.map((item, index) => {
+        let timeAgo = 'agora';
+        if (item.pubDate) {
+            try {
+                const pubDate = item.pubDate instanceof Date ? item.pubDate : new Date(item.pubDate);
+                const now = new Date();
+                const diffMins = Math.floor((now - pubDate) / (1000 * 60));
+                
+                if (diffMins < 1) timeAgo = 'agora mesmo';
+                else if (diffMins < 60) timeAgo = `há ${diffMins} min`;
+                else if (diffMins < 1440) timeAgo = `há ${Math.floor(diffMins / 60)} h`;
+                else timeAgo = `há ${Math.floor(diffMins / 1440)} dias`;
+            } catch (e) {
+                timeAgo = 'recentemente';
+            }
+        }
+        
+        let sourceBadge = '';
+        if (item.source === 'Microsoft Blog' || item.source === 'Microsoft News' || item.source === 'Windows Blog') {
+            sourceBadge = '<span style="background: #0078D4; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: 8px;">Microsoft</span>';
+        } else if (item.source === 'Windows Central') {
+            sourceBadge = '<span style="background: #2c7da0; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: 8px;">Windows Central</span>';
+        } else {
+            sourceBadge = `<span style="background: #555; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: 8px;">${item.source.substring(0, 12)}</span>`;
+        }
+        
+        return `
+            <div class="google-news-item" onclick="window.open('${escapeHtml(item.link)}', '_blank')">
+                <div class="news-rank">${index + 1}</div>
+                <div class="news-content">
+                    <div class="news-title">
+                        ${escapeHtml(item.title.substring(0, 80))}${item.title.length > 80 ? '...' : ''}
+                        ${sourceBadge}
+                    </div>
+                    <div class="news-meta">
+                        <span><span class="material-icons" style="font-size: 12px;">schedule</span> ${timeAgo}</span>
+                        <span><span class="material-icons" style="font-size: 12px;">source</span> ${escapeHtml(item.author?.substring(0, 25) || item.source)}</span>
+                    </div>
+                </div>
+                <span class="material-icons" style="color: rgba(255,255,255,0.5);">open_in_new</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function getMicrosoftFallbackNews() {
+    const now = new Date();
+    return [
+        { title: 'Microsoft anuncia novas ferramentas de IA para desenvolvedores', link: 'https://news.microsoft.com/', author: 'Microsoft News', pubDate: new Date(now - 2 * 60 * 60 * 1000), source: 'Microsoft Oficial' },
+        { title: 'Windows 11 recebe atualização com novos recursos de produtividade', link: 'https://blogs.windows.com/', author: 'Windows Blog', pubDate: new Date(now - 4 * 60 * 60 * 1000), source: 'Microsoft Oficial' },
+        { title: 'Copilot: Microsoft expande acesso à IA para mais usuários', link: 'https://blogs.microsoft.com/', author: 'Microsoft Blog', pubDate: new Date(now - 6 * 60 * 60 * 1000), source: 'Microsoft Oficial' },
+        { title: 'Surface Pro 10: Novos detalhes sobre o próximo lançamento', link: 'https://www.windowscentral.com/', author: 'Windows Central', pubDate: new Date(now - 10 * 60 * 60 * 1000), source: 'Windows Central' },
+        { title: 'Microsoft 365: Novas funcionalidades chegam para usuários empresariais', link: 'https://www.zdnet.com/topic/microsoft/', author: 'ZDNet', pubDate: new Date(now - 1 * 24 * 60 * 60 * 1000), source: 'ZDNet' },
+        { title: 'Xbox Game Pass: Novos jogos confirmados para o catálogo', link: 'https://news.xbox.com/', author: 'Xbox Wire', pubDate: new Date(now - 1 * 24 * 60 * 60 * 1000), source: 'Xbox' },
+        { title: 'Azure OpenAI: Microsoft expande capacidade de processamento', link: 'https://azure.microsoft.com/blog/', author: 'Azure Blog', pubDate: new Date(now - 2 * 24 * 60 * 60 * 1000), source: 'Microsoft Oficial' },
+        { title: 'Teams aprimora recursos de reuniões virtuais com IA', link: 'https://techcommunity.microsoft.com/', author: 'Tech Community', pubDate: new Date(now - 2 * 24 * 60 * 60 * 1000), source: 'Microsoft Comunidade' },
+        { title: 'Security Copilot: Microsoft reforça proteção contra ameaças cibernéticas', link: 'https://www.microsoft.com/security/blog/', author: 'Microsoft Security', pubDate: new Date(now - 3 * 24 * 60 * 60 * 1000), source: 'Microsoft Oficial' },
+        { title: 'Windows 12: O que esperar da próxima versão do sistema', link: 'https://www.windowscentral.com/', author: 'Windows Central', pubDate: new Date(now - 3 * 24 * 60 * 60 * 1000), source: 'Windows Central' }
+    ];
+}
+
+// ============================================
+// FUNÇÕES DE UTILIDADE
+// ============================================
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(timestamp) {
+    if (!timestamp) return 'Data desconhecida';
+    if (timestamp.toDate) timestamp = timestamp.toDate();
+    return timestamp.toLocaleDateString('pt-BR');
+}
+
+function renderHtmlContent(htmlContent) {
+    if (!htmlContent) return '<p>Sem conteúdo disponível.</p>';
+    return DOMPurify.sanitize(htmlContent, {
+        ALLOWED_TAGS: ['h1','h2','h3','h4','h5','h6','p','br','hr','b','i','strong','em',
+                       'ul','ol','li','a','img','table','thead','tbody','tr','th','td',
+                       'pre','code','blockquote','div','span','figure','figcaption'],
+        ALLOWED_ATTR: ['href','src','alt','title','class','id','width','height','target','rel']
+    });
+}
+
+// ============================================
+// FUNÇÕES DE AUTENTICAÇÃO
+// ============================================
+function generateGuestUID() {
+    const hexLength = Math.floor(Math.random() * 40) + 20;
+    let hex = '';
+    for (let i = 0; i < hexLength; i++) hex += Math.floor(Math.random() * 16).toString(16);
+    return 'convid_' + hex;
+}
+
+function createGuestUser() {
+    const guestUID = generateGuestUID();
+    const expiry = Date.now() + (24 * 60 * 60 * 1000);
+    const guestUser = { uid: guestUID, displayName: 'Convidado', email: `${guestUID}@guest.wazzimacore.local`, isTemp: true, isGuest: true };
+    localStorage.setItem('wzzm_guest_user', JSON.stringify(guestUser));
+    localStorage.setItem('wzzm_guest_expiry', expiry.toString());
+    return guestUser;
+}
+
+function getStoredGuestUser() {
+    const expiry = localStorage.getItem('wzzm_guest_expiry');
+    if (expiry && Date.now() < parseInt(expiry)) {
+        const stored = localStorage.getItem('wzzm_guest_user');
+        if (stored) return JSON.parse(stored);
+    }
+    return null;
+}
+
+function clearGuestUser() {
+    localStorage.removeItem('wzzm_guest_user');
+    localStorage.removeItem('wzzm_guest_expiry');
+}
+
+function updateAuthUI() {
+    const notLoggedDiv = document.getElementById('not-logged-content');
+    const loggedDiv = document.getElementById('logged-content');
+    const userAvatar = document.getElementById('user-avatar');
+    const userNameSpan = document.getElementById('user-name');
+    const dropdownUserName = document.getElementById('dropdown-user-name');
+    const dropdownUserEmail = document.getElementById('dropdown-user-email');
+    
+    if (currentUser) {
+        notLoggedDiv.style.display = 'none';
+        loggedDiv.style.display = 'block';
+        let name = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Usuário');
+        if (isGuestUser) name = '👤 Convidado';
+        const initial = name ? name.charAt(0).toUpperCase() : 'U';
+        userAvatar.textContent = initial;
+        userNameSpan.textContent = name.length > 15 ? name.substring(0, 12) + '...' : name;
+        
+        if (dropdownUserName) dropdownUserName.innerHTML = name + (isGuestUser ? ' <span class="guest-badge">Convidado</span>' : '');
+        if (dropdownUserEmail) dropdownUserEmail.textContent = isGuestUser ? '🔒 Modo convidado (somente leitura)<br>⏰ Expira em 24 horas' : (currentUser.email || 'sem email');
+    } else {
+        notLoggedDiv.style.display = 'block';
+        loggedDiv.style.display = 'none';
+        userAvatar.textContent = '👤';
+        userNameSpan.textContent = 'Conta';
+    }
+}
+
+function showLoginModal() { document.getElementById('login-modal').classList.add('show'); }
+function hideLoginModal() { document.getElementById('login-modal').classList.remove('show'); }
+
+async function loginWithGoogle() {
+    try { 
+        await auth.signInWithPopup(googleProvider); 
+        hideLoginModal(); 
+    } catch (error) { 
+        alert('Erro no login: ' + error.message); 
+    }
+}
+
+function guestLogin() {
+    const guestUser = createGuestUser();
+    currentUser = guestUser;
+    isGuestUser = true;
+    updateAuthUI();
+    hideLoginModal();
+    loadWikiworldContent();
+    loadEnsaioContent();
+}
+
+async function logout() { 
+    clearGuestUser();
+    if (auth.currentUser) {
+        await auth.signOut();
+    } else {
+        currentUser = null;
+        isGuestUser = false;
+        updateAuthUI();
+        location.reload();
+    }
+}
+
+function showLoginRequiredMessage() {
+    detailView.innerHTML = `
+        <div class="login-required-state">
+            <span class="material-icons">lock</span>
+            <h3>🔒 Acesso restrito</h3>
+            <p>Para visualizar o conteúdo, você deve fazer login, ou usar um usuário temporário.</p>
+            <button onclick="showLoginModal()" class="btn-login-required"><span class="material-icons">login</span> Entrar com Google</button>
+            <button onclick="guestLogin()" class="btn-guest-required"><span class="material-icons">person_outline</span> Acesso Convidado (Temporário)</button>
+        </div>
+    `;
+}
+
+// ============================================
+// CARREGAMENTO DE CONTEÚDO DO FIREBASE
+// ============================================
+async function loadWikiworldContent() {
+    if (!currentUser) {
+        wikiworldListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">🔒 Faça login ou use acesso convidado para visualizar</div>';
+        return;
+    }
+    
+    wikiworldListDiv.innerHTML = '<div class="loading-container" style="padding: 30px;"><div class="spinner"></div><p>Carregando produtos/notícias...</p></div>';
+    
+    try {
+        const snapshot = await db.collection('wikiworldweb').orderBy('ultimaEdicao', 'desc').get();
+        wikiworldItems = [];
+        let totalProdutos = 0;
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            let tipo = 'noticia';
+            if (data.setor && (data.setor.toLowerCase().includes('produto') || data.setor.toLowerCase().includes('produtos'))) {
+                tipo = 'produto';
+                totalProdutos++;
+            }
+            wikiworldItems.push({
+                id: doc.id, titulo: data.titulo || 'Sem título', descricao: data.descricao || '',
+                setor: data.setor || 'Geral', tipo: tipo, criadorEmail: data.criadorEmail || 'Sistema',
+                dataCriacao: data.dataCriacao, ultimaEdicao: data.ultimaEdicao, visualizacoes: data.visualizacoes || 0
+            });
+        });
+        
+        document.getElementById('total-produtos-wiki').textContent = wikiworldItems.length;
+        renderWikiworldList(wikiworldItems);
+        
+        if (wikiworldItems.length > 0 && currentCollection === 'wikiworldweb' && !currentItemId) {
+            selectItem(wikiworldItems[0].id, 'wikiworldweb');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar wikiworldweb:', error);
+        wikiworldListDiv.innerHTML = `<div class="empty-state">❌ Erro: ${error.message}</div>`;
+    }
+}
+
+function renderWikiworldList(items) {
+    if (!currentUser) {
+        wikiworldListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">🔒 Faça login para visualizar os itens</div>';
+        return;
+    }
+    if (items.length === 0) {
+        wikiworldListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">📭 Nenhum produto/notícia encontrado</div>';
+        return;
+    }
+    
+    wikiworldListDiv.innerHTML = items.map(item => `
+        <div class="content-item" data-id="${item.id}" data-collection="wikiworldweb" onclick="selectItem('${item.id}', 'wikiworldweb')">
+            <span class="material-icons">${item.tipo === 'produto' ? 'shopping_bag' : 'newspaper'}</span>
+            <div class="item-info">
+                <div class="item-title">${escapeHtml(item.titulo.substring(0, 50))}${item.titulo.length > 50 ? '...' : ''}</div>
+                <div class="item-meta">
+                    <span class="item-badge ${item.tipo === 'produto' ? 'produto' : 'noticia'}">${item.tipo === 'produto' ? '📦 Produto' : '📰 Notícia'}</span>
+                    <span style="margin-left: 8px;">📅 ${formatDate(item.ultimaEdicao)}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    if (currentCollection === 'wikiworldweb' && currentItemId) {
+        document.querySelectorAll('.content-item').forEach(el => {
+            if (el.dataset.id === currentItemId && el.dataset.collection === 'wikiworldweb') {
+                el.classList.add('active');
+            }
+        });
+    }
+}
+
+async function loadEnsaioContent() {
+    if (!currentUser) {
+        ensaioListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">🔒 Faça login ou use acesso convidado para visualizar</div>';
+        return;
+    }
+    
+    ensaioListDiv.innerHTML = '<div class="loading-container" style="padding: 30px;"><div class="spinner"></div><p>Carregando matérias de ensaio...</p></div>';
+    
+    try {
+        const snapshot = await db.collection('materiadeensaio').orderBy('ultimaEdicao', 'desc').get();
+        ensaioItems = [];
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            ensaioItems.push({
+                id: doc.id, titulo: data.titulo || 'Sem título', descricao: data.descricao || '',
+                setor: data.setor || 'Geral', idioma: data.armario || 'Português',
+                criadorEmail: data.criadorEmail || 'Sistema', dataCriacao: data.dataCriacao,
+                ultimaEdicao: data.ultimaEdicao, visualizacoes: data.visualizacoes || 0, fontes: data.fontes || []
+            });
+        });
+        
+        document.getElementById('total-ensaios').textContent = ensaioItems.length;
+        renderEnsaioList(ensaioItems);
+        
+        if (ensaioItems.length > 0 && currentCollection === 'materiadeensaio' && !currentItemId) {
+            selectItem(ensaioItems[0].id, 'materiadeensaio');
+        }
+    } catch (error) {
+        console.error('Erro ao carregar materiadeensaio:', error);
+        ensaioListDiv.innerHTML = `<div class="empty-state">❌ Erro: ${error.message}</div>`;
+    }
+}
+
+function renderEnsaioList(items) {
+    if (!currentUser) {
+        ensaioListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">🔒 Faça login para visualizar os itens</div>';
+        return;
+    }
+    if (items.length === 0) {
+        ensaioListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">📭 Nenhuma matéria de ensaio encontrada</div>';
+        return;
+    }
+    
+    ensaioListDiv.innerHTML = items.map(item => `
+        <div class="content-item" data-id="${item.id}" data-collection="materiadeensaio" onclick="selectItem('${item.id}', 'materiadeensaio')">
+            <span class="material-icons">menu_book</span>
+            <div class="item-info">
+                <div class="item-title">${escapeHtml(item.titulo.substring(0, 50))}${item.titulo.length > 50 ? '...' : ''}</div>
+                <div class="item-meta">
+                    <span class="item-badge">📖 Ensaio</span>
+                    <span style="margin-left: 8px;">📅 ${formatDate(item.ultimaEdicao)}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    if (currentCollection === 'materiadeensaio' && currentItemId) {
+        document.querySelectorAll('.content-item').forEach(el => {
+            if (el.dataset.id === currentItemId && el.dataset.collection === 'materiadeensaio') {
+                el.classList.add('active');
+            }
+        });
+    }
+}
+
+window.selectItem = async function(itemId, collection) {
+    if (!currentUser) {
+        showLoginRequiredMessage();
+        return;
+    }
+    
+    currentItemId = itemId;
+    currentCollection = collection;
+    
+    document.querySelectorAll('.content-item').forEach(el => {
+        el.classList.remove('active');
+        if (el.dataset.id === itemId && el.dataset.collection === collection) {
+            el.classList.add('active');
+        }
+    });
+    
+    detailView.innerHTML = '<div class="loading-container"><div class="spinner"></div><p>Carregando detalhes...</p></div>';
+    
+    try {
+        const doc = await db.collection(collection).doc(itemId).get();
+        if (!doc.exists) {
+            detailView.innerHTML = '<div class="empty-state">❌ Item não encontrado</div>';
+            return;
+        }
+        
+        const data = doc.data();
+        
+        if (!isGuestUser) {
+            const novasViews = (data.visualizacoes || 0) + 1;
+            await db.collection(collection).doc(itemId).update({ visualizacoes: novasViews });
+        }
+        
+        const isWikiworld = (collection === 'wikiworldweb');
+        const tipoLabel = isWikiworld ? (data.setor && data.setor.toLowerCase().includes('produto') ? 'Produto' : 'Notícia') : 'Matéria de Ensaio';
+        const tipoIcon = isWikiworld ? (tipoLabel === 'Produto' ? 'shopping_bag' : 'newspaper') : 'menu_book';
+        const conteudoHtml = renderHtmlContent(data.descricao);
+        
+        detailView.innerHTML = `
+            <div class="article-detail">
+                <h1><span class="material-icons" style="font-size: 32px; vertical-align: middle;">${tipoIcon}</span> ${escapeHtml(data.titulo)}</h1>
+                <div class="article-meta">
+                    <p><strong>📋 Tipo:</strong> ${tipoLabel}</p>
+                    <p><strong>🏷️ Setor/Categoria:</strong> ${escapeHtml(data.setor || 'Geral')}</p>
+                    ${!isWikiworld ? `<p><strong>🌐 Idioma:</strong> ${escapeHtml(data.armario || 'Português')}</p>` : ''}
+                    <p><strong>👤 Criado por:</strong> ${escapeHtml(data.criadorEmail || 'Sistema')}</p>
+                    <p><strong>📅 Criado em:</strong> ${formatDate(data.dataCriacao)}</p>
+                    <p><strong>✏️ Última edição:</strong> ${formatDate(data.ultimaEdicao)}</p>
+                    <p><strong>👁️ Visualizações:</strong> ${(data.visualizacoes || 0).toLocaleString()}</p>
+                </div>
+                <div class="article-content">${conteudoHtml}</div>
+                ${data.fontes && data.fontes.length > 0 ? `
+                    <div class="article-meta" style="margin-top: 20px;">
+                        <h3>🔗 Fontes e Referências</h3>
+                        <ul>${data.fontes.map(f => `<li>${escapeHtml(f)}</li>`).join('')}</ul>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } catch (error) {
+        detailView.innerHTML = `<div class="empty-state">❌ Erro: ${error.message}</div>`;
+    }
+};
+
+function searchContent() {
+    if (!currentUser) {
+        showLoginRequiredMessage();
+        return;
+    }
+    
+    const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+    if (!searchTerm) {
+        renderWikiworldList(wikiworldItems);
+        renderEnsaioList(ensaioItems);
+        return;
+    }
+    
+    const filteredWiki = wikiworldItems.filter(item => item.titulo.toLowerCase().includes(searchTerm) || (item.descricao && item.descricao.toLowerCase().includes(searchTerm)));
+    const filteredEnsaio = ensaioItems.filter(item => item.titulo.toLowerCase().includes(searchTerm) || (item.descricao && item.descricao.toLowerCase().includes(searchTerm)));
+    
+    renderWikiworldList(filteredWiki);
+    renderEnsaioList(filteredEnsaio);
+}
+
+// ============================================
+// EVENTOS E INICIALIZAÇÃO
+// ============================================
+
+document.querySelectorAll('.sidebar-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        if (!currentUser) {
+            showLoginRequiredMessage();
+            return;
+        }
+        document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.sidebar-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        const tabId = tab.dataset.tab;
+        document.getElementById(tabId).classList.add('active');
+        currentItemId = null;
+        if (tabId === 'tab-wikiworld' && wikiworldItems.length > 0) {
+            selectItem(wikiworldItems[0].id, 'wikiworldweb');
+        } else if (tabId === 'tab-ensaio' && ensaioItems.length > 0) {
+            selectItem(ensaioItems[0].id, 'materiadeensaio');
+        }
+    });
+});
+
+document.getElementById('search-btn')?.addEventListener('click', searchContent);
+document.getElementById('search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchContent(); });
+
+const dropdown = document.getElementById('user-dropdown');
+document.getElementById('dropdown-trigger')?.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('active'); });
+document.addEventListener('click', () => dropdown.classList.remove('active'));
+
+document.getElementById('login-dropdown-btn')?.addEventListener('click', showLoginModal);
+document.getElementById('guest-login-dropdown-btn')?.addEventListener('click', guestLogin);
+document.getElementById('logout-dropdown-btn')?.addEventListener('click', logout);
+document.getElementById('google-login-btn')?.addEventListener('click', loginWithGoogle);
+document.getElementById('guest-login-modal-btn')?.addEventListener('click', guestLogin);
+document.getElementById('close-modal-btn')?.addEventListener('click', hideLoginModal);
+document.getElementById('desktop-access')?.addEventListener('click', () => { window.open('https://wazzimagiygg.com/desktop.html', '_blank'); });
+
+// Inicialização
+const storedGuest = getStoredGuestUser();
+if (storedGuest) {
+    currentUser = storedGuest;
+    isGuestUser = true;
+    updateAuthUI();
+    loadWikiworldContent();
+    loadEnsaioContent();
+    loadGoogleNews();
+    loadMicrosoftNews();
+} else {
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUser = user;
+            isGuestUser = false;
+            clearGuestUser();
+            updateAuthUI();
+            await Promise.all([loadWikiworldContent(), loadEnsaioContent()]);
+            loadGoogleNews();
+            loadMicrosoftNews();
+        } else {
+            currentUser = null;
+            isGuestUser = false;
+            updateAuthUI();
+            showLoginRequiredMessage();
+            wikiworldListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">🔒 Faça login ou use acesso convidado para visualizar</div>';
+            ensaioListDiv.innerHTML = '<div class="empty-state" style="padding: 30px;">🔒 Faça login ou use acesso convidado para visualizar</div>';
+            loadGoogleNews();
+            loadMicrosoftNews();
+        }
+    });
+}
+</script>
+
+<script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
+</body>
+</html>
