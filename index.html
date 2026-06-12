@@ -18,6 +18,8 @@
             background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
             color: #e0e0e0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
@@ -182,8 +184,8 @@
             max-width: 1400px;
             margin: 0 auto;
             padding: 30px;
-            display: flex;
-            gap: 30px;
+            flex: 1;
+            width: 100%;
         }
 
         /* Sidebar */
@@ -512,8 +514,63 @@
             color: #888;
         }
 
+        /* Footer */
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8em;
+            margin-top: 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-ticket {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+
+        .footer-ticket:hover {
+            background: rgba(255,255,255,0.25);
+            transform: scale(1.02);
+            text-decoration: none;
+        }
+
+        .footer-divider {
+            margin: 0 10px;
+            opacity: 0.5;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .flex-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
         @media (max-width: 900px) {
-            .main-container {
+            .flex-container {
                 flex-direction: column;
             }
             .sidebar {
@@ -521,6 +578,20 @@
             }
             .projects-grid {
                 grid-template-columns: 1fr;
+            }
+            .header-container {
+                flex-direction: column;
+            }
+            .search-area {
+                width: 100%;
+                max-width: none;
+            }
+            .footer-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .footer-divider {
+                display: none;
             }
         }
     </style>
@@ -572,55 +643,78 @@
 </div>
 
 <div class="main-container">
-    <div class="sidebar">
-        <div class="filter-card">
-            <h3><span class="material-icons">filter_list</span> Filtros</h3>
-            <div class="filter-group">
-                <label>Tipo de Código</label>
-                <select id="filter-type" class="filter-select">
-                    <option value="">Todos</option>
-                    <option value="HTML/CSS">HTML/CSS</option>
-                    <option value="JavaScript">JavaScript</option>
-                    <option value="React">React</option>
-                    <option value="Vue">Vue</option>
-                    <option value="Angular">Angular</option>
-                    <option value="Biblioteca">Biblioteca</option>
-                    <option value="Framework">Framework</option>
-                    <option value="Componente">Componente</option>
-                </select>
+    <div class="flex-container">
+        <div class="sidebar">
+            <div class="filter-card">
+                <h3><span class="material-icons">filter_list</span> Filtros</h3>
+                <div class="filter-group">
+                    <label>Tipo de Código</label>
+                    <select id="filter-type" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="HTML/CSS">HTML/CSS</option>
+                        <option value="JavaScript">JavaScript</option>
+                        <option value="React">React</option>
+                        <option value="Vue">Vue</option>
+                        <option value="Angular">Angular</option>
+                        <option value="Biblioteca">Biblioteca</option>
+                        <option value="Framework">Framework</option>
+                        <option value="Componente">Componente</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status</label>
+                    <select id="filter-status" class="filter-select">
+                        <option value="">Todos</option>
+                        <option value="open">Aberto (Collab)</option>
+                        <option value="closed">Fechado (Apenas autor)</option>
+                        <option value="locked">Bloqueado/Trancado</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Mostrar apenas meus projetos</label>
+                    <input type="checkbox" id="filter-mine" style="width: auto; margin-top: 8px;">
+                </div>
             </div>
-            <div class="filter-group">
-                <label>Status</label>
-                <select id="filter-status" class="filter-select">
-                    <option value="">Todos</option>
-                    <option value="open">Aberto (Collab)</option>
-                    <option value="closed">Fechado (Apenas autor)</option>
-                    <option value="locked">Bloqueado/Trancado</option>
-                </select>
-            </div>
-            <div class="filter-group">
-                <label>Mostrar apenas meus projetos</label>
-                <input type="checkbox" id="filter-mine" style="width: auto; margin-top: 8px;">
+            <div class="stats-card">
+                <div class="stats-number" id="total-projects">0</div>
+                <div>Projetos no SkyHTML</div>
+                <div style="margin-top: 15px;">
+                    <div class="stats-number" id="total-collab">0</div>
+                    <div>Projetos com Collab Aberta</div>
+                </div>
             </div>
         </div>
-        <div class="stats-card">
-            <div class="stats-number" id="total-projects">0</div>
-            <div>Projetos no SkyHTML</div>
-            <div style="margin-top: 15px;">
-                <div class="stats-number" id="total-collab">0</div>
-                <div>Projetos com Collab Aberta</div>
+
+        <div class="content-area">
+            <div class="projects-header">
+                <h2>📁 Projetos da Comunidade</h2>
+                <button id="refresh-btn" class="btn-secondary">🔄 Atualizar</button>
+            </div>
+            <div id="projects-grid" class="projects-grid">
+                <div class="loading"><div class="spinner"></div><p>Carregando projetos...</p></div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="content-area">
-        <div class="projects-header">
-            <h2>📁 Projetos da Comunidade</h2>
-            <button id="refresh-btn" class="btn-secondary">🔄 Atualizar</button>
-        </div>
-        <div id="projects-grid" class="projects-grid">
-            <div class="loading"><div class="spinner"></div><p>Carregando projetos...</p></div>
-        </div>
+<!-- FOOTER COM CONTATO POR TICKET ADICIONADO (IGUAL AO MASPIA FORUM) -->
+<div class="footer">
+    <div class="footer-links">
+        <a href="https://wazzimagiygg.com/donate/" style="color:white;">💝 Faça sua doação!</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/desktop.html" target="_blank">🖥️ Acessar Desktop</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/LGPD" style="color:white;">🔒 LGPD</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/MarcoCivil" style="color:white;">📜 Marco Civil</a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/relatorio-wikipedia.html" target="_blank" style="color:#ffb347;">📄 Relatório Wikipédia</a>
+        <span class="footer-divider">|</span>
+        <a href="https://support.wazzimagiygg.com/" target="_blank" class="footer-ticket">
+            🎫 Contato por Ticket
+        </a>
+        <span class="footer-divider">|</span>
+        <a href="https://wazzimagiygg.com/produtos" target="_blank" style="color:#ffb347;">🛍️ Produtos WazzimaGiygg</a>
     </div>
 </div>
 
@@ -685,6 +779,23 @@
     </div>
 </div>
 
+<!-- Modal Login -->
+<div id="login-modal" class="modal">
+    <div class="modal-content">
+        <h2><span class="material-icons">login</span> Entrar no SkyHTML</h2>
+        <p style="margin-bottom: 20px;">Faça login para criar projetos e colaborar com a comunidade!</p>
+        <button id="google-login-modal-btn" class="btn-primary" style="width:100%;">
+            <span class="material-icons">google</span> Entrar com Google
+        </button>
+        <button id="guest-login-modal-btn" class="btn-secondary" style="width:100%; margin-top: 10px;">
+            <span class="material-icons">person_outline</span> Acesso Convidado (Somente Leitura)
+        </button>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button id="close-login-modal" class="btn-secondary">Fechar</button>
+        </div>
+    </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -731,11 +842,20 @@ function updateAuthUI() {
     }
 }
 
+function showLoginModal() {
+    document.getElementById('login-modal').classList.add('show');
+}
+
+function hideLoginModal() {
+    document.getElementById('login-modal').classList.remove('show');
+}
+
 async function loginWithGoogle() {
     try {
         const result = await auth.signInWithPopup(googleProvider);
         currentUser = result.user;
         updateAuthUI();
+        hideLoginModal();
         loadProjects();
     } catch (error) {
         alert('Erro no login: ' + error.message);
@@ -745,6 +865,7 @@ async function loginWithGoogle() {
 function guestLogin() {
     currentUser = { uid: 'guest_' + Date.now(), displayName: 'Convidado', email: 'guest@skyhtml.local', isGuest: true };
     updateAuthUI();
+    hideLoginModal();
     loadProjects();
 }
 
@@ -793,17 +914,14 @@ async function loadProjects() {
 function applyFilters() {
     let filtered = [...allProjects];
     
-    // Filtro por tipo
     if (currentFilter.type) {
         filtered = filtered.filter(p => p.type === currentFilter.type);
     }
     
-    // Filtro por status
     if (currentFilter.status) {
         filtered = filtered.filter(p => p.status === currentFilter.status);
     }
     
-    // Filtro por busca
     if (currentFilter.search) {
         const searchLower = currentFilter.search.toLowerCase();
         filtered = filtered.filter(p => 
@@ -813,8 +931,7 @@ function applyFilters() {
         );
     }
     
-    // Filtro "meus projetos"
-    if (currentFilter.mine && currentUser) {
+    if (currentFilter.mine && currentUser && !currentUser.isGuest) {
         filtered = filtered.filter(p => p.authorId === currentUser.uid);
     }
     
@@ -830,7 +947,7 @@ function renderProjects(projects) {
     }
     
     container.innerHTML = projects.map(project => {
-        const isAuthor = currentUser && project.authorId === currentUser.uid;
+        const isAuthor = currentUser && project.authorId === currentUser.uid && !currentUser.isGuest;
         const canView = !project.locked || isAuthor;
         const statusBadge = project.locked ? 'locked' : (project.status === 'open' ? 'collab' : 'private');
         const statusText = project.locked ? '🔒 Trancado' : (project.status === 'open' ? '🤝 Collab Aberta' : '🔒 Apenas Autor');
@@ -858,27 +975,34 @@ function renderProjects(projects) {
                 <div class="project-actions" onclick="event.stopPropagation()">
                     ${canView ? `<button class="btn-icon" onclick="viewProject('${project.id}')"><span class="material-icons">visibility</span> Ver</button>` : '<button class="btn-icon" disabled style="opacity:0.5"><span class="material-icons">lock</span> Bloqueado</button>'}
                     ${isAuthor ? `<button class="btn-icon" onclick="manageProject('${project.id}')"><span class="material-icons">settings</span> Gerenciar</button>` : ''}
-                    ${(project.status === 'open' && currentUser && !isAuthor && !project.locked) ? `<button class="btn-icon" onclick="requestCollab('${project.id}')"><span class="material-icons">group_add</span> Solicitar Collab</button>` : ''}
                 </div>
             </div>
         `;
     }).join('');
 }
 
-// Visualizar projeto
 window.viewProject = async function(projectId) {
+    if (!currentUser) {
+        showLoginModal();
+        return;
+    }
+    
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
     
-    // Incrementar views
-    if (!currentUser?.isGuest) {
+    if (project.locked && project.authorId !== currentUser.uid && !currentUser.isGuest) {
+        alert('Este projeto está trancado pelo autor e não pode ser visualizado.');
+        return;
+    }
+    
+    if (!currentUser.isGuest) {
         await db.collection('skyhtml').doc(projectId).update({
             views: firebase.firestore.FieldValue.increment(1)
         });
         project.views = (project.views || 0) + 1;
     }
     
-    const isAuthor = currentUser && project.authorId === currentUser.uid;
+    const isAuthor = currentUser && project.authorId === currentUser.uid && !currentUser.isGuest;
     const isCollaborator = project.collaborators && project.collaborators.includes(currentUser?.uid);
     const canEdit = isAuthor || isCollaborator;
     
@@ -921,7 +1045,6 @@ window.viewProject = async function(projectId) {
     modal.classList.add('show');
 };
 
-// Gerenciar projeto (autor)
 window.manageProject = function(projectId) {
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
@@ -1003,35 +1126,13 @@ window.unlockProject = async function(projectId) {
     }
 };
 
-window.requestCollab = async function(projectId) {
-    if (!currentUser) {
-        alert('Faça login para solicitar colaboração');
-        return;
-    }
-    
-    const project = allProjects.find(p => p.id === projectId);
-    if (!project) return;
-    
-    const message = prompt('Mensagem para o autor solicitando colaboração:');
-    if (message) {
-        await db.collection('skyhtml').doc(projectId).update({
-            collaborationRequests: firebase.firestore.FieldValue.arrayUnion({
-                userId: currentUser.uid,
-                userName: currentUser.displayName || currentUser.email,
-                message: message,
-                date: new Date()
-            })
-        });
-        alert('Solicitação enviada ao autor!');
-    }
-};
-
 // Criar novo projeto
 async function createProject(event) {
     event.preventDefault();
     
-    if (!currentUser) {
-        alert('Faça login para criar um projeto');
+    if (!currentUser || currentUser.isGuest) {
+        alert('Faça login com Google para criar um projeto');
+        showLoginModal();
         return;
     }
     
@@ -1079,12 +1180,18 @@ function formatDate(date) {
     return date.toLocaleDateString('pt-BR');
 }
 
+function searchContent() {
+    currentFilter.search = document.getElementById('search-input').value;
+    applyFilters();
+}
+
 // ============================================
 // EVENTOS
 // ============================================
 document.getElementById('new-project-btn').onclick = () => {
-    if (!currentUser) {
-        alert('Faça login para criar um projeto');
+    if (!currentUser || currentUser.isGuest) {
+        alert('Faça login com Google para criar um projeto');
+        showLoginModal();
         return;
     }
     document.getElementById('project-modal').classList.add('show');
@@ -1099,6 +1206,10 @@ document.getElementById('close-view-modal').onclick = () => {
 };
 
 document.getElementById('refresh-btn').onclick = () => loadProjects();
+document.getElementById('search-btn').onclick = searchContent;
+document.getElementById('search-input').onkeypress = (e) => {
+    if (e.key === 'Enter') searchContent();
+};
 
 // Filtros
 document.getElementById('filter-type').onchange = (e) => {
@@ -1113,16 +1224,6 @@ document.getElementById('filter-mine').onchange = (e) => {
     currentFilter.mine = e.target.checked;
     applyFilters();
 };
-document.getElementById('search-btn').onclick = () => {
-    currentFilter.search = document.getElementById('search-input').value;
-    applyFilters();
-};
-document.getElementById('search-input').onkeypress = (e) => {
-    if (e.key === 'Enter') {
-        currentFilter.search = e.target.value;
-        applyFilters();
-    }
-};
 
 document.getElementById('project-form').onsubmit = createProject;
 
@@ -1135,7 +1236,7 @@ document.getElementById('dropdown-trigger').onclick = (e) => {
 document.addEventListener('click', () => dropdown.classList.remove('active'));
 
 // Autenticação
-document.getElementById('login-btn').onclick = loginWithGoogle;
+document.getElementById('login-btn').onclick = showLoginModal;
 document.getElementById('guest-login-btn').onclick = guestLogin;
 document.getElementById('logout-btn').onclick = logout;
 document.getElementById('my-projects-btn').onclick = () => {
@@ -1144,6 +1245,9 @@ document.getElementById('my-projects-btn').onclick = () => {
     applyFilters();
     dropdown.classList.remove('active');
 };
+document.getElementById('google-login-modal-btn').onclick = loginWithGoogle;
+document.getElementById('guest-login-modal-btn').onclick = guestLogin;
+document.getElementById('close-login-modal').onclick = hideLoginModal;
 
 // Inicialização
 auth.onAuthStateChanged((user) => {
@@ -1158,5 +1262,8 @@ auth.onAuthStateChanged((user) => {
     }
 });
 </script>
+
+<!-- Iframe do verificador/logs -->
+<script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
 </body>
 </html>
