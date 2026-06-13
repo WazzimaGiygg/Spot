@@ -21,7 +21,6 @@
             flex-direction: column;
         }
 
-        /* Header */
         .header {
             background: rgba(10, 14, 39, 0.95);
             backdrop-filter: blur(10px);
@@ -92,7 +91,6 @@
             transform: translateY(-2px);
         }
 
-        /* Main Container */
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
@@ -101,14 +99,12 @@
             width: 100%;
         }
 
-        /* Chat Layout */
         .chat-wrapper {
             display: flex;
             gap: 30px;
             flex-wrap: wrap;
         }
 
-        /* Sidebar do Chat */
         .chat-sidebar {
             width: 300px;
             flex-shrink: 0;
@@ -136,6 +132,22 @@
             font-size: 0.85rem;
             line-height: 1.5;
             margin-bottom: 15px;
+        }
+
+        .api-status {
+            background: rgba(233, 69, 96, 0.2);
+            border: 1px solid #e94560;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: #e94560;
+        }
+
+        .api-status.success {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4caf50;
+            color: #4caf50;
         }
 
         .feature-list {
@@ -169,7 +181,6 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* Chat Principal */
         .chat-main {
             flex: 1;
             background: rgba(30, 35, 64, 0.8);
@@ -220,7 +231,6 @@
             50% { opacity: 0.5; }
         }
 
-        /* Messages Area */
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -297,15 +307,6 @@
             font-family: monospace;
         }
 
-        .message-content p {
-            margin-bottom: 8px;
-        }
-
-        .message-content p:last-child {
-            margin-bottom: 0;
-        }
-
-        /* Typing Indicator */
         .typing-indicator {
             display: flex;
             gap: 4px;
@@ -331,7 +332,6 @@
             30% { transform: translateY(-10px); opacity: 1; }
         }
 
-        /* Input Area */
         .chat-input-area {
             padding: 20px;
             border-top: 1px solid rgba(255,255,255,0.1);
@@ -398,7 +398,6 @@
             background: rgba(255,255,255,0.2);
         }
 
-        /* Suggestions */
         .suggestions {
             padding: 15px 20px;
             border-top: 1px solid rgba(255,255,255,0.1);
@@ -423,7 +422,6 @@
             color: white;
         }
 
-        /* Footer */
         .footer {
             background: #1a1a2e;
             color: white;
@@ -472,7 +470,6 @@
             gap: 5px;
         }
 
-        /* Scrollbar */
         .chat-messages::-webkit-scrollbar {
             width: 6px;
         }
@@ -531,13 +528,13 @@
 
 <div class="main-container">
     <div class="chat-wrapper">
-        <!-- Sidebar -->
         <div class="chat-sidebar">
             <div class="chat-info-card">
                 <h3><span class="material-icons">info</span> Sobre o DeepSeek</h3>
                 <p>DeepSeek é um assistente de inteligência artificial avançado, capaz de responder perguntas, ajudar com código, escrever textos e muito mais!</p>
                 <div class="stats-number" id="message-count">0</div>
                 <div>mensagens nesta conversa</div>
+                <div id="api-status" class="api-status">🔌 Modo: Demonstração</div>
             </div>
             
             <div class="chat-info-card">
@@ -553,12 +550,14 @@
             </div>
             
             <div class="chat-info-card">
-                <h3><span class="material-icons">tips_and_updates</span> Dicas</h3>
-                <p>💡 Seja específico em suas perguntas<br>📝 Peça exemplos quando necessário<br>🔄 Use linguagem natural</p>
+                <h3><span class="material-icons">tips_and_updates</span> Como usar</h3>
+                <p>🔑 Para usar a API real:<br>
+                1. Acesse platform.deepseek.com<br>
+                2. Obtenha sua chave de API<br>
+                3. Substitua na variável DEEPSEEK_API_KEY</p>
             </div>
         </div>
 
-        <!-- Chat Principal -->
         <div class="chat-main">
             <div class="chat-header">
                 <h2>
@@ -576,21 +575,7 @@
             </div>
 
             <div class="chat-messages" id="chat-messages">
-                <div class="message ai">
-                    <div class="message-avatar ai">🤖</div>
-                    <div class="message-content">
-                        <p>Olá! 👋 Sou o DeepSeek, seu assistente de IA.</p>
-                        <p>Como posso ajudá-lo hoje? Você pode me perguntar sobre:</p>
-                        <ul style="margin-left: 20px; margin-top: 8px;">
-                            <li>💻 Programação e desenvolvimento</li>
-                            <li>📝 Escrita e revisão de textos</li>
-                            <li>🔍 Pesquisa e análise de informações</li>
-                            <li>🎨 Ideias criativas</li>
-                            <li>📚 Estudos e aprendizado</li>
-                        </ul>
-                        <p>É só digitar sua mensagem abaixo! ✨</p>
-                    </div>
-                </div>
+                <!-- Mensagens serão inseridas aqui -->
             </div>
 
             <div class="suggestions">
@@ -599,6 +584,7 @@
                 <button class="suggestion-chip" onclick="sendSuggestion('Escreva um poema sobre tecnologia')">📝 Poema sobre tech</button>
                 <button class="suggestion-chip" onclick="sendSuggestion('Como aprender programação do zero?')">📚 Aprender programação</button>
                 <button class="suggestion-chip" onclick="sendSuggestion('Dicas para produtividade no trabalho')">⚡ Produtividade</button>
+                <button class="suggestion-chip" onclick="sendSuggestion('O que é JavaScript?')">💡 JavaScript</button>
             </div>
 
             <div class="chat-input-area">
@@ -612,7 +598,6 @@
     </div>
 </div>
 
-<!-- Footer -->
 <div class="footer">
     <div class="footer-links">
         <a href="https://wazzimagiygg.com/donate/" style="color:white;">💝 Faça sua doação!</a>
@@ -634,23 +619,44 @@
 </div>
 
 <script>
-    // Configuração da API DeepSeek
-    // IMPORTANTE: Para usar a API real, você precisa de uma chave da DeepSeek
-    // Insira sua chave abaixo (https://platform.deepseek.com/)
-    const DEEPSEEK_API_KEY = 'sk-demo-test-key-limited'; // Substitua pela sua chave
+    // ============================================
+    // CONFIGURAÇÃO DA API DEEPSEEK
+    // ============================================
+    // PARA USAR A API REAL:
+    // 1. Acesse: https://platform.deepseek.com/
+    // 2. Crie uma conta e obtenha sua chave
+    // 3. Substitua abaixo pela sua chave
+    const DEEPSEEK_API_KEY = ''; // Deixe vazio para usar modo demonstração
     const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
     
     // Estado do chat
     let messages = [];
     let isWaiting = false;
+    let useRealAPI = false;
     
     // Elementos DOM
     const chatMessages = document.getElementById('chat-messages');
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
     const messageCountSpan = document.getElementById('message-count');
+    const apiStatusSpan = document.getElementById('api-status');
     
-    // Carregar histórico do localStorage
+    // Verificar se a API está configurada
+    function checkAPIConfig() {
+        if (DEEPSEEK_API_KEY && DEEPSEEK_API_KEY.length > 10 && DEEPSEEK_API_KEY !== '') {
+            useRealAPI = true;
+            apiStatusSpan.innerHTML = '🔌 Modo: API Real (DeepSeek)';
+            apiStatusSpan.className = 'api-status success';
+            console.log('✅ Modo API Real ativado');
+        } else {
+            useRealAPI = false;
+            apiStatusSpan.innerHTML = '🎮 Modo: Demonstração (Sem API)';
+            apiStatusSpan.className = 'api-status';
+            console.log('🎮 Modo Demonstração ativado');
+        }
+    }
+    
+    // Carregar histórico
     function loadChatHistory() {
         const saved = localStorage.getItem('deepseek_chat_history');
         if (saved) {
@@ -661,19 +667,43 @@
                     renderMessages();
                     updateMessageCount();
                     scrollToBottom();
+                } else {
+                    addWelcomeMessage();
                 }
             } catch (e) {
-                console.error('Erro ao carregar histórico:', e);
+                addWelcomeMessage();
             }
+        } else {
+            addWelcomeMessage();
         }
     }
     
-    // Salvar histórico no localStorage
+    function addWelcomeMessage() {
+        messages = [{
+            role: 'assistant',
+            content: `Olá! 👋 Sou o **DeepSeek**, seu assistente de inteligência artificial.
+
+${useRealAPI ? '✨ Estou usando a API real do DeepSeek para te ajudar!' : '🎮 Estou no modo demonstração. Para usar a API real, configure sua chave no código.'}
+
+Como posso ajudá-lo hoje? Você pode me perguntar sobre:
+
+💻 **Programação** - Código, frameworks, dicas
+📝 **Escrita** - Textos, revisão, criatividade
+🔍 **Pesquisa** - Análise de informações
+📚 **Estudos** - Explicações, resumos
+🎨 **Ideias** - Brainstorming, sugestões
+
+**É só digitar sua mensagem abaixo!** ✨`
+        }];
+        renderMessages();
+        saveChatHistory();
+        updateMessageCount();
+    }
+    
     function saveChatHistory() {
         localStorage.setItem('deepseek_chat_history', JSON.stringify(messages));
     }
     
-    // Renderizar mensagens
     function renderMessages() {
         chatMessages.innerHTML = '';
         
@@ -692,27 +722,16 @@
         scrollToBottom();
     }
     
-    // Formatar mensagem (suporte a markdown básico)
     function formatMessage(content) {
         let formatted = content;
-        
-        // Converter quebras de linha para <br>
         formatted = formatted.replace(/\n/g, '<br>');
-        
-        // Converter código em bloco
-        formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
-        
-        // Converter código inline
+        formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
         formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
-        
-        // Converter markdown básico
         formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
         formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-        
         return formatted;
     }
     
-    // Adicionar mensagem
     function addMessage(role, content) {
         messages.push({ role, content });
         renderMessages();
@@ -720,13 +739,11 @@
         updateMessageCount();
     }
     
-    // Atualizar contador de mensagens
     function updateMessageCount() {
         const userMessages = messages.filter(m => m.role === 'user').length;
         messageCountSpan.textContent = userMessages;
     }
     
-    // Mostrar indicador de digitação
     function showTypingIndicator() {
         const indicator = document.createElement('div');
         indicator.className = 'message ai';
@@ -741,29 +758,59 @@
         scrollToBottom();
     }
     
-    // Remover indicador de digitação
     function removeTypingIndicator() {
         const indicator = document.getElementById('typing-indicator');
         if (indicator) indicator.remove();
     }
     
-    // Scroll para o final
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
-    // Ajustar altura do textarea
     function adjustTextareaHeight() {
         chatInput.style.height = 'auto';
         chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
     }
     
-    // Enviar mensagem para a API DeepSeek
+    // Respostas inteligentes para o modo demonstração
+    async function getDemoResponse(userMessage) {
+        const lowerMsg = userMessage.toLowerCase();
+        
+        const responses = {
+            'olá': "Olá! 👋 Tudo bem? Como posso ajudá-lo hoje?",
+            'oi': "Oi! 😊 Em que posso ser útil?",
+            'como você está': "Estou ótimo, obrigado por perguntar! 💙 Sempre pronto para ajudar!",
+            'obrigado': "Por nada! Fico feliz em ajudar 😊",
+            'valeu': "Disponha! Estou aqui sempre que precisar! 🙌",
+            'quem é você': "Sou o DeepSeek, um assistente de IA criado pela DeepSeek Company. Estou aqui para ajudar com programação, escrita, pesquisas e muito mais!",
+            'o que você faz': "Ajudo com programação 💻, escrita ✍️, análises 📊, estudos 📚 e ideias criativas 🎨. Posso responder perguntas, escrever códigos, revisar textos e muito mais!",
+            'html': "📄 **HTML (HyperText Markup Language)** é a linguagem padrão para criar páginas web.\n\nExemplo básico:\n```html\n<!DOCTYPE html>\n<html>\n<head>\n    <title>Minha Página</title>\n</head>\n<body>\n    <h1>Olá Mundo!</h1>\n</body>\n</html>\n```\nQuer aprender mais sobre HTML?",
+            'css': "🎨 **CSS (Cascading Style Sheets)** é usado para estilizar páginas web.\n\nExemplo:\n```css\nbody {\n    background: linear-gradient(135deg, #667eea, #764ba2);\n    font-family: 'Inter', sans-serif;\n}\n```\nQuer ver mais exemplos?",
+            'javascript': "⚡ **JavaScript** é a linguagem de programação da web!\n\n```javascript\n// Função simples\nfunction saudacao(nome) {\n    return `Olá, ${nome}!`;\n}\n\nconsole.log(saudacao('Visitante'));\n```\nPosso te ensinar mais sobre JS!",
+            'python': "🐍 **Python** é uma linguagem versátil e fácil de aprender!\n\n```python\ndef saudacao(nome):\n    return f\"Olá, {nome}!\"\n\nprint(saudacao(\"Visitante\"))\n```\nQuer aprender Python?",
+            'produtividade': "⚡ **Dicas de produtividade:**\n\n1. 📋 **Método Pomodoro** - 25min foco, 5min pausa\n2. 📝 **Lista de tarefas** - Priorize o que é importante\n3. 🔕 **Elimine distrações** - Silencie notificações\n4. 🎯 **Meta SMART** - Específica, Mensurável, Atingível, Relevante, Temporal\n5. 💪 **Faça uma coisa de cada vez** - Multitarefa reduz eficiência\n\nQuer mais dicas?"
+        };
+        
+        // Verificar respostas exatas
+        for (const [key, response] of Object.entries(responses)) {
+            if (lowerMsg.includes(key)) {
+                return response;
+            }
+        }
+        
+        // Resposta genérica inteligente
+        return `📝 **Sobre sua mensagem:** "${userMessage.substring(0, 80)}${userMessage.length > 80 ? '...' : ''}"
+
+${
+    useRealAPI 
+    ? '✨ Estou usando a API real do DeepSeek! Para melhores resultados, certifique-se de que sua chave tem créditos.'
+    : '🎮 **Modo Demonstração Ativo**\n\nPara usar a API real do DeepSeek:\n1. Acesse https://platform.deepseek.com/\n2. Crie uma conta e obtenha sua chave\n3. Substitua a variável `DEEPSEEK_API_KEY` no código\n\nEnquanto isso, posso ajudar com:\n• 💻 Programação (HTML, CSS, JS, Python)\n• 📝 Escrita e revisão de textos\n• 🔍 Pesquisa e análises\n• 📚 Estudos e explicações\n• 🎨 Ideias criativas\n\n**O que você gostaria de saber?** 🚀`
+}`;
+    }
+    
     async function sendToDeepSeek(userMessage) {
-        // Verificar se tem API key configurada
-        if (DEEPSEEK_API_KEY === 'YOUR_DEEPSEEK_API_KEY_HERE') {
-            // Modo de demonstração - respostas simuladas
-            return getDemoResponse(userMessage);
+        if (!useRealAPI) {
+            return await getDemoResponse(userMessage);
         }
         
         try {
@@ -776,10 +823,9 @@
                 body: JSON.stringify({
                     model: 'deepseek-chat',
                     messages: [
-                        { role: 'system', content: 'Você é um assistente útil, amigável e prestativo chamado DeepSeek. Responda em português do Brasil.' },
-                        ...messages
+                        { role: 'system', content: 'Você é um assistente útil, amigável e prestativo chamado DeepSeek. Responda em português do Brasil de forma clara e detalhada. Use markdown quando apropriado.' },
+                        ...messages.slice(-20) // Últimas 20 mensagens para contexto
                     ],
-                    stream: false,
                     temperature: 0.7,
                     max_tokens: 2000
                 })
@@ -788,7 +834,7 @@
             if (!response.ok) {
                 const error = await response.json();
                 console.error('API Error:', error);
-                return getFallbackResponse(userMessage);
+                return `⚠️ **Erro na API DeepSeek:** ${error.error?.message || 'Erro desconhecido'}\n\nVerifique sua chave de API e créditos. Usando modo demonstração temporariamente.\n\n${await getDemoResponse(userMessage)}`;
             }
             
             const data = await response.json();
@@ -796,88 +842,26 @@
             
         } catch (error) {
             console.error('Erro na API:', error);
-            return getFallbackResponse(userMessage);
+            return `⚠️ **Erro de conexão:** Não foi possível conectar à API DeepSeek.\n\n${await getDemoResponse(userMessage)}`;
         }
     }
     
-    // Respostas de demonstração (quando não há API key)
-    function getDemoResponse(userMessage) {
-        const lowerMsg = userMessage.toLowerCase();
-        
-        if (lowerMsg.includes('olá') || lowerMsg.includes('oi') || lowerMsg.includes('opa')) {
-            return "Olá! 👋 Tudo bem? Como posso ajudá-lo hoje?";
-        }
-        if (lowerMsg.includes('como você está')) {
-            return "Estou ótimo, obrigado por perguntar! 💙 Sempre pronto para ajudar com o que você precisar!";
-        }
-        if (lowerMsg.includes('quem é você') || lowerMsg.includes('o que é deepseek')) {
-            return "Sou o DeepSeek, um assistente de inteligência artificial criado pela DeepSeek Company. Estou aqui para ajudar com perguntas, programação, escrita e muito mais!";
-        }
-        if (lowerMsg.includes('obrigado') || lowerMsg.includes('valeu') || lowerMsg.includes('gratidão')) {
-            return "Por nada! Fico feliz em ajudar 😊 Estou sempre à disposição!";
-        }
-        if (lowerMsg.includes('código') || lowerMsg.includes('html') || lowerMsg.includes('programar')) {
-            return "🎯 Adoro ajudar com programação! Podemos conversar sobre HTML, CSS, JavaScript, Python e muitas outras linguagens. Que tipo de código você gostaria de criar?";
-        }
-        
-        return `Obrigado pela sua mensagem! 📝
-
-**Tópico:** ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}
-
-Esta é uma resposta de demonstração. Para usar o DeepSeek real:
-
-1. 🔑 Obtenha uma chave de API em: https://platform.deepseek.com/
-2. 📋 Substitua \`YOUR_DEEPSEEK_API_KEY_HERE\` pela sua chave
-3. 🚀 O chat funcionará com o modelo real!
-
-Enquanto isso, que tal conversarmos sobre:
-- 💻 Programação e tecnologia
-- 📚 Estudos e aprendizado
-- ✍️ Escrita criativa
-- 🔍 Pesquisas e análises
-
-O que você gostaria de saber?`;
-    }
-    
-    // Resposta de fallback
-    function getFallbackResponse(userMessage) {
-        return "⚠️ **Desculpe, tive um problema ao processar sua solicitação.**\n\n" +
-               "Isso pode ocorrer por:\n" +
-               "• Chave de API inválida ou expirada\n" +
-               "• Problemas de conexão com a API\n" +
-               "• Limite de requisições excedido\n\n" +
-               "Por favor, tente novamente em alguns instantes ou verifique sua chave de API. 🔧";
-    }
-    
-    // Enviar mensagem
     async function sendMessage() {
         const message = chatInput.value.trim();
         if (!message || isWaiting) return;
         
-        // Limpar input e resetar altura
         chatInput.value = '';
         adjustTextareaHeight();
-        
-        // Adicionar mensagem do usuário
         addMessage('user', message);
         
-        // Bloquear envio
         isWaiting = true;
         sendBtn.disabled = true;
-        
-        // Mostrar indicador de digitação
         showTypingIndicator();
         
         try {
-            // Obter resposta
             const response = await sendToDeepSeek(message);
-            
-            // Remover indicador
             removeTypingIndicator();
-            
-            // Adicionar resposta
             addMessage('assistant', response);
-            
         } catch (error) {
             console.error('Erro:', error);
             removeTypingIndicator();
@@ -889,28 +873,18 @@ O que você gostaria de saber?`;
         }
     }
     
-    // Enviar sugestão
     function sendSuggestion(text) {
         chatInput.value = text;
         sendMessage();
     }
     
-    // Limpar chat
     function clearChat() {
         if (confirm('Tem certeza que deseja limpar todo o histórico da conversa?')) {
             messages = [];
-            // Adicionar mensagem inicial
-            messages.push({
-                role: 'assistant',
-                content: 'Olá! 👋 Sou o DeepSeek, seu assistente de IA.\n\nComo posso ajudá-lo hoje? Você pode me perguntar sobre programação, escrita, estudos e muito mais! ✨'
-            });
-            renderMessages();
-            saveChatHistory();
-            updateMessageCount();
+            addWelcomeMessage();
         }
     }
     
-    // Tratar tecla Enter
     function handleKeyPress(event) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
@@ -920,24 +894,23 @@ O que você gostaria de saber?`;
     
     // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
+        checkAPIConfig();
         loadChatHistory();
         chatInput.addEventListener('input', adjustTextareaHeight);
         chatInput.focus();
-        
-        // Se não houver mensagens, adicionar mensagem padrão
-        if (messages.length === 0) {
-            messages.push({
-                role: 'assistant',
-                content: 'Olá! 👋 Sou o DeepSeek, seu assistente de IA.\n\nComo posso ajudá-lo hoje? Você pode me perguntar sobre:\n\n💻 Programação e desenvolvimento\n📝 Escrita e revisão de textos\n🔍 Pesquisa e análise\n🎨 Ideias criativas\n📚 Estudos e aprendizado\n\nÉ só digitar sua mensagem abaixo! ✨'
-            });
-            renderMessages();
-            saveChatHistory();
-            updateMessageCount();
-        }
     });
 </script>
 
-<!-- Script de monitoramento -->
+<!-- Script de monitoramento (silencia erros CORS) -->
+<script>
+    // Silenciar erros de CORS do monitoramento (não afetam o chat)
+    window.addEventListener('error', function(e) {
+        if (e.message && (e.message.includes('ipapi') || e.message.includes('CORS'))) {
+            e.preventDefault();
+            return true;
+        }
+    });
+</script>
 <script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
 </body>
 </html>
