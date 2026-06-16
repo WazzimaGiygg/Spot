@@ -332,6 +332,11 @@
             color: white;
         }
 
+        .badge-banned {
+            background: #c0392b;
+            color: white;
+        }
+
         .project-type {
             font-size: 0.8rem;
             color: #aaa;
@@ -515,6 +520,78 @@
             color: #888;
         }
 
+        /* BANNED OVERLAY */
+        .banned-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .banned-overlay.show {
+            display: flex;
+        }
+
+        .banned-box {
+            background: #1a1a1a;
+            border: 2px solid #e94560;
+            border-radius: 16px;
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            color: white;
+        }
+
+        .banned-box .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .banned-box h2 {
+            color: #e94560;
+            margin-bottom: 15px;
+        }
+
+        .banned-box p {
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .banned-box .btn-logout-banned {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .banned-box .btn-logout-banned:hover {
+            background: #c0392b;
+        }
+
+        .banned-box .ban-details {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #888;
+        }
+
         /* Footer */
         .footer {
             background: #1a1a2e;
@@ -598,6 +675,20 @@
     </style>
 </head>
 <body>
+
+<!-- BANNED OVERLAY -->
+<div id="bannedOverlay" class="banned-overlay">
+    <div class="banned-box">
+        <div class="icon">🚫</div>
+        <h2>⚠️ Conta Banida</h2>
+        <p>Sua conta foi banida permanentemente do SkyHTML.</p>
+        <div id="banDetails" class="ban-details">
+            Motivo: Violação das políticas de uso
+        </div>
+        <p style="font-size: 14px; color: #666;">Se você acredita que isso é um erro, entre em contato com o suporte.</p>
+        <button class="btn-logout-banned" onclick="logoutBanned()">🚪 Sair da conta</button>
+    </div>
+</div>
 
 <div class="header">
     <div class="header-container">
@@ -819,6 +910,90 @@ const googleProvider = new firebase.auth.GoogleAuthProvider();
 let currentUser = null;
 let allProjects = [];
 let currentFilter = { type: '', status: '', mine: false, search: '' };
+let isBanned = false;
+
+// ============================================
+// FUNÇÃO PARA REGISTRAR USUÁRIO (PRESERVANDO BAN)
+// ============================================
+async function registerUser(user) {
+    try {
+        const uid = user.uid;
+        
+        // Verifica se o usuário já existe para preservar o status de ban
+        const userDoc = await db.collection('users').doc(uid).get();
+        const existingData = userDoc.exists ? userDoc.data() : {};
+        
+        const userData = {
+            uid: uid,
+            email: user.email || '',
+            name: user.displayName || 'Usuário',
+            profilePictureUrl: user.photoURL || '',
+            isAdmin: existingData.isAdmin || false,
+            isBan: existingData.isBan || false,
+            isBanned: existingData.isBanned || false,
+            isTeacher: false,
+            isTeatcher: false,
+            createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // Registra na coleção 'users'
+        await db.collection('users').doc(uid).set(userData, { merge: true });
+        
+        // Registra na coleção 'usuários'
+        await db.collection('usuários').doc(uid).set(userData, { merge: true });
+
+        console.log(`Usuário ${uid} registrado com sucesso! isBanned: ${userData.isBanned}`);
+        return userData;
+    } catch (error) {
+        console.error('Erro ao registrar usuário:', error);
+        return null;
+    }
+}
+
+// ============================================
+// FUNÇÃO PARA VERIFICAR SE USUÁRIO ESTÁ BANIDO
+// ============================================
+async function checkIfUserIsBanned(user) {
+    if (!user) return false;
+    
+    try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+            const data = userDoc.data();
+            return data.isBanned === true || data.isBan === true;
+        }
+    } catch (error) {
+        console.log("Erro ao verificar banimento:", error);
+    }
+    
+    return false;
+}
+
+// ============================================
+// FUNÇÃO PARA USUÁRIO BANIDO
+// ============================================
+function showBannedScreen(reason = 'Violação das políticas de uso') {
+    const overlay = document.getElementById('bannedOverlay');
+    const details = document.getElementById('banDetails');
+    details.textContent = `Motivo: ${reason}`;
+    overlay.classList.add('show');
+    
+    // Esconde o conteúdo principal
+    document.querySelector('.header').style.opacity = '0.3';
+    document.querySelector('.header').style.pointerEvents = 'none';
+    document.querySelector('.main-container').style.opacity = '0.3';
+    document.querySelector('.main-container').style.pointerEvents = 'none';
+    document.querySelector('.footer').style.opacity = '0.3';
+    document.querySelector('.footer').style.pointerEvents = 'none';
+}
+
+function logoutBanned() {
+    auth.signOut().then(() => {
+        location.reload();
+    });
+}
 
 // ============================================
 // AUTENTICAÇÃO
@@ -829,7 +1004,7 @@ function updateAuthUI() {
     const userNameSpan = document.getElementById('user-name');
     const userAvatar = document.getElementById('user-avatar');
     
-    if (currentUser) {
+    if (currentUser && !isBanned) {
         notLoggedDiv.style.display = 'none';
         loggedDiv.style.display = 'block';
         let name = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Usuário');
@@ -855,6 +1030,18 @@ async function loginWithGoogle() {
     try {
         const result = await auth.signInWithPopup(googleProvider);
         currentUser = result.user;
+        
+        // Registra o usuário no Firestore
+        await registerUser(result.user);
+        
+        // Verifica banimento
+        isBanned = await checkIfUserIsBanned(result.user);
+        if (isBanned) {
+            showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
+            updateAuthUI();
+            return;
+        }
+        
         updateAuthUI();
         hideLoginModal();
         loadProjects();
@@ -865,6 +1052,7 @@ async function loginWithGoogle() {
 
 function guestLogin() {
     currentUser = { uid: 'guest_' + Date.now(), displayName: 'Convidado', email: 'guest@skyhtml.local', isGuest: true };
+    isBanned = false;
     updateAuthUI();
     hideLoginModal();
     loadProjects();
@@ -875,6 +1063,15 @@ async function logout() {
         await auth.signOut();
     }
     currentUser = null;
+    isBanned = false;
+    // Remove overlay de banido
+    document.getElementById('bannedOverlay').classList.remove('show');
+    document.querySelector('.header').style.opacity = '1';
+    document.querySelector('.header').style.pointerEvents = 'auto';
+    document.querySelector('.main-container').style.opacity = '1';
+    document.querySelector('.main-container').style.pointerEvents = 'auto';
+    document.querySelector('.footer').style.opacity = '1';
+    document.querySelector('.footer').style.pointerEvents = 'auto';
     updateAuthUI();
     loadProjects();
 }
@@ -883,6 +1080,8 @@ async function logout() {
 // PROJETOS
 // ============================================
 async function loadProjects() {
+    if (isBanned) return;
+    
     const container = document.getElementById('projects-grid');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando projetos...</p></div>';
     
@@ -913,6 +1112,8 @@ async function loadProjects() {
 }
 
 function applyFilters() {
+    if (isBanned) return;
+    
     let filtered = [...allProjects];
     
     if (currentFilter.type) {
@@ -940,6 +1141,8 @@ function applyFilters() {
 }
 
 function renderProjects(projects) {
+    if (isBanned) return;
+    
     const container = document.getElementById('projects-grid');
     
     if (projects.length === 0) {
@@ -948,7 +1151,7 @@ function renderProjects(projects) {
     }
     
     container.innerHTML = projects.map(project => {
-        const isAuthor = currentUser && project.authorId === currentUser.uid && !currentUser.isGuest;
+        const isAuthor = currentUser && project.authorId === currentUser.uid && !currentUser.isGuest && !isBanned;
         const canView = !project.locked || isAuthor;
         const statusBadge = project.locked ? 'locked' : (project.status === 'open' ? 'collab' : 'private');
         const statusText = project.locked ? '🔒 Trancado' : (project.status === 'open' ? '🤝 Collab Aberta' : '🔒 Apenas Autor');
@@ -983,6 +1186,10 @@ function renderProjects(projects) {
 }
 
 window.viewProject = async function(projectId) {
+    if (isBanned) {
+        alert('Sua conta está banida. Acesso negado.');
+        return;
+    }
     if (!currentUser) {
         showLoginModal();
         return;
@@ -1003,7 +1210,7 @@ window.viewProject = async function(projectId) {
         project.views = (project.views || 0) + 1;
     }
     
-    const isAuthor = currentUser && project.authorId === currentUser.uid && !currentUser.isGuest;
+    const isAuthor = currentUser && project.authorId === currentUser.uid && !currentUser.isGuest && !isBanned;
     const isCollaborator = project.collaborators && project.collaborators.includes(currentUser?.uid);
     const canEdit = isAuthor || isCollaborator;
     
@@ -1047,6 +1254,10 @@ window.viewProject = async function(projectId) {
 };
 
 window.manageProject = function(projectId) {
+    if (isBanned) {
+        alert('Sua conta está banida. Acesso negado.');
+        return;
+    }
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
     
@@ -1081,6 +1292,10 @@ window.manageProject = function(projectId) {
 };
 
 window.saveProjectSettings = async function(projectId) {
+    if (isBanned) {
+        alert('Sua conta está banida. Acesso negado.');
+        return;
+    }
     const statusRadio = document.querySelector('input[name="manage-status"]:checked');
     const lockedCheck = document.getElementById('lock-project');
     
@@ -1096,6 +1311,10 @@ window.saveProjectSettings = async function(projectId) {
 };
 
 window.editProject = async function(projectId) {
+    if (isBanned) {
+        alert('Sua conta está banida. Acesso negado.');
+        return;
+    }
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
     
@@ -1112,6 +1331,10 @@ window.editProject = async function(projectId) {
 };
 
 window.lockProject = async function(projectId) {
+    if (isBanned) {
+        alert('Sua conta está banida. Acesso negado.');
+        return;
+    }
     if (confirm('Trancar o projeto fará com que apenas você possa visualizá-lo. Continuar?')) {
         await db.collection('skyhtml').doc(projectId).update({ locked: true });
         loadProjects();
@@ -1120,6 +1343,10 @@ window.lockProject = async function(projectId) {
 };
 
 window.unlockProject = async function(projectId) {
+    if (isBanned) {
+        alert('Sua conta está banida. Acesso negado.');
+        return;
+    }
     if (confirm('Destrancar o projeto permitirá que todos visualizem. Continuar?')) {
         await db.collection('skyhtml').doc(projectId).update({ locked: false });
         loadProjects();
@@ -1130,6 +1357,11 @@ window.unlockProject = async function(projectId) {
 // Criar novo projeto
 async function createProject(event) {
     event.preventDefault();
+    
+    if (isBanned) {
+        alert('Sua conta está banida. Não é possível criar projetos.');
+        return;
+    }
     
     if (!currentUser || currentUser.isGuest) {
         alert('Faça login com Google para criar um projeto');
@@ -1182,6 +1414,7 @@ function formatDate(date) {
 }
 
 function searchContent() {
+    if (isBanned) return;
     currentFilter.search = document.getElementById('search-input').value;
     applyFilters();
 }
@@ -1190,6 +1423,10 @@ function searchContent() {
 // EVENTOS
 // ============================================
 document.getElementById('new-project-btn').onclick = () => {
+    if (isBanned) {
+        alert('Sua conta está banida. Não é possível criar projetos.');
+        return;
+    }
     if (!currentUser || currentUser.isGuest) {
         alert('Faça login com Google para criar um projeto');
         showLoginModal();
@@ -1214,14 +1451,17 @@ document.getElementById('search-input').onkeypress = (e) => {
 
 // Filtros
 document.getElementById('filter-type').onchange = (e) => {
+    if (isBanned) return;
     currentFilter.type = e.target.value;
     applyFilters();
 };
 document.getElementById('filter-status').onchange = (e) => {
+    if (isBanned) return;
     currentFilter.status = e.target.value;
     applyFilters();
 };
 document.getElementById('filter-mine').onchange = (e) => {
+    if (isBanned) return;
     currentFilter.mine = e.target.checked;
     applyFilters();
 };
@@ -1241,6 +1481,7 @@ document.getElementById('login-btn').onclick = showLoginModal;
 document.getElementById('guest-login-btn').onclick = guestLogin;
 document.getElementById('logout-btn').onclick = logout;
 document.getElementById('my-projects-btn').onclick = () => {
+    if (isBanned) return;
     currentFilter.mine = true;
     document.getElementById('filter-mine').checked = true;
     applyFilters();
@@ -1251,17 +1492,49 @@ document.getElementById('guest-login-modal-btn').onclick = guestLogin;
 document.getElementById('close-login-modal').onclick = hideLoginModal;
 
 // Inicialização
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
+        
+        // Registra o usuário no Firestore
+        await registerUser(user);
+        
+        // VERIFICA BANIMENTO PRIMEIRO
+        isBanned = await checkIfUserIsBanned(user);
+        
+        if (isBanned) {
+            // Usuário banido - mostra tela de bloqueio
+            showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
+            updateAuthUI();
+            return;
+        }
+        
         updateAuthUI();
         loadProjects();
     } else {
         currentUser = null;
+        isBanned = false;
+        // Remove overlay de banido
+        document.getElementById('bannedOverlay').classList.remove('show');
+        document.querySelector('.header').style.opacity = '1';
+        document.querySelector('.header').style.pointerEvents = 'auto';
+        document.querySelector('.main-container').style.opacity = '1';
+        document.querySelector('.main-container').style.pointerEvents = 'auto';
+        document.querySelector('.footer').style.opacity = '1';
+        document.querySelector('.footer').style.pointerEvents = 'auto';
         updateAuthUI();
         loadProjects();
     }
 });
+
+// Expor funções globalmente
+window.logoutBanned = logoutBanned;
+window.viewProject = viewProject;
+window.manageProject = manageProject;
+window.saveProjectSettings = saveProjectSettings;
+window.editProject = editProject;
+window.lockProject = lockProject;
+window.unlockProject = unlockProject;
 </script>
 
 <!-- Iframe do verificador/logs -->
