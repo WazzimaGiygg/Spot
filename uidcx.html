@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WazzimaGiygg Core</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 48px 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.6s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-area img {
+            height: 64px;
+            width: auto;
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+
+        .logo-area h1 {
+            color: white;
+            font-size: 1.8em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-area p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+
+        .login-box {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .login-title {
+            color: white;
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85em;
+            margin-bottom: 24px;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 14px 20px;
+            background: white;
+            color: #333;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-google:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-google:active {
+            transform: translateY(0);
+        }
+
+        .btn-google img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider span {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 0.8em;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-guest {
+            width: 100%;
+            padding: 14px 20px;
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: inherit;
+        }
+
+        .btn-guest:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-guest .material-icons {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .guest-info {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 193, 7, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 193, 7, 0.8);
+            font-size: 0.8em;
+        }
+
+        .guest-info .material-icons {
+            font-size: 18px;
+            color: #ffc107;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75em;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .feature-item .material-icons {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .feature-item.active {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .feature-item.active .material-icons {
+            color: #4ade80;
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #f87171;
+            font-size: 0.85em;
+            display: none;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #4ade80;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 16px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        .footer-links {
+            margin-top: 24px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.3);
+            text-decoration: none;
+            font-size: 0.75em;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .footer-links .separator {
+            color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Status do usuário */
+        .user-status {
+            display: none;
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.15);
+            border-radius: 8px;
+            color: #4ade80;
+            font-size: 0.85em;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-status.show {
+            display: flex;
+        }
+
+        .user-status .material-icons {
+            font-size: 20px;
+        }
+
+        .user-status .user-email {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8em;
+            margin-left: 4px;
+        }
+
+        .btn-continue {
+            display: none;
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #4ade80, #22d3ee);
+            color: #0f0c29;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            margin-top: 12px;
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 222, 128, 0.3);
+        }
+
+        .btn-continue.show {
+            display: block;
+        }
+
+        /* BANNED OVERLAY */
+        .banned-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .banned-overlay.show {
+            display: flex;
+        }
+
+        .banned-box {
+            background: #1a1a1a;
+            border: 2px solid #e94560;
+            border-radius: 16px;
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            color: white;
+        }
+
+        .banned-box .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .banned-box h2 {
+            color: #e94560;
+            margin-bottom: 15px;
+        }
+
+        .banned-box p {
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .banned-box .ban-details {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #888;
+        }
+
+        .banned-box .btn-logout-banned {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .banned-box .btn-logout-banned:hover {
+            background: #c0392b;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 32px 20px;
+            }
+            .login-box {
+                padding: 24px 16px;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .logo-area h1 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- BANNED OVERLAY -->
+<div id="bannedOverlay" class="banned-overlay">
+    <div class="banned-box">
+        <div class="icon">🚫</div>
+        <h2>⚠️ Conta Banida</h2>
+        <p>Sua conta foi banida permanentemente do sistema WazzimaGiygg.</p>
+        <div id="banDetails" class="ban-details">
+            Motivo: Violação das políticas de uso
+        </div>
+        <p style="font-size: 14px; color: #666;">Se você acredita que isso é um erro, entre em contato com o suporte.</p>
+        <button class="btn-logout-banned" onclick="logoutBanned()">🚪 Sair da conta</button>
+    </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Autenticando...</div>
+</div>
+
+<!-- MAIN LOGIN -->
+<div class="login-container">
+    <div class="logo-area">
+        <img src="https://wazzimagiygg.com/favicom.png" alt="WazzimaGiygg">
+        <h1>WazzimaGiygg</h1>
+        <p>Central do Usuário - Acesse sua conta</p>
+    </div>
+
+    <div class="login-box">
+        <div class="login-title">🔐 Acesse sua conta</div>
+        <div class="login-subtitle">Entre para acessar todas as funcionalidades</div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="error-message">
+            <span class="material-icons">error_outline</span>
+            <span id="errorText">Erro ao fazer login</span>
+        </div>
+
+        <!-- User Status -->
+        <div id="userStatus" class="user-status">
+            <span class="material-icons">check_circle</span>
+            <span>Você está logado como <strong id="statusUserName">Usuário</strong></span>
+            <span class="user-email" id="statusUserEmail"></span>
+        </div>
+
+        <!-- Google Login -->
+        <button class="btn-google" id="googleLoginBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Entrar com Google
+        </button>
+
+        <div class="divider">
+            <span>ou</span>
+        </div>
+
+        <!-- Guest Login -->
+        <button class="btn-guest" id="guestLoginBtn">
+            <span class="material-icons">person_outline</span>
+            Acesso Convidado (Temporário)
+        </button>
+
+        <div class="guest-info">
+            <span class="material-icons">info</span>
+            <span>O acesso convidado permite apenas <strong>leitura</strong> e expira em <strong>24 horas</strong>.</span>
+        </div>
+
+        <!-- Continue Button (when already logged in) -->
+        <button class="btn-continue" id="continueBtn">
+            <span class="material-icons">arrow_forward</span>
+            Continuar para a Central
+        </button>
+
+        <!-- Features -->
+        <div class="features-grid">
+            <div class="feature-item active">
+                <span class="material-icons">check_circle</span>
+                Acesso completo
+            </div>
+            <div class="feature-item active">
+                <span class="material-icons">security</span>
+                Seguro e criptografado
+            </div>
+            <div class="feature-item active">
+                <span class="material-icons">forum</span>
+                Fórum e comunidade
+            </div>
+            <div class="feature-item active">
+                <span class="material-icons">privacy_tip</span>
+                LGPD compliant
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-links">
+        <a href="https://wazzimagiygg.com/LGPD">🔒 LGPD</a>
+        <span class="separator">|</span>
+        <a href="https://wazzimagiygg.com/MarcoCivil">📜 Marco Civil</a>
+        <span class="separator">|</span>
+        <a href="https://support.wazzimagiygg.com/">🎫 Suporte</a>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG
+// ============================================================
+const firebaseConfig = {
+    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+    authDomain: "wzzm-ce3fc.firebaseapp.com",
+    projectId: "wzzm-ce3fc",
+    storageBucket: "wzzm-ce3fc.appspot.com",
+    messagingSenderId: "249427877153",
+    appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ============================================================
+// DOM REFS
+// ============================================================
+const googleLoginBtn = document.getElementById('googleLoginBtn');
+const guestLoginBtn = document.getElementById('guestLoginBtn');
+const continueBtn = document.getElementById('continueBtn');
+const errorMessage = document.getElementById('errorMessage');
+const errorText = document.getElementById('errorText');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingText = document.getElementById('loadingText');
+const userStatus = document.getElementById('userStatus');
+const statusUserName = document.getElementById('statusUserName');
+const statusUserEmail = document.getElementById('statusUserEmail');
+const bannedOverlay = document.getElementById('bannedOverlay');
+const banDetails = document.getElementById('banDetails');
+
+// ============================================================
+// FUNÇÕES DE UTILIDADE
+// ============================================================
+function showError(message) {
+    errorText.textContent = message;
+    errorMessage.classList.add('show');
+    setTimeout(() => {
+        errorMessage.classList.remove('show');
+    }, 6000);
+}
+
+function showLoading(message = 'Autenticando...') {
+    loadingText.textContent = message;
+    loadingOverlay.classList.add('show');
+}
+
+function hideLoading() {
+    loadingOverlay.classList.remove('show');
+}
+
+function showBannedScreen(reason = 'Violação das políticas de uso') {
+    banDetails.textContent = `Motivo: ${reason}`;
+    bannedOverlay.classList.add('show');
+    document.querySelector('.login-container').style.opacity = '0.3';
+    document.querySelector('.login-container').style.pointerEvents = 'none';
+}
+
+function logoutBanned() {
+    auth.signOut().then(() => {
+        location.reload();
+    });
+}
+
+// ============================================================
+// REGISTRAR USUÁRIO NO FIRESTORE
+// ============================================================
+async function registerUser(user) {
+    try {
+        const uid = user.uid;
+        
+        // Verifica se o usuário já existe
+        const userDoc = await db.collection('users').doc(uid).get();
+        const existingData = userDoc.exists ? userDoc.data() : {};
+        
+        // Verifica se é admin específico
+        const ADMIN_UIDS = ['sZxfMuOBPbXdR8nttVPXIN8QOOl1', '6aPqWVh8JVYL5NqEb78iDGPD7dH3'];
+        const isAdmin = existingData.isAdmin || ADMIN_UIDS.includes(uid);
+        const isBanned = existingData.isBanned || false;
+        
+        const userData = {
+            uid: uid,
+            email: user.email || '',
+            name: user.displayName || 'Usuário',
+            profilePictureUrl: user.photoURL || '',
+            isAdmin: isAdmin,
+            isBanned: isBanned,
+            isTeacher: existingData.isTeacher || false,
+            isTeatcher: existingData.isTeatcher || false,
+            createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await db.collection('users').doc(uid).set(userData, { merge: true });
+        await db.collection('usuários').doc(uid).set(userData, { merge: true });
+        
+        // Registra no perfil do fórum
+        await db.collection('maspia').doc('usuarios').collection('perfis').doc(uid).set({
+            email: user.email,
+            name: user.displayName,
+            role: isAdmin ? 'admin' : 'member',
+            isBanned: isBanned,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        console.log(`Usuário ${uid} registrado. isBanned: ${isBanned}`);
+        return userData;
+    } catch (error) {
+        console.error('Erro ao registrar usuário:', error);
+        return null;
+    }
+}
+
+// ============================================================
+// VERIFICAR SE USUÁRIO ESTÁ BANIDO
+// ============================================================
+async function checkIfUserIsBanned(user) {
+    if (!user) return false;
+    
+    try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+            const data = userDoc.data();
+            return data.isBanned === true;
+        }
+    } catch (error) {
+        console.log("Erro ao verificar banimento:", error);
+    }
+    
+    return false;
+}
+
+// ============================================================
+// FUNÇÕES DE LOGIN
+// ============================================================
+
+// Google Login
+googleLoginBtn.addEventListener('click', async () => {
+    showLoading('Abrindo Google...');
+    errorMessage.classList.remove('show');
+    
+    try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const result = await auth.signInWithPopup(provider);
+        const user = result.user;
+        
+        showLoading('Registrando usuário...');
+        
+        // Registra o usuário
+        await registerUser(user);
+        
+        // Verifica se está banido
+        const isBanned = await checkIfUserIsBanned(user);
+        
+        if (isBanned) {
+            hideLoading();
+            showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
+            return;
+        }
+        
+        // Login bem-sucedido
+        hideLoading();
+        window.location.href = 'index.html';
+        
+    } catch (error) {
+        hideLoading();
+        console.error('Erro no login Google:', error);
+        
+        if (error.code === 'auth/popup-closed-by-user') {
+            showError('Login cancelado. Tente novamente.');
+        } else if (error.code === 'auth/popup-blocked') {
+            showError('Pop-up bloqueado. Permita pop-ups para este site.');
+        } else {
+            showError('Erro ao fazer login: ' + error.message);
+        }
+    }
+});
+
+// Guest Login
+guestLoginBtn.addEventListener('click', () => {
+    showLoading('Criando acesso convidado...');
+    errorMessage.classList.remove('show');
+    
+    try {
+        // Gera um UID para convidado
+        const guestUID = generateGuestUID();
+        const expiry = Date.now() + (24 * 60 * 60 * 1000); // 24 horas
+        
+        const guestUser = {
+            uid: guestUID,
+            displayName: 'Convidado',
+            email: `${guestUID}@guest.wazzimacore.local`,
+            isGuest: true
+        };
+        
+        // Salva no localStorage
+        localStorage.setItem('wzzm_guest_user', JSON.stringify(guestUser));
+        localStorage.setItem('wzzm_guest_expiry', expiry.toString());
+        
+        hideLoading();
+        window.location.href = 'index.html';
+        
+    } catch (error) {
+        hideLoading();
+        showError('Erro ao criar acesso convidado: ' + error.message);
+    }
+});
+
+function generateGuestUID() {
+    const hexLength = Math.floor(Math.random() * 40) + 20;
+    let hex = '';
+    for (let i = 0; i < hexLength; i++) {
+        hex += Math.floor(Math.random() * 16).toString(16);
+    }
+    return 'convid_' + hex;
+}
+
+// Continue Button - verifica se já está logado
+continueBtn.addEventListener('click', () => {
+    window.location.href = 'index.html';
+});
+
+// ============================================================
+// VERIFICAR SESSÃO EXISTENTE
+// ============================================================
+async function checkExistingSession() {
+    // Verifica usuário convidado
+    const guestExpiry = localStorage.getItem('wzzm_guest_expiry');
+    if (guestExpiry && Date.now() < parseInt(guestExpiry)) {
+        const guestUser = localStorage.getItem('wzzm_guest_user');
+        if (guestUser) {
+            const user = JSON.parse(guestUser);
+            statusUserName.textContent = 'Convidado';
+            statusUserEmail.textContent = '🔒 Modo leitura';
+            userStatus.classList.add('show');
+            continueBtn.classList.add('show');
+            return true;
+        }
+    }
+    
+    // Verifica usuário autenticado do Firebase
+    const user = auth.currentUser;
+    if (user) {
+        const isBanned = await checkIfUserIsBanned(user);
+        if (isBanned) {
+            showBannedScreen('Sua conta foi banida.');
+            return true;
+        }
+        statusUserName.textContent = user.displayName || 'Usuário';
+        statusUserEmail.textContent = user.email || '';
+        userStatus.classList.add('show');
+        continueBtn.classList.add('show');
+        return true;
+    }
+    
+    return false;
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verifica se já tem sessão ativa
+    const hasSession = await checkExistingSession();
+    
+    // Observa mudanças de autenticação
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            const isBanned = await checkIfUserIsBanned(user);
+            if (isBanned) {
+                showBannedScreen('Sua conta foi banida.');
+                return;
+            }
+            statusUserName.textContent = user.displayName || 'Usuário';
+            statusUserEmail.textContent = user.email || '';
+            userStatus.classList.add('show');
+            continueBtn.classList.add('show');
+        } else {
+            // Remove convidado expirado
+            const guestExpiry = localStorage.getItem('wzzm_guest_expiry');
+            if (guestExpiry && Date.now() > parseInt(guestExpiry)) {
+                localStorage.removeItem('wzzm_guest_user');
+                localStorage.removeItem('wzzm_guest_expiry');
+            }
+        }
+    });
+});
+
+// ============================================================
+// EXPORTAR FUNÇÕES GLOBAIS
+// ============================================================
+window.logoutBanned = logoutBanned;
+
+console.log('🔐 Página de Login WazzimaGiygg carregada!');
+console.log('📌 Versão 2.0 - Integração com Firebase Auth e Firestore');
+</script>
+
+</body>
+</html>
