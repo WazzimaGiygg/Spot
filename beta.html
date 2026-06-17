@@ -10,9 +10,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
+    <!-- Quill Editor -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         /* ===== ESTILOS COMPLETOS ===== */
@@ -123,6 +127,15 @@
             font-weight: 600;
             text-transform: uppercase;
         }
+        .badge-mod {
+            background: #ff9800;
+            color: white;
+            font-size: 0.6em;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
 
         /* BANNED OVERLAY */
         .banned-overlay {
@@ -142,7 +155,7 @@
         .banned-overlay.show { display: flex; }
         .banned-box {
             background: #1a1a1a;
-            border: 2px solid #dc3545;
+            border: 2px solid #e94560;
             border-radius: 16px;
             padding: 50px;
             max-width: 500px;
@@ -151,10 +164,10 @@
             color: white;
         }
         .banned-box .icon { font-size: 80px; margin-bottom: 20px; }
-        .banned-box h2 { color: #dc3545; margin-bottom: 15px; }
+        .banned-box h2 { color: #e94560; margin-bottom: 15px; }
         .banned-box p { color: #aaa; margin-bottom: 20px; line-height: 1.6; }
         .banned-box .btn-logout-banned {
-            background: #dc3545;
+            background: #e94560;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -357,12 +370,12 @@
             gap: 8px;
         }
         .btn-primary {
-            background: #4a6cf7;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
             color: white;
         }
         .btn-primary:hover {
-            background: #3a56d4;
             transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233,69,96,0.3);
         }
         .btn-success {
             background: #2ecc71;
@@ -370,6 +383,7 @@
         }
         .btn-success:hover {
             background: #27ae60;
+            transform: translateY(-1px);
         }
         .btn-danger {
             background: #e74c3c;
@@ -386,6 +400,13 @@
         .btn-outline:hover {
             background: #f5f6fa;
         }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
         .btn-sm { padding: 6px 14px; font-size: 0.8em; }
 
         /* CARDS */
@@ -395,9 +416,11 @@
             padding: 16px 20px;
             margin-bottom: 12px;
             transition: all 0.2s;
+            cursor: pointer;
         }
         .card:hover {
-            border-color: #4a6cf7;
+            border-color: #e94560;
+            transform: translateX(4px);
         }
         .card-header {
             display: flex;
@@ -434,47 +457,231 @@
         .status-badge.pending { background: #fff3cd; color: #856404; }
         .status-badge.banned { background: #f8d7da; color: #721c24; }
 
-        /* GRID DE PÁGINAS */
-        .pages-grid {
+        /* GRID DE CATEGORIAS */
+        .categories-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
             margin-top: 20px;
         }
-        .page-card {
-            background: #f8f9fc;
-            border: 1px solid #eaecf0;
-            border-radius: 8px;
-            padding: 20px;
+        .category-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             transition: all 0.3s;
             cursor: pointer;
+            border: 1px solid #eef2f7;
         }
-        .page-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-color: #a7d7f9;
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-color: #e94560;
         }
-        .page-card .icon { font-size: 2em; margin-bottom: 10px; }
-        .page-card .name {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #0645ad;
+        .category-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 20px;
+            color: white;
+        }
+        .category-header.sub {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+        }
+        .category-body { padding: 20px; }
+        .category-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        /* THREADS */
+        .threads-list {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #eef2f7;
+        }
+        .thread-item {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .thread-item:hover {
+            background: #f8f9fa;
+        }
+        .thread-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #1a1a2e;
             margin-bottom: 8px;
         }
-        .page-card .meta {
-            font-size: 0.85em;
-            color: #54595d;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #eaecf0;
-        }
-        .article-count {
-            display: inline-block;
-            background-color: #eaf3ff;
-            padding: 2px 8px;
-            border-radius: 12px;
+        .thread-meta {
+            display: flex;
+            gap: 15px;
             font-size: 0.8em;
+            color: #666;
         }
+
+        /* POSTS */
+        .post-card {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid #eef2f7;
+            transition: background-color 0.3s;
+        }
+        .post-card:hover { border-color: #e94560; }
+        .post-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .post-author { font-weight: 600; }
+        .post-date { font-size: 0.8em; color: #666; }
+        .post-content {
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .post-content h1, .post-content h2, .post-content h3 {
+            margin: 15px 0 10px 0;
+        }
+        .post-content h1 { font-size: 1.5em; }
+        .post-content h2 { font-size: 1.3em; }
+        .post-content h3 { font-size: 1.1em; }
+        .post-content p { margin-bottom: 10px; }
+        .post-content ul, .post-content ol { margin: 10px 0 10px 30px; }
+        .post-content img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+        .post-content iframe { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+        .post-content pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .post-content code {
+            background: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .post-content blockquote {
+            border-left: 4px solid #e94560;
+            padding-left: 20px;
+            margin: 15px 0;
+            color: #666;
+        }
+        .post-content a { color: #e94560; text-decoration: none; }
+        .post-content a:hover { text-decoration: underline; }
+
+        .post-actions {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85em;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            color: #e94560;
+            background: rgba(233,69,96,0.1);
+        }
+
+        /* COMMENTS */
+        .comment-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        .comment-item {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .comment-author { font-weight: 600; font-size: 0.85em; }
+        .comment-date { font-size: 0.7em; color: #999; }
+        .comment-text { font-size: 0.9em; line-height: 1.5; }
+
+        /* PAGINATION */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .pagination-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+            color: #333;
+        }
+        .pagination-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: white;
+            border-color: #e94560;
+        }
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            color: white;
+            border-color: #e94560;
+            cursor: default;
+        }
+        .pagination-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .pagination-dots {
+            padding: 8px 4px;
+            color: #666;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .breadcrumb .separator { color: #999; margin: 0 5px; }
 
         /* MODAL */
         .modal-overlay {
@@ -493,7 +700,7 @@
         .modal-box {
             background: white;
             border-radius: 16px;
-            max-width: 600px;
+            max-width: 800px;
             width: 92%;
             padding: 28px;
             max-height: 85vh;
@@ -511,166 +718,19 @@
         }
         .modal-box .close-modal:hover { color: #333; }
 
-        /* EDITOR */
-        .editor-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-        }
-        .editor-container {
-            width: 95%;
-            height: 90%;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .editor-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            background: #2c3e50;
-            color: white;
-        }
-        .editor-header h3 { margin: 0; }
-        .editor-header-buttons { display: flex; gap: 10px; }
-        .editor-btn {
-            padding: 8px 16px;
-            background: #36c;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .editor-btn:hover { background: #2a5a9e; }
-        .editor-btn-danger { background: #dc3545; }
-        .editor-btn-danger:hover { background: #c82333; }
-        .editor-body {
-            flex: 1;
-            display: flex;
-            padding: 20px;
-            gap: 20px;
-            overflow: hidden;
-        }
-        .editor-sidebar {
-            width: 30%;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-        .editor-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-        }
-        .editor-field { margin-bottom: 15px; }
-        .editor-field label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: #333;
-        }
-        .editor-field input, .editor-field textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: inherit;
-        }
-        .editor-field textarea {
+        /* QUILL EDITOR */
+        .ql-container {
             min-height: 200px;
-            resize: vertical;
-            font-family: monospace;
-        }
-        .editor-preview {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 15px;
-            background: #fafafa;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-        .article-list-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .article-list-item:hover { background: #eaf3ff; }
-        .article-list-item.active { background: #eaf3ff; border-left: 3px solid #36c; }
-        .delete-article-btn {
-            color: #dc3545;
-            cursor: pointer;
-            font-size: 18px;
-        }
-
-        /* FORMAT GUIDE */
-        .format-guide {
-            background: #fff8e7;
-            border: 1px solid #ffd700;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 15px;
-        }
-        .format-guide h4 {
-            color: #b8860b;
-            margin-bottom: 10px;
             font-size: 14px;
         }
-        .format-guide table { width: 100%; font-size: 11px; }
-        .format-guide td { padding: 4px; border-bottom: 1px solid #ffe4b5; }
-        .format-guide code {
-            background: #fff;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-            font-size: 11px;
+        .ql-editor {
+            min-height: 200px;
         }
-
-        /* WIKI CONTENT RENDERED */
-        .wiki-content-rendered {
-            line-height: 1.6;
+        .ql-toolbar {
+            border-radius: 8px 8px 0 0;
         }
-        .wiki-content-rendered h1, .wiki-content-rendered h2 {
-            font-family: 'Times New Roman', serif;
-            border-bottom: 1px solid #a2a9b1;
-            margin: 1.5em 0 0.5em 0;
-            padding-bottom: 0.17em;
-        }
-        .wiki-content-rendered h1 { font-size: 1.8em; }
-        .wiki-content-rendered h2 { font-size: 1.5em; }
-        .wiki-content-rendered h3 { font-size: 1.2em; margin: 1.2em 0 0.3em 0; }
-        .wiki-content-rendered p { margin: 0.5em 0; }
-        .wiki-content-rendered ul, .wiki-content-rendered ol {
-            margin: 0.5em 0 0.5em 2em;
-        }
-        .wiki-content-rendered pre {
-            background: #f8f9fa;
-            border: 1px solid #eaecf0;
-            padding: 12px;
-            overflow-x: auto;
-        }
-        .wiki-content-rendered blockquote {
-            border-left: 4px solid #eaecf0;
-            padding-left: 16px;
-            margin: 1em 0;
-            color: #54595d;
+        .ql-container {
+            border-radius: 0 0 8px 8px;
         }
 
         /* LOADING */
@@ -724,8 +784,9 @@
             }
             .sidebar-divider { display: none; }
             .sidebar-badge { display: none; }
-            .editor-body { flex-direction: column; }
-            .editor-sidebar { width: 100%; max-height: 300px; }
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
             .header-content {
                 flex-direction: column;
                 align-items: stretch;
@@ -734,6 +795,8 @@
             .user-info { justify-content: space-between; }
             .content-area { padding: 16px; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
+            .pagination { gap: 4px; }
+            .pagination-btn { padding: 6px 10px; font-size: 0.8em; }
         }
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr; }
@@ -789,13 +852,17 @@
         <a class="sidebar-item" data-page="perfil">
             <span class="material-icons">person</span> Meu Perfil
         </a>
-        <a class="sidebar-item" data-page="paginas">
-            <span class="material-icons">menu_book</span> Minhas Páginas
-            <span class="sidebar-badge" id="pageCount">0</span>
+        <a class="sidebar-item" data-page="forum">
+            <span class="material-icons">forum</span> Fórum
+            <span class="sidebar-badge" id="forumCount">0</span>
         </a>
-        <a class="sidebar-item" data-page="artigos">
-            <span class="material-icons">article</span> Meus Artigos
-            <span class="sidebar-badge green" id="articleCount">0</span>
+        <a class="sidebar-item" data-page="categorias">
+            <span class="material-icons">category</span> Categorias
+            <span class="sidebar-badge green" id="categoryCount">0</span>
+        </a>
+        <a class="sidebar-item" data-page="topicos">
+            <span class="material-icons">chat</span> Tópicos
+            <span class="sidebar-badge orange" id="threadCount">0</span>
         </a>
         
         <div class="sidebar-divider"></div>
@@ -805,13 +872,7 @@
         </a>
         <a class="sidebar-item" data-page="tickets">
             <span class="material-icons">confirmation_number</span> Tickets
-            <span class="sidebar-badge orange" id="ticketCount">0</span>
-        </a>
-        
-        <div class="sidebar-divider"></div>
-        
-        <a class="sidebar-item" data-page="wiki-editor">
-            <span class="material-icons">edit</span> Editor Wiki
+            <span class="sidebar-badge red" id="ticketCount">0</span>
         </a>
         
         <div class="sidebar-divider" id="adminDivider" style="display:none;"></div>
@@ -824,6 +885,9 @@
             </a>
             <a class="sidebar-item" data-page="admin-ban">
                 <span class="material-icons">block</span> Banir Usuários
+            </a>
+            <a class="sidebar-item" data-page="admin-forum">
+                <span class="material-icons">settings</span> Gerenciar Fórum
             </a>
             <a class="sidebar-item" data-page="admin-lgpd">
                 <span class="material-icons">privacy_tip</span> Solicitações LGPD
@@ -853,59 +917,20 @@
     </div>
 </div>
 
-<!-- EDITOR MODAL -->
-<div id="editorModal" class="editor-modal">
-    <div class="editor-container">
-        <div class="editor-header">
-            <h3 id="editorTitle">📝 Editor de Conteúdo</h3>
-            <div class="editor-header-buttons">
-                <button id="editorSaveBtn" class="editor-btn">💾 Salvar</button>
-                <button id="editorCloseBtn" class="editor-btn editor-btn-danger">❌ Fechar</button>
-            </div>
+<!-- IMAGE MODAL -->
+<div class="modal-overlay" id="imageModal">
+    <div class="modal-box">
+        <button class="close-modal" onclick="closeImageModal()">&times;</button>
+        <h2>🖼️ Inserir Imagem</h2>
+        <div class="form-group" style="margin-top:16px;">
+            <label>URL da Imagem</label>
+            <input type="text" id="imageUrl" class="form-control" placeholder="https://exemplo.com/imagem.jpg">
         </div>
-        <div class="editor-body">
-            <div class="editor-sidebar">
-                <h4>📄 Artigos desta página</h4>
-                <div id="editorArticleList" style="max-height:250px;overflow-y:auto;"></div>
-                <button id="editorNewArticleBtn" class="editor-btn" style="margin-top:15px;width:100%;">➕ Novo Artigo</button>
-                
-                <!-- GUIA DE FORMATAÇÃO -->
-                <div class="format-guide">
-                    <h4>📝 Guia Rápido de Formatação</h4>
-                    <table>
-                        <tr><td><code>= Título =</code></td><td>→</td><td><strong>h1</strong></td></tr>
-                        <tr><td><code>== Subtítulo ==</code></td><td>→</td><td><strong>h2</strong></td></tr>
-                        <tr><td><code>=== Seção ===</code></td><td>→</td><td><strong>h3</strong></td></tr>
-                        <tr><td><code>**negrito**</code></td><td>→</td><td><strong>negrito</strong></td></tr>
-                        <tr><td><code>*itálico*</code></td><td>→</td><td><em>itálico</em></td></tr>
-                        <tr><td><code>[[Página]]</code></td><td>→</td><td>Link interno</td></tr>
-                        <tr><td><code>[https://url.com Texto]</code></td><td>→</td><td>Link externo</td></tr>
-                        <tr><td><code>* Item</code></td><td>→</td><td>Lista com marcadores</td></tr>
-                        <tr><td><code># Item</code></td><td>→</td><td>Lista numerada</td></tr>
-                        <tr><td><code>&gt; citação</code></td><td>→</td><td>Citação</td></tr>
-                        <tr><td><code>`código`</code></td><td>→</td><td>Código inline</td></tr>
-                    </table>
-                </div>
-            </div>
-            <div class="editor-main">
-                <div class="editor-field">
-                    <label>Título do Artigo</label>
-                    <input type="text" id="editorArticleTitle" placeholder="Título do artigo">
-                </div>
-                <div class="editor-field">
-                    <label>Conteúdo (Wiki Markdown)</label>
-                    <textarea id="editorArticleContent" placeholder="Digite seu conteúdo usando a formatação wiki..."></textarea>
-                </div>
-                <div class="editor-field">
-                    <label>Descrição curta (opcional)</label>
-                    <textarea id="editorArticleDescription" rows="2" placeholder="Breve descrição para listagem"></textarea>
-                </div>
-                <div class="editor-field">
-                    <label>Pré-visualização</label>
-                    <div id="editorPreview" class="editor-preview"><em>Pré-visualização aparecerá aqui</em></div>
-                </div>
-            </div>
+        <div class="form-group">
+            <label>Texto alternativo (opcional)</label>
+            <input type="text" id="imageAlt" class="form-control" placeholder="Descrição da imagem">
         </div>
+        <button class="btn btn-primary" onclick="insertImageToEditor()">Inserir Imagem</button>
     </div>
 </div>
 
@@ -935,10 +960,24 @@ let isAdmin = false;
 let isTeacher = false;
 let isBanned = false;
 let currentPage = 'dashboard';
-let allPages = [];
-let allArticles = [];
-let currentEditingPageUid = null;
-let currentEditingArticleId = null;
+
+// Estado do Fórum
+let currentCategoryId = null;
+let currentSubcategoryId = null;
+let currentThreadId = null;
+let forumQuill = null;
+let replyQuill = null;
+let currentEditorType = null;
+const POSTS_PER_PAGE = 10;
+let currentForumPage = 1;
+let totalForumPosts = 0;
+let totalForumPages = 0;
+
+// Admin UIDs
+const ADMIN_UIDS = ['sZxfMuOBPbXdR8nttVPXIN8QOOl1', '6aPqWVh8JVYL5NqEb78iDGPD7dH3'];
+
+// Anti-spam
+const submitLocks = new Map();
 
 // ============================================================
 // DOM REFS
@@ -954,16 +993,6 @@ const modalOverlay = $('modalOverlay');
 const modalBox = $('modalBox');
 const modalContent = $('modalContent');
 const modalClose = $('modalClose');
-const editorModal = $('editorModal');
-const editorTitle = $('editorTitle');
-const editorArticleTitle = $('editorArticleTitle');
-const editorArticleContent = $('editorArticleContent');
-const editorArticleDescription = $('editorArticleDescription');
-const editorPreview = $('editorPreview');
-const editorArticleList = $('editorArticleList');
-const editorSaveBtn = $('editorSaveBtn');
-const editorCloseBtn = $('editorCloseBtn');
-const editorNewArticleBtn = $('editorNewArticleBtn');
 const bannedOverlay = $('bannedOverlay');
 const banDetails = $('banDetails');
 
@@ -990,6 +1019,20 @@ function getInitials(name) {
     return name.substring(0, 2).toUpperCase();
 }
 
+function isLocked(key, timeout = 2000) {
+    if (submitLocks.has(key)) {
+        const lockTime = submitLocks.get(key);
+        if (Date.now() - lockTime < timeout) return true;
+        submitLocks.delete(key);
+    }
+    return false;
+}
+
+function lock(key, timeout = 2000) {
+    submitLocks.set(key, Date.now());
+    setTimeout(() => submitLocks.delete(key), timeout);
+}
+
 function showModal(html) {
     modalContent.innerHTML = html;
     modalOverlay.classList.add('show');
@@ -1005,88 +1048,6 @@ modalOverlay.addEventListener('click', (e) => {
 });
 
 // ============================================================
-// FORMATAÇÃO WIKI PARA HTML
-// ============================================================
-function wikitextToHtml(wikitext) {
-    if (!wikitext || typeof wikitext !== 'string') return '';
-    
-    let html = wikitext;
-    
-    // Títulos
-    html = html.replace(/^======(.+?)======/gm, '<h6>$1</h6>');
-    html = html.replace(/^=====(.+?)=====/gm, '<h5>$1</h5>');
-    html = html.replace(/^====(.+?)====/gm, '<h4>$1</h4>');
-    html = html.replace(/^===(.+?)===/gm, '<h3>$1</h3>');
-    html = html.replace(/^==(.+?)==/gm, '<h2>$1</h2>');
-    html = html.replace(/^=(.+?)=/gm, '<h1>$1</h1>');
-    
-    // Formatação de texto
-    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
-    
-    // Links internos
-    html = html.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, target, text) => {
-        const displayText = text || target;
-        return `<a href="#" class="wiki-link" onclick="navigateToPage('${target}')">${escapeHtml(displayText)}</a>`;
-    });
-    
-    // Links externos
-    html = html.replace(/\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$2</a>');
-    html = html.replace(/\[(https?:\/\/[^\s\]]+)\]/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-    
-    // Listas
-    let inList = false;
-    let listType = '';
-    const lines = html.split('\n');
-    const processed = [];
-    
-    for (let line of lines) {
-        if (line.match(/^\* /)) {
-            if (!inList) { processed.push('<ul>'); inList = true; listType = 'ul'; }
-            processed.push(`<li>${line.replace(/^\* /, '')}</li>`);
-        } else if (line.match(/^# /)) {
-            if (!inList) { processed.push('<ol>'); inList = true; listType = 'ol'; }
-            processed.push(`<li>${line.replace(/^# /, '')}</li>`);
-        } else {
-            if (inList) {
-                processed.push(listType === 'ul' ? '</ul>' : '</ol>');
-                inList = false;
-                listType = '';
-            }
-            processed.push(line);
-        }
-    }
-    if (inList) processed.push(listType === 'ul' ? '</ul>' : '</ol>');
-    html = processed.join('\n');
-    
-    // Citações
-    html = html.replace(/^&gt;(.+)$/gm, '<blockquote>$1</blockquote>');
-    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-    
-    // Código inline
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    // Parágrafos
-    const paragraphs = html.split('\n\n');
-    html = paragraphs.map(para => {
-        para = para.trim();
-        if (!para) return '';
-        if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<ol') || 
-            para.startsWith('<table') || para.startsWith('<blockquote') || para.startsWith('<pre')) {
-            return para;
-        }
-        return `<p>${para}</p>`;
-    }).join('\n');
-    
-    html = html.replace(/\n/g, '<br>');
-    html = html.replace(/<p><br><\/p>/g, '');
-    
-    return html;
-}
-
-// ============================================================
 // AUTENTICAÇÃO E PERFIL
 // ============================================================
 async function registerUser(user) {
@@ -1100,7 +1061,7 @@ async function registerUser(user) {
             email: user.email || '',
             name: user.displayName || 'Usuário',
             profilePictureUrl: user.photoURL || '',
-            isAdmin: existingData.isAdmin || false,
+            isAdmin: existingData.isAdmin || ADMIN_UIDS.includes(uid),
             isBanned: existingData.isBanned || false,
             isTeacher: existingData.isTeacher || false,
             isTeatcher: existingData.isTeatcher || false,
@@ -1111,8 +1072,15 @@ async function registerUser(user) {
 
         await db.collection('users').doc(uid).set(userData, { merge: true });
         await db.collection('usuários').doc(uid).set(userData, { merge: true });
+        
+        // Registrar no perfil do fórum
+        await db.collection('maspia').doc('usuarios').collection('perfis').doc(uid).set({
+            email: user.email,
+            name: user.displayName,
+            role: ADMIN_UIDS.includes(uid) ? 'admin' : 'member',
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
 
-        console.log(`Usuário ${uid} registrado. isBanned: ${userData.isBanned}`);
         return userData;
     } catch (error) {
         console.error('Erro ao registrar usuário:', error);
@@ -1137,6 +1105,10 @@ async function checkIfUserIsBanned(user) {
 function showBannedScreen(reason = 'Violação das políticas de uso') {
     banDetails.textContent = `Motivo: ${reason}`;
     bannedOverlay.classList.add('show');
+    document.querySelector('.main-container').style.opacity = '0.3';
+    document.querySelector('.main-container').style.pointerEvents = 'none';
+    document.querySelector('.header').style.opacity = '0.3';
+    document.querySelector('.header').style.pointerEvents = 'none';
 }
 
 function logoutBanned() {
@@ -1148,7 +1120,7 @@ async function loadUserProfile(uid) {
         const doc = await db.collection('users').doc(uid).get();
         if (doc.exists) {
             userProfile = doc.data();
-            isAdmin = userProfile.isAdmin === true;
+            isAdmin = userProfile.isAdmin === true || ADMIN_UIDS.includes(uid);
             isTeacher = userProfile.isTeacher === true || userProfile.isTeatcher === true;
             isBanned = userProfile.isBanned === true;
         } else {
@@ -1156,13 +1128,13 @@ async function loadUserProfile(uid) {
                 displayName: currentUser.displayName || 'Usuário',
                 email: currentUser.email,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                isAdmin: false,
+                isAdmin: ADMIN_UIDS.includes(uid),
                 isTeacher: false,
                 isBanned: false
             };
             await db.collection('users').doc(uid).set(newProfile);
             userProfile = newProfile;
-            isAdmin = false;
+            isAdmin = ADMIN_UIDS.includes(uid);
             isTeacher = false;
             isBanned = false;
         }
@@ -1187,7 +1159,6 @@ function updateUI() {
     if (isTeacher) badges += '<span class="badge-teacher">Professor</span> ';
     userBadge.innerHTML = badges;
     
-    // Admin section
     const adminSection = document.getElementById('adminSection');
     const adminDivider = document.getElementById('adminDivider');
     if (isAdmin) {
@@ -1200,12 +1171,12 @@ function updateUI() {
     
     if (isBanned) {
         showBannedScreen(userProfile?.banReason || 'Violação das políticas de uso');
-        document.querySelector('.main-container').style.opacity = '0.3';
-        document.querySelector('.main-container').style.pointerEvents = 'none';
     } else {
         bannedOverlay.classList.remove('show');
         document.querySelector('.main-container').style.opacity = '1';
         document.querySelector('.main-container').style.pointerEvents = 'auto';
+        document.querySelector('.header').style.opacity = '1';
+        document.querySelector('.header').style.pointerEvents = 'auto';
     }
 }
 
@@ -1231,10 +1202,8 @@ document.querySelectorAll('.sidebar-item').forEach(item => {
 
 function navigateTo(page) {
     currentPage = page;
-    
     document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
     document.querySelector(`.sidebar-item[data-page="${page}"]`)?.classList.add('active');
-    
     renderPage(page);
 }
 
@@ -1244,14 +1213,15 @@ async function renderPage(page) {
     switch(page) {
         case 'dashboard': await renderDashboard(); break;
         case 'perfil': await renderPerfil(); break;
-        case 'paginas': await renderPages(); break;
-        case 'artigos': await renderArticles(); break;
+        case 'forum': await renderForum(); break;
+        case 'categorias': await renderCategorias(); break;
+        case 'topicos': await renderTopicos(); break;
         case 'historico': await renderHistorico(); break;
         case 'tickets': await renderTickets(); break;
-        case 'wiki-editor': await renderWikiEditor(); break;
         case 'configuracoes': await renderConfiguracoes(); break;
         case 'admin-users': if (isAdmin) await renderAdminUsers(); else renderUnauthorized(); break;
         case 'admin-ban': if (isAdmin) await renderAdminBan(); else renderUnauthorized(); break;
+        case 'admin-forum': if (isAdmin) await renderAdminForum(); else renderUnauthorized(); break;
         case 'admin-lgpd': if (isAdmin) await renderAdminLGPD(); else renderUnauthorized(); break;
         default: pageContainer.innerHTML = '<h2>Página não encontrada</h2>';
     }
@@ -1271,21 +1241,40 @@ function renderUnauthorized() {
 // DASHBOARD
 // ============================================================
 async function renderDashboard() {
-    let totalPages = 0;
-    let totalArticles = 0;
+    let totalCategorias = 0;
+    let totalSubcategorias = 0;
+    let totalTopicos = 0;
+    let totalPosts = 0;
     let totalTickets = 0;
-    let totalEdits = 0;
     
     try {
-        // Contar páginas
-        const pagesSnap = await db.collection('documentos').get();
-        totalPages = pagesSnap.size;
-        allPages = pagesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Contar categorias
+        const catSnap = await db.collection('maspia').doc('forum').collection('categories').get();
+        totalCategorias = catSnap.size;
         
-        // Contar artigos
-        for (const doc of pagesSnap.docs) {
-            const articlesSnap = await db.collection('documentos').doc(doc.id).collection('inevitavel').get();
-            totalArticles += articlesSnap.size;
+        // Contar subcategorias, tópicos e posts
+        for (const catDoc of catSnap.docs) {
+            const subSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(catDoc.id)
+                .collection('subcategories').get();
+            totalSubcategorias += subSnap.size;
+            
+            for (const subDoc of subSnap.docs) {
+                const threadSnap = await db.collection('maspia').doc('forum')
+                    .collection('categories').doc(catDoc.id)
+                    .collection('subcategories').doc(subDoc.id)
+                    .collection('threads').get();
+                totalTopicos += threadSnap.size;
+                
+                for (const threadDoc of threadSnap.docs) {
+                    const postSnap = await db.collection('maspia').doc('forum')
+                        .collection('categories').doc(catDoc.id)
+                        .collection('subcategories').doc(subDoc.id)
+                        .collection('threads').doc(threadDoc.id)
+                        .collection('posts').get();
+                    totalPosts += postSnap.size;
+                }
+            }
         }
         
         // Tickets
@@ -1294,14 +1283,9 @@ async function renderDashboard() {
             .get();
         totalTickets = ticketsSnap.size;
         
-        // Edições
-        const editsSnap = await db.collection('user_edits')
-            .where('userId', '==', currentUser.uid)
-            .get();
-        totalEdits = editsSnap.size;
-        
-        document.getElementById('pageCount').textContent = totalPages;
-        document.getElementById('articleCount').textContent = totalArticles;
+        document.getElementById('forumCount').textContent = totalTopicos;
+        document.getElementById('categoryCount').textContent = totalCategorias;
+        document.getElementById('threadCount').textContent = totalTopicos;
         document.getElementById('ticketCount').textContent = totalTickets;
     } catch (err) {
         console.error('Erro ao carregar estatísticas:', err);
@@ -1314,54 +1298,38 @@ async function renderDashboard() {
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <span class="icon material-icons">menu_book</span>
-                    <div class="number">${totalPages}</div>
-                    <div class="label">Páginas</div>
+                    <span class="icon material-icons">category</span>
+                    <div class="number">${totalCategorias}</div>
+                    <div class="label">Categorias</div>
                 </div>
                 <div class="stat-card">
-                    <span class="icon material-icons">article</span>
-                    <div class="number">${totalArticles}</div>
-                    <div class="label">Artigos</div>
+                    <span class="icon material-icons">folder</span>
+                    <div class="number">${totalSubcategorias}</div>
+                    <div class="label">Subcategorias</div>
                 </div>
                 <div class="stat-card">
-                    <span class="icon material-icons">confirmation_number</span>
-                    <div class="number">${totalTickets}</div>
-                    <div class="label">Tickets</div>
+                    <span class="icon material-icons">chat</span>
+                    <div class="number">${totalTopicos}</div>
+                    <div class="label">Tópicos</div>
                 </div>
                 <div class="stat-card">
-                    <span class="icon material-icons">edit</span>
-                    <div class="number">${totalEdits}</div>
-                    <div class="label">Edições</div>
+                    <span class="icon material-icons">message</span>
+                    <div class="number">${totalPosts}</div>
+                    <div class="label">Posts</div>
                 </div>
             </div>
             
             <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
-                <button class="btn btn-primary" onclick="navigateTo('paginas')">📚 Ver Páginas</button>
-                <button class="btn btn-success" onclick="navigateTo('wiki-editor')">✏️ Editor Wiki</button>
+                <button class="btn btn-primary" onclick="navigateTo('forum')">💬 Ver Fórum</button>
+                <button class="btn btn-success" onclick="showCreateThread()">📝 Novo Tópico</button>
                 <button class="btn btn-outline" onclick="navigateTo('tickets')">🎫 Tickets</button>
             </div>
-            
-            <h3 style="margin-top:24px;font-size:1em;font-weight:600;">📌 Páginas Recentes</h3>
-            ${allPages.length === 0 ? '<p style="color:#999;">Nenhuma página criada ainda.</p>' : 
-                allPages.slice(0,5).map(p => `
-                    <div class="card" onclick="navigateToPage('${p.id}')" style="cursor:pointer;">
-                        <div class="card-header">
-                            <span class="card-title">${escapeHtml(p.titulo || p.id)}</span>
-                            <span class="status-badge ${p.status || 'active'}">${p.status || 'Ativo'}</span>
-                        </div>
-                        <div class="card-meta">
-                            <span>📅 ${formatDate(p.criadoEm)}</span>
-                            <span>📄 ${p.articleCount || 0} artigos</span>
-                        </div>
-                    </div>
-                `).join('')
-            }
         </div>
     `;
 }
 
 // ============================================================
-// PÁGINA: PERFIL
+// PERFIL
 // ============================================================
 async function renderPerfil() {
     const profile = userProfile || {};
@@ -1372,7 +1340,7 @@ async function renderPerfil() {
             <p class="page-subtitle">Gerencie suas informações pessoais</p>
             
             <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;padding:16px;background:#f8f9fc;border-radius:12px;">
-                <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#4a6cf7,#6c8cff);display:flex;align-items:center;justify-content:center;font-size:2em;color:white;font-weight:700;">
+                <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#e94560,#ff6b6b);display:flex;align-items:center;justify-content:center;font-size:2em;color:white;font-weight:700;">
                     ${getInitials(currentUser.displayName || 'Usuário')}
                 </div>
                 <div>
@@ -1381,7 +1349,7 @@ async function renderPerfil() {
                     <p style="font-size:0.8em;color:#999;">
                         ${isAdmin ? '🔑 Administrador' : ''} ${isTeacher ? '📚 Professor' : ''}
                         ${isBanned ? '🚫 Banido' : ''}
-                        ${(!isAdmin && !isTeacher && !isBanned) ? '👤 Usuário' : ''}
+                        ${(!isAdmin && !isTeacher && !isBanned) ? '👤 Membro' : ''}
                     </p>
                 </div>
             </div>
@@ -1399,19 +1367,14 @@ async function renderPerfil() {
                     <label>ID do Usuário</label>
                     <input class="form-control" value="${escapeHtml(currentUser.uid)}" disabled style="background:#f5f6fa;font-size:0.8em;">
                 </div>
-                <div class="form-group">
-                    <label>Bio / Sobre você</label>
-                    <textarea class="form-control" id="profileBio" rows="3">${escapeHtml(profile.bio || '')}</textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">💾 Salvar alterações</button>
+                <button type="submit" class="btn btn-primary">💾 Salvar</button>
             </form>
             
             <hr style="margin:24px 0;border:none;border-top:1px solid #eee;">
-            
             <h3 style="font-size:1em;font-weight:600;">🔐 Segurança</h3>
             <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
-                <button class="btn btn-outline" onclick="alert('Função de alteração de senha disponível em breve.')">Alterar senha</button>
-                <button class="btn btn-danger" onclick="requestDataDeletion()">Solicitar exclusão de dados (LGPD)</button>
+                <button class="btn btn-outline" onclick="alert('Em breve.')">Alterar senha</button>
+                <button class="btn btn-danger" onclick="requestDataDeletion()">Solicitar exclusão (LGPD)</button>
             </div>
         </div>
     `;
@@ -1419,32 +1382,29 @@ async function renderPerfil() {
     document.getElementById('profileForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('profileName').value.trim();
-        const bio = document.getElementById('profileBio').value.trim();
         
         try {
             await db.collection('users').doc(currentUser.uid).update({
                 displayName: name || currentUser.displayName,
-                bio: bio,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             userProfile.displayName = name || currentUser.displayName;
-            userProfile.bio = bio;
             updateUI();
-            alert('✅ Perfil atualizado com sucesso!');
+            alert('✅ Perfil atualizado!');
         } catch (err) {
-            alert('❌ Erro ao atualizar: ' + err.message);
+            alert('❌ Erro: ' + err.message);
         }
     });
 }
 
 // ============================================================
-// PÁGINA: PÁGINAS
+// FÓRUM - VISÃO GERAL
 // ============================================================
-async function renderPages() {
+async function renderForum() {
     if (isBanned) {
         pageContainer.innerHTML = `
             <div class="page active">
-                <h1 class="page-title">📚 Páginas</h1>
+                <h1 class="page-title">💬 Fórum</h1>
                 <div class="empty-state">
                     <span class="material-icons">block</span>
                     <h3>Acesso negado</h3>
@@ -1454,279 +1414,1181 @@ async function renderPages() {
         `;
         return;
     }
-    
-    let pages = [];
-    try {
-        const snap = await db.collection('documentos').get();
-        pages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        allPages = pages;
-        document.getElementById('pageCount').textContent = pages.length;
-    } catch (err) { console.error(err); }
     
     pageContainer.innerHTML = `
         <div class="page active">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
                 <div>
-                    <h1 class="page-title">📚 Páginas</h1>
-                    <p class="page-subtitle">Todas as páginas do sistema (${pages.length})</p>
+                    <h1 class="page-title">💬 Fórum</h1>
+                    <p class="page-subtitle">Navegue pelas categorias e participe das discussões</p>
                 </div>
-                <button class="btn btn-success" onclick="openCreatePage()">+ Criar Página</button>
+                <button class="btn btn-success" onclick="showCreateThread()">📝 Novo Tópico</button>
             </div>
             
-            ${pages.length === 0 ? `
-                <div class="empty-state">
-                    <span class="material-icons">menu_book</span>
-                    <p>Nenhuma página criada ainda.</p>
-                    <button class="btn btn-primary" onclick="openCreatePage()" style="margin-top:12px;">Criar primeira página</button>
-                </div>
-            ` : `
-                <div class="pages-grid">
-                    ${pages.map(p => `
-                        <div class="page-card" onclick="navigateToPage('${p.id}')">
-                            <div class="icon">📚</div>
-                            <div class="name">${escapeHtml(p.titulo || p.id)}</div>
-                            <div style="font-size:0.85em;color:#666;">${escapeHtml(p.descricao?.substring(0,80) || '')}${(p.descricao?.length||0)>80?'...':''}</div>
-                            <div class="meta">
-                                <span class="article-count">📄 ${p.articleCount || 0} artigos</span>
-                                <span style="margin-left:12px;">📅 ${formatDate(p.criadoEm)}</span>
-                            </div>
-                            <div style="margin-top:10px;display:flex;gap:8px;">
-                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); openEditor('${p.id}', null)">✏️ Editar</button>
-                                <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); deletePage('${p.id}')">🗑️</button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `}
+            <div id="forumContent">
+                <div class="loading-spinner" style="margin:40px auto;display:block;"></div>
+            </div>
         </div>
     `;
+    
+    await loadForumContent();
 }
 
-window.navigateToPage = async function(pageUid) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
-        return;
-    }
+async function loadForumContent() {
+    const container = document.getElementById('forumContent');
     
     try {
-        const doc = await db.collection('documentos').doc(pageUid).get();
-        if (!doc.exists) {
-            alert('Página não encontrada');
+        const catSnap = await db.collection('maspia').doc('forum')
+            .collection('categories')
+            .orderBy('order', 'asc')
+            .get();
+        
+        const categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        if (categories.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <span class="material-icons">category</span>
+                    <p>Nenhuma categoria disponível.</p>
+                    ${isAdmin ? `<button class="btn btn-primary" onclick="showCreateCategory()">Criar Categoria</button>` : ''}
+                </div>
+            `;
             return;
         }
-        const data = doc.data();
         
-        const articlesSnap = await db.collection('documentos').doc(pageUid).collection('inevitavel').get();
-        const articles = articlesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        let html = `<div class="categories-grid">`;
         
-        showModal(`
-            <h2>📚 ${escapeHtml(data.titulo || pageUid)}</h2>
-            <div style="margin:12px 0;padding:12px;background:#f8f9fc;border-radius:8px;">
-                <p><strong>UID:</strong> ${escapeHtml(pageUid)}</p>
-                <p><strong>Categoria:</strong> ${escapeHtml(data.categoria || 'Geral')}</p>
-                <p><strong>Artigos:</strong> ${articles.length}</p>
-                <p><strong>Status:</strong> <span class="status-badge ${data.status || 'active'}">${data.status || 'Ativo'}</span></p>
-            </div>
-            <div style="margin:12px 0;"><strong>Descrição:</strong><br>${escapeHtml(data.descricao || 'Sem descrição.')}</div>
+        for (const cat of categories) {
+            const subSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(cat.id)
+                .collection('subcategories')
+                .orderBy('order', 'asc')
+                .get();
             
-            <h3 style="margin:16px 0 8px;">📄 Artigos</h3>
-            ${articles.length === 0 ? '<p style="color:#999;">Nenhum artigo.</p>' : 
-                articles.map(a => `
-                    <div class="card" onclick="viewArticle('${pageUid}','${a.id}')" style="cursor:pointer;">
-                        <div class="card-header">
-                            <span class="card-title">${escapeHtml(a.titulo)}</span>
-                            <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openEditor('${pageUid}','${a.id}')">✏️</button>
-                        </div>
-                        <div class="card-meta">📅 ${formatDate(a.dataCriacao)}</div>
+            const subcategories = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            html += `
+                <div class="category-card" onclick="navigateTo('categorias'); showCategoryDetail('${cat.id}')">
+                    <div class="category-header">
+                        <h3>${escapeHtml(cat.icon || '📁')} ${escapeHtml(cat.name)}</h3>
+                        <p>${escapeHtml(cat.description || '')}</p>
                     </div>
-                `).join('')
-            }
-            
-            <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="hideModal(); openEditor('${pageUid}', null)">✏️ Editar Página</button>
-                <button class="btn btn-success" onclick="hideModal(); openEditor('${pageUid}', 'novo')">➕ Novo Artigo</button>
-                <button class="btn btn-outline" onclick="hideModal()">Fechar</button>
-            </div>
-        `);
-    } catch (err) {
-        alert('Erro: ' + err.message);
-    }
-};
-
-window.viewArticle = async function(pageUid, articleId) {
-    try {
-        const doc = await db.collection('documentos').doc(pageUid).collection('inevitavel').doc(articleId).get();
-        if (!doc.exists) return;
-        const data = doc.data();
-        const contentHtml = wikitextToHtml(data.descricao || 'Sem conteúdo.');
-        
-        showModal(`
-            <h2>📄 ${escapeHtml(data.titulo)}</h2>
-            <div style="margin:12px 0;padding:12px;background:#f8f9fc;border-radius:8px;font-size:0.85em;">
-                <p><strong>Criado por:</strong> ${escapeHtml(data.criadorNome || 'Sistema')}</p>
-                <p><strong>Data:</strong> ${formatDate(data.dataCriacao)}</p>
-            </div>
-            <div class="wiki-content-rendered">${contentHtml}</div>
-            <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="hideModal(); openEditor('${pageUid}','${articleId}')">✏️ Editar</button>
-                <button class="btn btn-outline" onclick="hideModal()">Fechar</button>
-            </div>
-        `);
-    } catch (err) {
-        alert('Erro: ' + err.message);
-    }
-};
-
-window.openCreatePage = function() {
-    if (isBanned) {
-        alert('Sua conta está banida. Não é possível criar páginas.');
-        return;
-    }
-    
-    showModal(`
-        <h2>📚 Criar Nova Página</h2>
-        <form id="createPageForm">
-            <div class="form-group">
-                <label>Nome da página (UID)</label>
-                <input class="form-control" id="pageUid" placeholder="ex: meu_projeto" required>
-                <small>Use letras, números e underscores</small>
-            </div>
-            <div class="form-group">
-                <label>Título</label>
-                <input class="form-control" id="pageTitle" required>
-            </div>
-            <div class="form-group">
-                <label>Descrição</label>
-                <textarea class="form-control" id="pageDescription" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Categoria</label>
-                <input class="form-control" id="pageCategory" placeholder="Ex: Tecnologia, Ciência">
-            </div>
-            <button type="submit" class="btn btn-primary">✨ Criar</button>
-            <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
-        </form>
-    `);
-    
-    document.getElementById('createPageForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const uid = document.getElementById('pageUid').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
-        const titulo = document.getElementById('pageTitle').value.trim();
-        const descricao = document.getElementById('pageDescription').value.trim();
-        const categoria = document.getElementById('pageCategory').value.trim() || 'Geral';
-        
-        if (!uid || !titulo) { alert('Preencha os campos.'); return; }
-        
-        try {
-            const docRef = db.collection('documentos').doc(uid);
-            if ((await docRef.get()).exists) {
-                alert(`Página "${uid}" já existe!`);
-                return;
-            }
-            await docRef.set({
-                uid, titulo, descricao, categoria,
-                criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-                criadoPor: currentUser.uid,
-                criadoPorNome: currentUser.displayName || 'Usuário',
-                status: 'ativo',
-                articleCount: 0
-            });
-            hideModal();
-            alert(`✅ Página "${titulo}" criada!`);
-            renderPages();
-        } catch (err) {
-            alert('Erro: ' + err.message);
+                    <div class="category-body">
+                        <div class="category-stats">
+                            <span>Subcategorias: ${subcategories.length}</span>
+                            <span>Tópicos: ${cat.threadsCount || 0}</span>
+                        </div>
+                        ${subcategories.slice(0,3).map(sub => `
+                            <div style="padding:4px 0;font-size:0.85em;color:#555;">
+                                ${escapeHtml(sub.icon || '📌')} ${escapeHtml(sub.name)}
+                            </div>
+                        `).join('')}
+                        ${subcategories.length > 3 ? `<div style="font-size:0.8em;color:#999;">+ ${subcategories.length - 3} mais</div>` : ''}
+                    </div>
+                </div>
+            `;
         }
-    });
-};
-
-window.deletePage = async function(pageUid) {
-    if (isBanned) {
-        alert('Sua conta está banida. Não é possível excluir.');
-        return;
-    }
-    if (!confirm(`Tem certeza que deseja excluir a página "${pageUid}" permanentemente?`)) return;
-    
-    try {
-        // Excluir todos os artigos da página
-        const articlesSnap = await db.collection('documentos').doc(pageUid).collection('inevitavel').get();
-        const batch = db.batch();
-        articlesSnap.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        batch.delete(db.collection('documentos').doc(pageUid));
-        await batch.commit();
-        alert('✅ Página excluída com sucesso!');
-        renderPages();
+        
+        html += `</div>`;
+        
+        if (isAdmin) {
+            html += `<div style="text-align:center;margin-top:20px;">
+                <button class="btn btn-primary" onclick="showCreateCategory()">📁 Nova Categoria</button>
+                <button class="btn btn-outline" onclick="navigateTo('admin-forum')">⚙️ Gerenciar Fórum</button>
+            </div>`;
+        }
+        
+        container.innerHTML = html;
     } catch (err) {
-        alert('Erro: ' + err.message);
+        container.innerHTML = `<div class="empty-state">❌ Erro: ${err.message}</div>`;
     }
-};
+}
 
 // ============================================================
-// PÁGINA: ARTIGOS
+// CATEGORIAS
 // ============================================================
-async function renderArticles() {
+async function renderCategorias() {
     if (isBanned) {
         pageContainer.innerHTML = `
             <div class="page active">
-                <h1 class="page-title">📄 Artigos</h1>
+                <h1 class="page-title">📁 Categorias</h1>
                 <div class="empty-state">
                     <span class="material-icons">block</span>
                     <h3>Acesso negado</h3>
-                    <p>Sua conta está banida.</p>
                 </div>
             </div>
         `;
         return;
     }
     
-    let articles = [];
+    pageContainer.innerHTML = `
+        <div class="page active">
+            <h1 class="page-title">📁 Categorias</h1>
+            <p class="page-subtitle">Todas as categorias do fórum</p>
+            <div id="categoriasContent">
+                <div class="loading-spinner" style="margin:40px auto;display:block;"></div>
+            </div>
+            ${isAdmin ? `<div style="margin-top:20px;"><button class="btn btn-primary" onclick="showCreateCategory()">📁 Nova Categoria</button></div>` : ''}
+        </div>
+    `;
+    
+    await loadCategoriasContent();
+}
+
+async function loadCategoriasContent() {
+    const container = document.getElementById('categoriasContent');
+    
     try {
-        const pagesSnap = await db.collection('documentos').get();
-        for (const pageDoc of pagesSnap.docs) {
-            const articlesSnap = await db.collection('documentos').doc(pageDoc.id).collection('inevitavel').get();
-            articlesSnap.docs.forEach(doc => {
-                articles.push({
-                    id: doc.id,
-                    pageId: pageDoc.id,
-                    pageTitle: pageDoc.data().titulo || pageDoc.id,
-                    ...doc.data()
-                });
-            });
+        const catSnap = await db.collection('maspia').doc('forum')
+            .collection('categories')
+            .orderBy('order', 'asc')
+            .get();
+        
+        const categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        document.getElementById('categoryCount').textContent = categories.length;
+        
+        if (categories.length === 0) {
+            container.innerHTML = `<div class="empty-state"><span class="material-icons">category</span><p>Nenhuma categoria.</p></div>`;
+            return;
         }
-        allArticles = articles;
-        document.getElementById('articleCount').textContent = articles.length;
-    } catch (err) { console.error(err); }
+        
+        let html = `<div class="categories-grid">`;
+        for (const cat of categories) {
+            const subSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(cat.id)
+                .collection('subcategories')
+                .orderBy('order', 'asc')
+                .get();
+            
+            const subcategories = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            html += `
+                <div class="category-card" onclick="showCategoryDetail('${cat.id}')">
+                    <div class="category-header">
+                        <h3>${escapeHtml(cat.icon || '📁')} ${escapeHtml(cat.name)}</h3>
+                        <p>${escapeHtml(cat.description || '')}</p>
+                    </div>
+                    <div class="category-body">
+                        <div class="category-stats">
+                            <span>Subcategorias: ${subcategories.length}</span>
+                            <span>Tópicos: ${cat.threadsCount || 0}</span>
+                        </div>
+                        ${subcategories.map(sub => `
+                            <div style="padding:4px 0;font-size:0.85em;border-bottom:1px solid #f0f0f0;cursor:pointer;" onclick="event.stopPropagation(); showSubcategoryDetail('${cat.id}','${sub.id}')">
+                                ${escapeHtml(sub.icon || '📌')} ${escapeHtml(sub.name)}
+                                <span style="float:right;color:#999;font-size:0.8em;">${sub.threadsCount || 0} tópicos</span>
+                            </div>
+                        `).join('')}
+                        ${isAdmin ? `
+                            <div style="margin-top:10px;">
+                                <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); showCreateSubcategory('${cat.id}')">+ Subcategoria</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        html += `</div>`;
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+    }
+}
+
+window.showCategoryDetail = async function(categoryId) {
+    if (isBanned) return;
+    
+    try {
+        const catDoc = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId).get();
+        const cat = catDoc.data();
+        
+        const subSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories')
+            .orderBy('order', 'asc')
+            .get();
+        
+        const subcategories = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        showModal(`
+            <h2>${escapeHtml(cat?.icon || '📁')} ${escapeHtml(cat?.name || 'Categoria')}</h2>
+            <p style="color:#888;">${escapeHtml(cat?.description || '')}</p>
+            <div style="margin:16px 0;">
+                <strong>Subcategorias (${subcategories.length})</strong>
+                ${subcategories.map(sub => `
+                    <div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;" onclick="hideModal(); showSubcategoryDetail('${categoryId}','${sub.id}')">
+                        ${escapeHtml(sub.icon || '📌')} <strong>${escapeHtml(sub.name)}</strong>
+                        <span style="float:right;color:#888;">${sub.threadsCount || 0} tópicos</span>
+                    </div>
+                `).join('')}
+            </div>
+            ${isAdmin ? `
+                <div style="margin-top:12px;display:flex;gap:8px;">
+                    <button class="btn btn-sm btn-primary" onclick="hideModal(); showCreateSubcategory('${categoryId}')">+ Subcategoria</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCategory('${categoryId}')">🗑️ Excluir</button>
+                </div>
+            ` : ''}
+            <button class="btn btn-outline" onclick="hideModal()" style="margin-top:12px;">Fechar</button>
+        `);
+    } catch (err) {
+        alert('Erro: ' + err.message);
+    }
+};
+
+window.showSubcategoryDetail = async function(categoryId, subcategoryId) {
+    if (isBanned) return;
+    
+    try {
+        const subDoc = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId).get();
+        const sub = subDoc.data();
+        
+        const threadSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads')
+            .orderBy('lastActivity', 'desc')
+            .get();
+        
+        const threads = threadSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        showModal(`
+            <h2>${escapeHtml(sub?.icon || '📌')} ${escapeHtml(sub?.name || 'Subcategoria')}</h2>
+            <p style="color:#888;">${escapeHtml(sub?.description || '')}</p>
+            <div style="margin:16px 0;">
+                <strong>Tópicos (${threads.length})</strong>
+                ${threads.map(t => `
+                    <div style="padding:10px;border-bottom:1px solid #eee;cursor:pointer;" onclick="hideModal(); showThreadDetail('${categoryId}','${subcategoryId}','${t.id}')">
+                        <strong>${escapeHtml(t.title)}</strong>
+                        <span style="display:block;font-size:0.8em;color:#888;">
+                            Por ${escapeHtml(t.authorName || 'Anônimo')} • ${formatDate(t.createdAt)} • ${t.postsCount || 0} posts
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="hideModal(); showCreateThread()">📝 Novo Tópico</button>
+                ${isAdmin ? `
+                    <button class="btn btn-sm btn-danger" onclick="deleteSubcategory('${categoryId}','${subcategoryId}')">🗑️ Excluir</button>
+                ` : ''}
+            </div>
+            <button class="btn btn-outline" onclick="hideModal()" style="margin-top:12px;">Fechar</button>
+        `);
+    } catch (err) {
+        alert('Erro: ' + err.message);
+    }
+};
+
+window.showThreadDetail = async function(categoryId, subcategoryId, threadId) {
+    if (isBanned) return;
+    
+    try {
+        const threadDoc = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').doc(threadId).get();
+        const thread = threadDoc.data();
+        
+        const postSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').doc(threadId)
+            .collection('posts')
+            .orderBy('createdAt', 'asc')
+            .get();
+        
+        const posts = postSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        
+        showModal(`
+            <h2>💬 ${escapeHtml(thread?.title || 'Tópico')}</h2>
+            <p style="color:#888;font-size:0.85em;">
+                Criado por ${escapeHtml(thread?.authorName || 'Anônimo')} em ${formatDate(thread?.createdAt)}
+                • ${posts.length} posts
+            </p>
+            <div style="max-height:400px;overflow-y:auto;margin:16px 0;">
+                ${posts.map(p => `
+                    <div style="padding:12px;border-bottom:1px solid #eee;background:${p.isAdmin ? '#fff8e7' : 'transparent'};">
+                        <div style="display:flex;justify-content:space-between;font-size:0.8em;color:#888;">
+                            <span><strong>${escapeHtml(p.authorName || 'Anônimo')}</strong> ${p.isAdmin ? '<span class="badge-admin" style="font-size:0.6em;">Admin</span>' : ''}</span>
+                            <span>${formatDate(p.createdAt)}</span>
+                        </div>
+                        <div style="margin-top:8px;font-size:0.9em;">${p.content}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-success" onclick="hideModal(); showCreatePost('${categoryId}','${subcategoryId}','${threadId}')">✏️ Responder</button>
+                ${isAdmin ? `
+                    <button class="btn btn-sm btn-danger" onclick="deleteThread('${categoryId}','${subcategoryId}','${threadId}')">🗑️ Excluir</button>
+                ` : ''}
+            </div>
+            <button class="btn btn-outline" onclick="hideModal()" style="margin-top:12px;">Fechar</button>
+        `);
+    } catch (err) {
+        alert('Erro: ' + err.message);
+    }
+};
+
+// ============================================================
+// TÓPICOS (Threads)
+// ============================================================
+async function renderTopicos() {
+    if (isBanned) {
+        pageContainer.innerHTML = `
+            <div class="page active">
+                <h1 class="page-title">💬 Tópicos</h1>
+                <div class="empty-state">
+                    <span class="material-icons">block</span>
+                    <h3>Acesso negado</h3>
+                </div>
+            </div>
+        `;
+        return;
+    }
     
     pageContainer.innerHTML = `
         <div class="page active">
-            <h1 class="page-title">📄 Artigos</h1>
-            <p class="page-subtitle">Todos os artigos do sistema (${articles.length})</p>
-            
-            ${articles.length === 0 ? `
-                <div class="empty-state">
-                    <span class="material-icons">article</span>
-                    <p>Nenhum artigo encontrado.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <h1 class="page-title">💬 Tópicos</h1>
+                    <p class="page-subtitle">Todos os tópicos do fórum</p>
                 </div>
-            ` : articles.map(a => `
-                <div class="card" onclick="viewArticle('${a.pageId}','${a.id}')" style="cursor:pointer;">
-                    <div class="card-header">
-                        <span class="card-title">${escapeHtml(a.titulo)}</span>
-                        <span style="font-size:0.8em;color:#888;">📚 ${escapeHtml(a.pageTitle)}</span>
-                    </div>
-                    <div class="card-meta">
-                        <span>👤 ${escapeHtml(a.criadorNome || 'Sistema')}</span>
-                        <span>📅 ${formatDate(a.dataCriacao)}</span>
-                    </div>
-                </div>
-            `).join('')}
+                <button class="btn btn-success" onclick="showCreateThread()">📝 Novo Tópico</button>
+            </div>
+            <div id="topicosContent">
+                <div class="loading-spinner" style="margin:40px auto;display:block;"></div>
+            </div>
         </div>
     `;
+    
+    await loadTopicosContent();
+}
+
+async function loadTopicosContent() {
+    const container = document.getElementById('topicosContent');
+    
+    try {
+        const allThreads = [];
+        const catSnap = await db.collection('maspia').doc('forum').collection('categories').get();
+        
+        for (const catDoc of catSnap.docs) {
+            const subSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(catDoc.id)
+                .collection('subcategories').get();
+            
+            for (const subDoc of subSnap.docs) {
+                const threadSnap = await db.collection('maspia').doc('forum')
+                    .collection('categories').doc(catDoc.id)
+                    .collection('subcategories').doc(subDoc.id)
+                    .collection('threads')
+                    .orderBy('lastActivity', 'desc')
+                    .limit(10)
+                    .get();
+                
+                threadSnap.docs.forEach(d => {
+                    allThreads.push({
+                        id: d.id,
+                        categoryId: catDoc.id,
+                        subcategoryId: subDoc.id,
+                        categoryName: catDoc.data().name,
+                        subcategoryName: subDoc.data().name,
+                        ...d.data()
+                    });
+                });
+            }
+        }
+        
+        allThreads.sort((a, b) => {
+            const da = a.lastActivity?.toDate?.() || new Date(0);
+            const db = b.lastActivity?.toDate?.() || new Date(0);
+            return db - da;
+        });
+        
+        document.getElementById('threadCount').textContent = allThreads.length;
+        
+        if (allThreads.length === 0) {
+            container.innerHTML = `<div class="empty-state"><span class="material-icons">chat</span><p>Nenhum tópico.</p></div>`;
+            return;
+        }
+        
+        container.innerHTML = `<div class="threads-list">` +
+            allThreads.map(t => `
+                <div class="thread-item" onclick="showThreadDetail('${t.categoryId}','${t.subcategoryId}','${t.id}')">
+                    <div class="thread-title">${escapeHtml(t.title)}</div>
+                    <div class="thread-meta">
+                        <span>📂 ${escapeHtml(t.categoryName)} / ${escapeHtml(t.subcategoryName)}</span>
+                        <span>👤 ${escapeHtml(t.authorName || 'Anônimo')}</span>
+                        <span>📅 ${formatDate(t.createdAt)}</span>
+                        <span>💬 ${t.postsCount || 0} posts</span>
+                    </div>
+                </div>
+            `).join('') +
+        `</div>`;
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+    }
 }
 
 // ============================================================
-// PÁGINA: HISTÓRICO
+// CRIAR TÓPICO
+// ============================================================
+window.showCreateThread = function() {
+    if (!currentUser || isBanned) {
+        if (isBanned) alert('Sua conta está banida.');
+        else alert('Faça login para criar tópicos.');
+        return;
+    }
+    
+    showModal(`
+        <h2>📝 Criar Novo Tópico</h2>
+        <form id="createThreadForm">
+            <div class="form-group">
+                <label>Título</label>
+                <input class="form-control" id="threadTitle" placeholder="Título do tópico" required>
+            </div>
+            <div class="form-group">
+                <label>Categoria</label>
+                <select class="form-control" id="threadCategory" required>
+                    <option value="">Selecione uma categoria...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Subcategoria</label>
+                <select class="form-control" id="threadSubcategory" required>
+                    <option value="">Selecione uma subcategoria...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Conteúdo</label>
+                <div id="threadEditor" style="height:250px;"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Criar Tópico</button>
+            <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
+        </form>
+    `);
+    
+    // Carregar categorias
+    loadCategorySelects();
+    
+    if (typeof Quill !== 'undefined') {
+        forumQuill = new Quill('#threadEditor', {
+            theme: 'snow',
+            placeholder: 'Digite o conteúdo do seu tópico... Use as ferramentas de formatação!',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
+        
+        // Adicionar botão de imagem
+        const toolbar = document.querySelector('.ql-toolbar');
+        if (toolbar) {
+            const imageBtn = document.createElement('button');
+            imageBtn.className = 'ql-image';
+            imageBtn.innerHTML = '🖼️';
+            imageBtn.title = 'Inserir imagem';
+            imageBtn.onclick = () => {
+                currentEditorType = 'thread';
+                document.getElementById('imageModal').classList.add('show');
+            };
+            toolbar.appendChild(imageBtn);
+        }
+    }
+    
+    document.getElementById('createThreadForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        if (isLocked(`createThread_${currentUser?.uid}`)) {
+            alert('Aguarde um momento...');
+            return;
+        }
+        
+        const title = document.getElementById('threadTitle').value.trim();
+        const categoryId = document.getElementById('threadCategory').value;
+        const subcategoryId = document.getElementById('threadSubcategory').value;
+        const content = forumQuill?.root.innerHTML || '';
+        
+        if (!title || !categoryId || !subcategoryId) {
+            alert('Preencha todos os campos.');
+            return;
+        }
+        if (!content || content === '<p><br></p>') {
+            alert('Digite o conteúdo do tópico.');
+            return;
+        }
+        
+        lock(`createThread_${currentUser?.uid}`, 3000);
+        
+        const submitBtn = e.target.querySelector('.btn-primary');
+        let originalText = submitBtn?.textContent || 'Criar';
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Criando...'; }
+        
+        try {
+            const threadId = Date.now().toString();
+            const postId = Date.now().toString();
+            
+            const batch = db.batch();
+            
+            const threadRef = db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').doc(subcategoryId)
+                .collection('threads').doc(threadId);
+            
+            batch.set(threadRef, {
+                title: title,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || currentUser.email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                postsCount: 1
+            });
+            
+            const postRef = db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').doc(subcategoryId)
+                .collection('threads').doc(threadId)
+                .collection('posts').doc(postId);
+            
+            batch.set(postRef, {
+                content: content,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || currentUser.email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                isAdmin: isAdmin
+            });
+            
+            await batch.commit();
+            
+            await updateForumCounts(categoryId, subcategoryId);
+            
+            hideModal();
+            alert('✅ Tópico criado com sucesso!');
+            navigateTo('topicos');
+            
+        } catch (err) {
+            alert('❌ Erro: ' + err.message);
+        } finally {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = originalText; }
+            submitLocks.delete(`createThread_${currentUser?.uid}`);
+        }
+    };
+};
+
+async function loadCategorySelects() {
+    try {
+        const catSnap = await db.collection('maspia').doc('forum').collection('categories').get();
+        const catSelect = document.getElementById('threadCategory');
+        const subSelect = document.getElementById('threadSubcategory');
+        
+        catSelect.innerHTML = '<option value="">Selecione uma categoria...</option>';
+        catSnap.docs.forEach(doc => {
+            const data = doc.data();
+            catSelect.innerHTML += `<option value="${doc.id}">${escapeHtml(data.icon || '📁')} ${escapeHtml(data.name)}</option>`;
+        });
+        
+        catSelect.onchange = async function() {
+            const catId = this.value;
+            subSelect.innerHTML = '<option value="">Selecione uma subcategoria...</option>';
+            subSelect.disabled = !catId;
+            
+            if (catId) {
+                const subSnap = await db.collection('maspia').doc('forum')
+                    .collection('categories').doc(catId)
+                    .collection('subcategories').get();
+                subSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    subSelect.innerHTML += `<option value="${doc.id}">${escapeHtml(data.icon || '📌')} ${escapeHtml(data.name)}</option>`;
+                });
+            }
+        };
+        subSelect.disabled = true;
+    } catch (err) {
+        console.error('Erro ao carregar categorias:', err);
+    }
+}
+
+window.showCreatePost = function(categoryId, subcategoryId, threadId) {
+    if (!currentUser || isBanned) {
+        if (isBanned) alert('Sua conta está banida.');
+        else alert('Faça login para responder.');
+        return;
+    }
+    
+    showModal(`
+        <h2>✏️ Responder ao Tópico</h2>
+        <div class="form-group">
+            <label>Conteúdo</label>
+            <div id="replyEditor" style="height:200px;"></div>
+        </div>
+        <button class="btn btn-primary" onclick="submitReply('${categoryId}','${subcategoryId}','${threadId}')">Enviar Resposta</button>
+        <button class="btn btn-outline" onclick="hideModal()">Cancelar</button>
+    `);
+    
+    if (typeof Quill !== 'undefined') {
+        replyQuill = new Quill('#replyEditor', {
+            theme: 'snow',
+            placeholder: 'Digite sua resposta... Use as ferramentas de formatação!',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'header': [1, 2, 3, false] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
+    }
+};
+
+window.submitReply = async function(categoryId, subcategoryId, threadId) {
+    if (!replyQuill) return;
+    if (isLocked(`reply_${threadId}_${currentUser?.uid}`)) {
+        alert('Aguarde um momento...');
+        return;
+    }
+    
+    const content = replyQuill.root.innerHTML;
+    if (!content || content === '<p><br></p>') {
+        alert('Digite o conteúdo.');
+        return;
+    }
+    
+    lock(`reply_${threadId}_${currentUser?.uid}`, 3000);
+    
+    try {
+        const postId = Date.now().toString();
+        
+        const batch = db.batch();
+        
+        const postRef = db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').doc(threadId)
+            .collection('posts').doc(postId);
+        
+        batch.set(postRef, {
+            content: content,
+            authorId: currentUser.uid,
+            authorName: currentUser.displayName || currentUser.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            isAdmin: isAdmin
+        });
+        
+        const threadRef = db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').doc(threadId);
+        
+        batch.update(threadRef, {
+            lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+            postsCount: firebase.firestore.FieldValue.increment(1)
+        });
+        
+        await batch.commit();
+        await updateForumCounts(categoryId, subcategoryId);
+        
+        hideModal();
+        alert('✅ Resposta enviada!');
+        navigateTo('topicos');
+        
+    } catch (err) {
+        alert('❌ Erro: ' + err.message);
+    } finally {
+        submitLocks.delete(`reply_${threadId}_${currentUser?.uid}`);
+    }
+};
+
+// ============================================================
+// FUNÇÕES ADMIN DO FÓRUM
+// ============================================================
+async function renderAdminForum() {
+    if (!isAdmin) { renderUnauthorized(); return; }
+    
+    pageContainer.innerHTML = `
+        <div class="page active">
+            <h1 class="page-title">⚙️ Gerenciar Fórum</h1>
+            <p class="page-subtitle">Administração completa do fórum</p>
+            
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+                <button class="btn btn-primary" onclick="showCreateCategory()">📁 Criar Categoria</button>
+                <button class="btn btn-success" onclick="navigateTo('categorias')">📋 Ver Categorias</button>
+            </div>
+            
+            <div id="adminForumStats">
+                <div class="loading-spinner" style="margin:20px auto;display:block;"></div>
+            </div>
+            
+            <h3 style="margin-top:24px;">📋 Todas as Categorias</h3>
+            <div id="adminCategoryList"></div>
+        </div>
+    `;
+    
+    await loadAdminForumStats();
+    await loadAdminCategoryList();
+}
+
+async function loadAdminForumStats() {
+    const container = document.getElementById('adminForumStats');
+    
+    try {
+        const catSnap = await db.collection('maspia').doc('forum').collection('categories').get();
+        let totalSubs = 0, totalThreads = 0, totalPosts = 0;
+        
+        for (const catDoc of catSnap.docs) {
+            const subSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(catDoc.id)
+                .collection('subcategories').get();
+            totalSubs += subSnap.size;
+            
+            for (const subDoc of subSnap.docs) {
+                const threadSnap = await db.collection('maspia').doc('forum')
+                    .collection('categories').doc(catDoc.id)
+                    .collection('subcategories').doc(subDoc.id)
+                    .collection('threads').get();
+                totalThreads += threadSnap.size;
+                
+                for (const threadDoc of threadSnap.docs) {
+                    const postSnap = await db.collection('maspia').doc('forum')
+                        .collection('categories').doc(catDoc.id)
+                        .collection('subcategories').doc(subDoc.id)
+                        .collection('threads').doc(threadDoc.id)
+                        .collection('posts').get();
+                    totalPosts += postSnap.size;
+                }
+            }
+        }
+        
+        container.innerHTML = `
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="number">${catSnap.size}</div>
+                    <div class="label">Categorias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${totalSubs}</div>
+                    <div class="label">Subcategorias</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${totalThreads}</div>
+                    <div class="label">Tópicos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${totalPosts}</div>
+                    <div class="label">Posts</div>
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+    }
+}
+
+async function loadAdminCategoryList() {
+    const container = document.getElementById('adminCategoryList');
+    
+    try {
+        const catSnap = await db.collection('maspia').doc('forum')
+            .collection('categories')
+            .orderBy('order', 'asc')
+            .get();
+        
+        if (catSnap.empty) {
+            container.innerHTML = '<p style="color:#999;">Nenhuma categoria.</p>';
+            return;
+        }
+        
+        container.innerHTML = catSnap.docs.map(doc => {
+            const data = doc.data();
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">${escapeHtml(data.icon || '📁')} ${escapeHtml(data.name)}</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline" onclick="editCategory('${doc.id}')">✏️</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCategory('${doc.id}')">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="card-meta">${escapeHtml(data.description || '')}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state">❌ ${err.message}</div>`;
+    }
+}
+
+window.showCreateCategory = function() {
+    if (!isAdmin) { alert('Apenas administradores.'); return; }
+    
+    showModal(`
+        <h2>📁 Criar Categoria</h2>
+        <form id="createCategoryForm">
+            <div class="form-group">
+                <label>Nome</label>
+                <input class="form-control" id="catName" required>
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea class="form-control" id="catDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Ícone (emoji)</label>
+                <input class="form-control" id="catIcon" placeholder="📁">
+            </div>
+            <div class="form-group">
+                <label>Ordem</label>
+                <input class="form-control" id="catOrder" type="number" value="0">
+            </div>
+            <button type="submit" class="btn btn-primary">Criar</button>
+            <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
+        </form>
+    `);
+    
+    document.getElementById('createCategoryForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('catName').value.trim();
+        const description = document.getElementById('catDescription').value.trim();
+        const icon = document.getElementById('catIcon').value.trim() || '📁';
+        const order = parseInt(document.getElementById('catOrder').value) || 0;
+        
+        if (!name) { alert('Digite o nome.'); return; }
+        
+        try {
+            await db.collection('maspia').doc('forum').collection('categories').add({
+                name, description, icon, order,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                subcategoriesCount: 0,
+                threadsCount: 0
+            });
+            hideModal();
+            alert('✅ Categoria criada!');
+            navigateTo('admin-forum');
+        } catch (err) {
+            alert('❌ Erro: ' + err.message);
+        }
+    };
+};
+
+window.showCreateSubcategory = function(categoryId) {
+    if (!isAdmin) { alert('Apenas administradores.'); return; }
+    
+    showModal(`
+        <h2>📌 Criar Subcategoria</h2>
+        <form id="createSubcategoryForm">
+            <div class="form-group">
+                <label>Nome</label>
+                <input class="form-control" id="subName" required>
+            </div>
+            <div class="form-group">
+                <label>Descrição</label>
+                <textarea class="form-control" id="subDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Ícone (emoji)</label>
+                <input class="form-control" id="subIcon" placeholder="📌">
+            </div>
+            <div class="form-group">
+                <label>Ordem</label>
+                <input class="form-control" id="subOrder" type="number" value="0">
+            </div>
+            <button type="submit" class="btn btn-primary">Criar</button>
+            <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
+        </form>
+    `);
+    
+    document.getElementById('createSubcategoryForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('subName').value.trim();
+        const description = document.getElementById('subDescription').value.trim();
+        const icon = document.getElementById('subIcon').value.trim() || '📌';
+        const order = parseInt(document.getElementById('subOrder').value) || 0;
+        
+        if (!name) { alert('Digite o nome.'); return; }
+        
+        try {
+            await db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').add({
+                    name, description, icon, order,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    threadsCount: 0,
+                    postsCount: 0
+                });
+            
+            const subSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').get();
+            
+            await db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .update({ subcategoriesCount: subSnap.size });
+            
+            hideModal();
+            alert('✅ Subcategoria criada!');
+            navigateTo('categorias');
+        } catch (err) {
+            alert('❌ Erro: ' + err.message);
+        }
+    };
+};
+
+window.editCategory = async function(categoryId) {
+    if (!isAdmin) return;
+    
+    try {
+        const doc = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId).get();
+        const data = doc.data();
+        
+        showModal(`
+            <h2>✏️ Editar Categoria</h2>
+            <form id="editCategoryForm">
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input class="form-control" id="editCatName" value="${escapeHtml(data.name || '')}" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea class="form-control" id="editCatDescription" rows="3">${escapeHtml(data.description || '')}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Ícone (emoji)</label>
+                    <input class="form-control" id="editCatIcon" value="${escapeHtml(data.icon || '📁')}">
+                </div>
+                <div class="form-group">
+                    <label>Ordem</label>
+                    <input class="form-control" id="editCatOrder" type="number" value="${data.order || 0}">
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
+            </form>
+        `);
+        
+        document.getElementById('editCategoryForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('editCatName').value.trim();
+            const description = document.getElementById('editCatDescription').value.trim();
+            const icon = document.getElementById('editCatIcon').value.trim() || '📁';
+            const order = parseInt(document.getElementById('editCatOrder').value) || 0;
+            
+            if (!name) { alert('Digite o nome.'); return; }
+            
+            try {
+                await db.collection('maspia').doc('forum')
+                    .collection('categories').doc(categoryId)
+                    .update({ name, description, icon, order });
+                hideModal();
+                alert('✅ Categoria atualizada!');
+                navigateTo('admin-forum');
+            } catch (err) {
+                alert('❌ Erro: ' + err.message);
+            }
+        };
+    } catch (err) {
+        alert('Erro: ' + err.message);
+    }
+};
+
+window.deleteCategory = async function(categoryId) {
+    if (!isAdmin) return;
+    if (!confirm('Tem certeza que deseja excluir esta categoria e todos os seus dados?')) return;
+    
+    try {
+        const subSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').get();
+        
+        const batch = db.batch();
+        
+        for (const subDoc of subSnap.docs) {
+            const threadSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').doc(subDoc.id)
+                .collection('threads').get();
+            
+            for (const threadDoc of threadSnap.docs) {
+                const postSnap = await db.collection('maspia').doc('forum')
+                    .collection('categories').doc(categoryId)
+                    .collection('subcategories').doc(subDoc.id)
+                    .collection('threads').doc(threadDoc.id)
+                    .collection('posts').get();
+                
+                postSnap.docs.forEach(p => batch.delete(p.ref));
+                batch.delete(threadDoc.ref);
+            }
+            batch.delete(subDoc.ref);
+        }
+        
+        batch.delete(db.collection('maspia').doc('forum').collection('categories').doc(categoryId));
+        await batch.commit();
+        
+        alert('✅ Categoria excluída!');
+        navigateTo('admin-forum');
+    } catch (err) {
+        alert('❌ Erro: ' + err.message);
+    }
+};
+
+window.deleteSubcategory = async function(categoryId, subcategoryId) {
+    if (!isAdmin) return;
+    if (!confirm('Tem certeza que deseja excluir esta subcategoria e todos os seus dados?')) return;
+    
+    try {
+        const threadSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').get();
+        
+        const batch = db.batch();
+        
+        for (const threadDoc of threadSnap.docs) {
+            const postSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').doc(subcategoryId)
+                .collection('threads').doc(threadDoc.id)
+                .collection('posts').get();
+            
+            postSnap.docs.forEach(p => batch.delete(p.ref));
+            batch.delete(threadDoc.ref);
+        }
+        
+        batch.delete(db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId));
+        
+        await batch.commit();
+        
+        const subSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').get();
+        
+        await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .update({ subcategoriesCount: subSnap.size });
+        
+        alert('✅ Subcategoria excluída!');
+        navigateTo('categorias');
+    } catch (err) {
+        alert('❌ Erro: ' + err.message);
+    }
+};
+
+window.deleteThread = async function(categoryId, subcategoryId, threadId) {
+    if (!isAdmin) return;
+    if (!confirm('Tem certeza que deseja excluir este tópico?')) return;
+    
+    try {
+        const postSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').doc(threadId)
+            .collection('posts').get();
+        
+        const batch = db.batch();
+        postSnap.docs.forEach(p => batch.delete(p.ref));
+        batch.delete(db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').doc(threadId));
+        
+        await batch.commit();
+        await updateForumCounts(categoryId, subcategoryId);
+        
+        alert('✅ Tópico excluído!');
+        navigateTo('topicos');
+    } catch (err) {
+        alert('❌ Erro: ' + err.message);
+    }
+};
+
+async function updateForumCounts(categoryId, subcategoryId) {
+    try {
+        const threadSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .collection('threads').get();
+        
+        let totalPosts = 0;
+        for (const doc of threadSnap.docs) {
+            const postSnap = await db.collection('maspia').doc('forum')
+                .collection('categories').doc(categoryId)
+                .collection('subcategories').doc(subcategoryId)
+                .collection('threads').doc(doc.id)
+                .collection('posts').get();
+            totalPosts += postSnap.size;
+        }
+        
+        await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').doc(subcategoryId)
+            .update({
+                threadsCount: threadSnap.size,
+                postsCount: totalPosts
+            });
+        
+        const catThreadSnap = await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .collection('subcategories').get();
+        
+        let totalThreads = 0;
+        for (const doc of catThreadSnap.docs) {
+            totalThreads += (doc.data().threadsCount || 0);
+        }
+        
+        await db.collection('maspia').doc('forum')
+            .collection('categories').doc(categoryId)
+            .update({ threadsCount: totalThreads });
+    } catch (err) {
+        console.error('Erro ao atualizar contagens:', err);
+    }
+}
+
+// ============================================================
+// IMAGEM EDITOR
+// ============================================================
+function closeImageModal() {
+    document.getElementById('imageModal').classList.remove('show');
+}
+
+window.insertImageToEditor = function() {
+    const url = document.getElementById('imageUrl').value.trim();
+    const alt = document.getElementById('imageAlt').value.trim() || 'imagem';
+    
+    if (!url) {
+        alert('Digite uma URL de imagem válida.');
+        return;
+    }
+    
+    let quill = null;
+    if (currentEditorType === 'thread') quill = forumQuill;
+    else if (currentEditorType === 'reply') quill = replyQuill;
+    
+    if (quill) {
+        const range = quill.getSelection();
+        if (range) {
+            quill.insertEmbed(range.index, 'image', url);
+        } else {
+            quill.insertEmbed(quill.getLength() - 1, 'image', url);
+        }
+    }
+    
+    closeImageModal();
+    document.getElementById('imageUrl').value = '';
+    document.getElementById('imageAlt').value = '';
+};
+
+// ============================================================
+// HISTÓRICO, TICKETS E OUTRAS PÁGINAS (mantidas das versões anteriores)
 // ============================================================
 async function renderHistorico() {
     let edits = [];
@@ -1743,33 +2605,20 @@ async function renderHistorico() {
         <div class="page active">
             <h1 class="page-title">📜 Histórico</h1>
             <p class="page-subtitle">Suas edições e ações registradas</p>
-            
             ${edits.length === 0 ? `
-                <div class="empty-state">
-                    <span class="material-icons">history</span>
-                    <p>Você ainda não possui edições registradas.</p>
-                </div>
+                <div class="empty-state"><span class="material-icons">history</span><p>Nenhuma edição registrada.</p></div>
             ` : `
                 <div class="table-container">
                     <table>
-                        <thead>
+                        <thead><tr><th>Ação</th><th>Alvo</th><th>Tipo</th><th>Data</th></tr></thead>
+                        <tbody>${edits.map(e => `
                             <tr>
-                                <th>Ação</th>
-                                <th>Alvo</th>
-                                <th>Tipo</th>
-                                <th>Data</th>
+                                <td>${escapeHtml(e.action || 'Edição')}</td>
+                                <td>${escapeHtml(e.targetId?.substring(0,12) || '---')}</td>
+                                <td><span style="font-size:0.8em;background:#f0f0f0;padding:2px 10px;border-radius:12px;">${escapeHtml(e.targetType || 'geral')}</span></td>
+                                <td>${formatDate(e.timestamp)}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            ${edits.map(e => `
-                                <tr>
-                                    <td>${escapeHtml(e.action || 'Edição')}</td>
-                                    <td>${escapeHtml(e.targetId?.substring(0,12) || '---')}</td>
-                                    <td><span style="font-size:0.8em;background:#f0f0f0;padding:2px 10px;border-radius:12px;">${escapeHtml(e.targetType || 'geral')}</span></td>
-                                    <td>${formatDate(e.timestamp)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
+                        `).join('')}</tbody>
                     </table>
                 </div>
             `}
@@ -1777,9 +2626,6 @@ async function renderHistorico() {
     `;
 }
 
-// ============================================================
-// PÁGINA: TICKETS
-// ============================================================
 async function renderTickets() {
     let ticketList = [];
     try {
@@ -1794,18 +2640,11 @@ async function renderTickets() {
     pageContainer.innerHTML = `
         <div class="page active">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-                <div>
-                    <h1 class="page-title">🎫 Tickets</h1>
-                    <p class="page-subtitle">Acompanhe seus chamados (${ticketList.length})</p>
-                </div>
+                <div><h1 class="page-title">🎫 Tickets</h1><p class="page-subtitle">Acompanhe seus chamados (${ticketList.length})</p></div>
                 <button class="btn btn-success" onclick="openNewTicket()">+ Novo Ticket</button>
             </div>
-            
             ${ticketList.length === 0 ? `
-                <div class="empty-state">
-                    <span class="material-icons">confirmation_number</span>
-                    <p>Nenhum ticket encontrado.</p>
-                </div>
+                <div class="empty-state"><span class="material-icons">confirmation_number</span><p>Nenhum ticket.</p></div>
             ` : ticketList.map(t => `
                 <div class="card" onclick="viewTicket('${t.id}')" style="cursor:pointer;">
                     <div class="card-header">
@@ -1813,11 +2652,7 @@ async function renderTickets() {
                         <span class="status-badge ${t.status || 'open'}">${t.status || 'Aberto'}</span>
                     </div>
                     <div class="card-preview">${escapeHtml(t.description?.substring(0,120) || '')}</div>
-                    <div class="card-meta">
-                        <span>📅 ${formatDate(t.createdAt)}</span>
-                        <span>#${t.id.substring(0,6)}</span>
-                        ${t.category ? `<span>📂 ${escapeHtml(t.category)}</span>` : ''}
-                    </div>
+                    <div class="card-meta"><span>📅 ${formatDate(t.createdAt)}</span><span>#${t.id.substring(0,6)}</span></div>
                 </div>
             `).join('')}
         </div>
@@ -1828,10 +2663,7 @@ window.openNewTicket = function() {
     showModal(`
         <h2>📝 Novo Ticket</h2>
         <form id="newTicketForm">
-            <div class="form-group">
-                <label>Título</label>
-                <input class="form-control" id="ticketTitle" placeholder="Resumo do problema" required>
-            </div>
+            <div class="form-group"><label>Título</label><input class="form-control" id="ticketTitle" required></div>
             <div class="form-group">
                 <label>Categoria</label>
                 <select class="form-control" id="ticketCategory">
@@ -1842,16 +2674,13 @@ window.openNewTicket = function() {
                     <option value="denuncia">Denúncia</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Descrição</label>
-                <textarea class="form-control" id="ticketDescription" rows="5" required></textarea>
-            </div>
+            <div class="form-group"><label>Descrição</label><textarea class="form-control" id="ticketDescription" rows="5" required></textarea></div>
             <button type="submit" class="btn btn-primary">Enviar</button>
             <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
         </form>
     `);
     
-    document.getElementById('newTicketForm').addEventListener('submit', async (e) => {
+    document.getElementById('newTicketForm').onsubmit = async (e) => {
         e.preventDefault();
         const title = document.getElementById('ticketTitle').value.trim();
         const category = document.getElementById('ticketCategory').value;
@@ -1870,116 +2699,42 @@ window.openNewTicket = function() {
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             hideModal();
-            renderTickets();
             alert('✅ Ticket criado!');
+            renderTickets();
         } catch (err) {
             alert('❌ Erro: ' + err.message);
         }
-    });
+    };
 };
 
 window.viewTicket = function(ticketId) {
-    // Buscar ticket e mensagens
     showModal(`
         <h2>🎫 Ticket</h2>
-        <p style="color:#888;font-size:0.85em;">Carregando...</p>
+        <p style="color:#888;">Carregando detalhes do ticket...</p>
+        <button class="btn btn-outline" onclick="hideModal()">Fechar</button>
     `);
-    // Implementação simplificada - em produção, carregar mensagens do ticket
 };
 
-// ============================================================
-// PÁGINA: WIKI EDITOR
-// ============================================================
-async function renderWikiEditor() {
-    if (isBanned) {
-        pageContainer.innerHTML = `
-            <div class="page active">
-                <h1 class="page-title">✏️ Editor Wiki</h1>
-                <div class="empty-state">
-                    <span class="material-icons">block</span>
-                    <h3>Acesso negado</h3>
-                    <p>Sua conta está banida.</p>
-                </div>
-            </div>
-        `;
-        return;
-    }
-    
-    let pages = [];
-    try {
-        const snap = await db.collection('documentos').get();
-        pages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    } catch (err) { console.error(err); }
-    
-    pageContainer.innerHTML = `
-        <div class="page active">
-            <h1 class="page-title">✏️ Editor Wiki</h1>
-            <p class="page-subtitle">Crie e edite páginas e artigos com formatação wiki</p>
-            
-            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
-                <button class="btn btn-success" onclick="openCreatePage()">📚 Nova Página</button>
-                <button class="btn btn-primary" onclick="if(pages.length>0) openEditor(pages[0].id, null)">✏️ Editar Página</button>
-            </div>
-            
-            <h3 style="font-size:1em;font-weight:600;">📄 Páginas disponíveis</h3>
-            ${pages.length === 0 ? '<p style="color:#999;">Nenhuma página. Crie uma para começar!</p>' :
-                pages.map(p => `
-                    <div class="card" onclick="openEditor('${p.id}', null)" style="cursor:pointer;">
-                        <div class="card-header">
-                            <span class="card-title">${escapeHtml(p.titulo || p.id)}</span>
-                            <span style="font-size:0.8em;color:#888;">${p.articleCount || 0} artigos</span>
-                        </div>
-                        <div class="card-meta">📅 ${formatDate(p.criadoEm)}</div>
-                    </div>
-                `).join('')
-            }
-            
-            <div style="margin-top:20px;padding:16px;background:#f8f9fc;border-radius:8px;">
-                <h4>📝 Guia de Formatação</h4>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.85em;">
-                    <div><code>= Título =</code> → <strong>h1</strong></div>
-                    <div><code>== Subtítulo ==</code> → <strong>h2</strong></div>
-                    <div><code>**negrito**</code> → <strong>negrito</strong></div>
-                    <div><code>*itálico*</code> → <em>itálico</em></div>
-                    <div><code>[[Página]]</code> → Link interno</div>
-                    <div><code>[url Texto]</code> → Link externo</div>
-                    <div><code>* Item</code> → Lista com marcadores</div>
-                    <div><code># Item</code> → Lista numerada</div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// ============================================================
-// PÁGINA: CONFIGURAÇÕES
-// ============================================================
 function renderConfiguracoes() {
     pageContainer.innerHTML = `
         <div class="page active">
             <h1 class="page-title">⚙️ Configurações</h1>
             <p class="page-subtitle">Personalize sua experiência</p>
-            
             <div style="display:grid;gap:16px;max-width:600px;">
                 <div style="background:#f8f9fc;border-radius:12px;padding:16px;">
-                    <h4 style="font-weight:500;">Tema</h4>
+                    <h4>Tema</h4>
                     <select class="form-control" style="margin-top:8px;">
                         <option value="light">Claro</option>
                         <option value="dark">Escuro</option>
                         <option value="system">Sistema</option>
                     </select>
                 </div>
-                
                 <div style="background:#f8f9fc;border-radius:12px;padding:16px;">
-                    <h4 style="font-weight:500;">Privacidade</h4>
+                    <h4>Privacidade</h4>
                     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:8px;">
                         <input type="checkbox"> Tornar perfil público
                     </label>
-                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
-                        <input type="checkbox"> Mostrar atividade recente
-                    </label>
                 </div>
-                
                 <button class="btn btn-primary" onclick="alert('Configurações salvas!')">💾 Salvar</button>
             </div>
         </div>
@@ -1987,188 +2742,7 @@ function renderConfiguracoes() {
 }
 
 // ============================================================
-// EDITOR WIKI (MODAL)
-// ============================================================
-async function openEditor(pageUid, articleId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Não é possível editar.');
-        return;
-    }
-    if (!currentUser) {
-        alert('Faça login para editar.');
-        return;
-    }
-    
-    currentEditingPageUid = pageUid;
-    await loadArticleList(pageUid);
-    
-    if (articleId === 'novo') {
-        currentEditingArticleId = null;
-        editorArticleTitle.value = '';
-        editorArticleContent.value = '';
-        editorArticleDescription.value = '';
-        editorTitle.innerHTML = `📝 Novo artigo em ${escapeHtml(pageUid)}`;
-        editorPreview.innerHTML = '<em>Pré-visualização aparecerá aqui</em>';
-    } else if (articleId) {
-        currentEditingArticleId = articleId;
-        await loadArticleData(pageUid, articleId);
-        editorTitle.innerHTML = `📝 Editando artigo em ${escapeHtml(pageUid)}`;
-    } else {
-        currentEditingArticleId = null;
-        editorArticleTitle.value = '';
-        editorArticleContent.value = '';
-        editorArticleDescription.value = '';
-        editorTitle.innerHTML = `📝 Editando página: ${escapeHtml(pageUid)}`;
-        editorPreview.innerHTML = '<em>Pré-visualização aparecerá aqui</em>';
-    }
-    
-    editorModal.style.display = 'flex';
-    
-    // Atualizar pré-visualização ao digitar
-    editorArticleContent.oninput = () => {
-        const content = editorArticleContent.value;
-        editorPreview.innerHTML = wikitextToHtml(content) || '<em>Sem conteúdo</em>';
-    };
-    editorArticleContent.oninput();
-}
-
-async function loadArticleList(pageUid) {
-    try {
-        const snap = await db.collection('documentos').doc(pageUid).collection('inevitavel').get();
-        const articles = snap.docs.map(d => ({ id: d.id, titulo: d.data().titulo }));
-        
-        if (articles.length === 0) {
-            editorArticleList.innerHTML = '<p style="text-align:center;color:#999;padding:20px;">Nenhum artigo</p>';
-        } else {
-            editorArticleList.innerHTML = articles.map(a => `
-                <div class="article-list-item" onclick="openEditor('${pageUid}','${a.id}')">
-                    <span>📄 ${escapeHtml(a.titulo)}</span>
-                    <span class="delete-article-btn" onclick="event.stopPropagation(); deleteArticle('${pageUid}','${a.id}')">🗑️</span>
-                </div>
-            `).join('');
-        }
-    } catch (err) {
-        editorArticleList.innerHTML = `<p>Erro: ${err.message}</p>`;
-    }
-}
-
-async function loadArticleData(pageUid, articleId) {
-    try {
-        const doc = await db.collection('documentos').doc(pageUid).collection('inevitavel').doc(articleId).get();
-        if (doc.exists) {
-            const data = doc.data();
-            editorArticleTitle.value = data.titulo || '';
-            editorArticleContent.value = data.descricao || '';
-            editorArticleDescription.value = data.resumo || '';
-            editorPreview.innerHTML = wikitextToHtml(data.descricao || '') || '<em>Sem conteúdo</em>';
-        }
-    } catch (err) {
-        alert('Erro ao carregar: ' + err.message);
-    }
-}
-
-async function saveArticle() {
-    if (isBanned) {
-        alert('Sua conta está banida. Não é possível salvar.');
-        return;
-    }
-    if (!currentEditingPageUid) { alert('Erro: página não identificada'); return; }
-    
-    const title = editorArticleTitle.value.trim();
-    const content = editorArticleContent.value;
-    const description = editorArticleDescription.value;
-    
-    if (!title && currentEditingArticleId !== null) { alert('Digite um título'); return; }
-    
-    editorSaveBtn.disabled = true;
-    editorSaveBtn.textContent = '💾 Salvando...';
-    
-    try {
-        if (currentEditingArticleId) {
-            await db.collection('documentos').doc(currentEditingPageUid).collection('inevitavel').doc(currentEditingArticleId).update({
-                titulo: title,
-                descricao: content,
-                resumo: description,
-                ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
-                editorId: currentUser.uid,
-                editorNome: currentUser.displayName
-            });
-            alert('✅ Artigo atualizado!');
-        } else if (title) {
-            const newId = title.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_' + Date.now();
-            await db.collection('documentos').doc(currentEditingPageUid).collection('inevitavel').doc(newId).set({
-                titulo: title,
-                descricao: content,
-                resumo: description,
-                criadorEmail: currentUser.email,
-                criadorNome: currentUser.displayName,
-                criadorUid: currentUser.uid,
-                dataCriacao: firebase.firestore.FieldValue.serverTimestamp(),
-                ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert('✅ Novo artigo criado!');
-        } else {
-            alert('Digite um título para o artigo');
-            editorSaveBtn.disabled = false;
-            editorSaveBtn.textContent = '💾 Salvar';
-            return;
-        }
-        
-        await loadArticleList(currentEditingPageUid);
-        renderPages();
-        
-        if (!confirm('Salvo com sucesso! Deseja continuar editando?')) {
-            closeEditor();
-        }
-    } catch (err) {
-        alert('Erro: ' + err.message);
-    } finally {
-        editorSaveBtn.disabled = false;
-        editorSaveBtn.textContent = '💾 Salvar';
-    }
-}
-
-async function deleteArticle(pageUid, articleId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Não é possível excluir.');
-        return;
-    }
-    if (!confirm('Tem certeza que deseja excluir este artigo permanentemente?')) return;
-    
-    try {
-        await db.collection('documentos').doc(pageUid).collection('inevitavel').doc(articleId).delete();
-        alert('Artigo excluído!');
-        await loadArticleList(pageUid);
-        if (currentEditingArticleId === articleId) {
-            currentEditingArticleId = null;
-            editorArticleTitle.value = '';
-            editorArticleContent.value = '';
-            editorArticleDescription.value = '';
-            editorPreview.innerHTML = '<em>Sem conteúdo</em>';
-        }
-        renderPages();
-    } catch (err) {
-        alert('Erro: ' + err.message);
-    }
-}
-
-function closeEditor() {
-    editorModal.style.display = 'none';
-    currentEditingPageUid = null;
-    currentEditingArticleId = null;
-}
-
-// Editor event listeners
-editorSaveBtn.addEventListener('click', saveArticle);
-editorCloseBtn.addEventListener('click', closeEditor);
-editorNewArticleBtn.addEventListener('click', () => {
-    if (currentEditingPageUid && !isBanned) {
-        openEditor(currentEditingPageUid, 'novo');
-    }
-});
-
-// ============================================================
-// ADMIN: USUÁRIOS
+// ADMIN: USUÁRIOS, BAN, LGPD
 // ============================================================
 async function renderAdminUsers() {
     let users = [];
@@ -2181,34 +2755,20 @@ async function renderAdminUsers() {
         <div class="page active">
             <h1 class="page-title">👥 Usuários</h1>
             <p class="page-subtitle">Gerenciamento de usuários (${users.length})</p>
-            
             <div class="table-container">
                 <table>
-                    <thead>
+                    <thead><tr><th>Usuário</th><th>Email</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody>${users.map(u => `
                         <tr>
-                            <th>Usuário</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Ações</th>
+                            <td><strong>${escapeHtml(u.displayName || u.name || u.id?.substring(0,8) || '---')}</strong></td>
+                            <td>${escapeHtml(u.email || '---')}</td>
+                            <td>${u.isBanned ? '🚫 Banido' : '✅ Ativo'} ${u.isAdmin ? ' 🔑' : ''}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" onclick="adminToggleBan('${u.id}')">${u.isBanned ? 'Desbanir' : 'Banir'}</button>
+                                ${!u.isAdmin ? `<button class="btn btn-sm btn-primary" onclick="adminMakeAdmin('${u.id}')">Tornar Admin</button>` : ''}
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        ${users.map(u => `
-                            <tr>
-                                <td><strong>${escapeHtml(u.displayName || u.name || u.id?.substring(0,8) || '---')}</strong></td>
-                                <td>${escapeHtml(u.email || '---')}</td>
-                                <td>
-                                    ${u.isBanned ? '🚫 Banido' : '✅ Ativo'}
-                                    ${u.isAdmin ? ' 🔑' : ''}
-                                    ${u.isTeacher || u.isTeatcher ? ' 📚' : ''}
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline" onclick="adminToggleBan('${u.id}')">${u.isBanned ? 'Desbanir' : 'Banir'}</button>
-                                    ${!u.isAdmin ? `<button class="btn btn-sm btn-primary" onclick="adminMakeAdmin('${u.id}')">Tornar Admin</button>` : ''}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
+                    `).join('')}</tbody>
                 </table>
             </div>
         </div>
@@ -2216,11 +2776,11 @@ async function renderAdminUsers() {
 }
 
 window.adminToggleBan = async function(uid) {
-    if (!confirm('Confirmar ação?')) return;
+    if (!confirm('Confirmar?')) return;
     try {
         const doc = await db.collection('users').doc(uid).get();
         const current = doc.data()?.isBanned || false;
-        await db.collection('users').doc(uid).update({ 
+        await db.collection('users').doc(uid).update({
             isBanned: !current,
             banReason: !current ? 'Banido por administrador' : '',
             bannedAt: !current ? firebase.firestore.FieldValue.serverTimestamp() : null
@@ -2231,7 +2791,7 @@ window.adminToggleBan = async function(uid) {
 };
 
 window.adminMakeAdmin = async function(uid) {
-    if (!confirm('Tornar este usuário administrador?')) return;
+    if (!confirm('Tornar admin?')) return;
     try {
         await db.collection('users').doc(uid).update({ isAdmin: true });
         await db.collection('usuários').doc(uid).update({ isAdmin: true });
@@ -2239,9 +2799,6 @@ window.adminMakeAdmin = async function(uid) {
     } catch (err) { alert('Erro: ' + err.message); }
 };
 
-// ============================================================
-// ADMIN: BANIR USUÁRIOS
-// ============================================================
 async function renderAdminBan() {
     let users = [];
     try {
@@ -2252,41 +2809,28 @@ async function renderAdminBan() {
     pageContainer.innerHTML = `
         <div class="page active">
             <h1 class="page-title">🚫 Banir Usuários</h1>
-            <p class="page-subtitle">Gerencie banimentos de usuários</p>
-            
+            <p class="page-subtitle">Gerencie banimentos</p>
             <div class="table-container">
                 <table>
-                    <thead>
+                    <thead><tr><th>Usuário</th><th>Email</th><th>Ação</th></tr></thead>
+                    <tbody>${users.map(u => `
                         <tr>
-                            <th>Usuário</th>
-                            <th>Email</th>
-                            <th>Ações</th>
+                            <td><strong>${escapeHtml(u.displayName || u.name || u.id?.substring(0,8) || '---')}</strong></td>
+                            <td>${escapeHtml(u.email || '---')}</td>
+                            <td><button class="btn btn-sm btn-danger" onclick="banUser('${u.id}')">🚫 Banir</button></td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        ${users.map(u => `
-                            <tr>
-                                <td><strong>${escapeHtml(u.displayName || u.name || u.id?.substring(0,8) || '---')}</strong></td>
-                                <td>${escapeHtml(u.email || '---')}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger" onclick="banUser('${u.id}')">🚫 Banir</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
+                    `).join('')}</tbody>
                 </table>
             </div>
-            
             <h3 style="margin-top:20px;">⚠️ Usuários Banidos</h3>
-            <div id="bannedUsersList" class="loading">Carregando...</div>
+            <div id="bannedUsersList"></div>
         </div>
     `;
     
-    // Carregar usuários banidos
     try {
         const bannedSnap = await db.collection('users').where('isBanned', '==', true).get();
         const bannedUsers = bannedSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        document.getElementById('bannedUsersList').innerHTML = bannedUsers.length === 0 ? 
+        document.getElementById('bannedUsersList').innerHTML = bannedUsers.length === 0 ?
             '<p style="color:#999;">Nenhum usuário banido.</p>' :
             bannedUsers.map(u => `
                 <div class="card">
@@ -2323,9 +2867,6 @@ window.banUser = async function(uid) {
     }
 };
 
-// ============================================================
-// ADMIN: LGPD
-// ============================================================
 async function renderAdminLGPD() {
     let requests = [];
     try {
@@ -2340,22 +2881,15 @@ async function renderAdminLGPD() {
         <div class="page active">
             <h1 class="page-title">🔒 Solicitações LGPD</h1>
             <p class="page-subtitle">Solicitações de exclusão de dados (${requests.length} pendentes)</p>
-            
             ${requests.length === 0 ? `
-                <div class="empty-state">
-                    <span class="material-icons">privacy_tip</span>
-                    <p>Nenhuma solicitação pendente.</p>
-                </div>
+                <div class="empty-state"><span class="material-icons">privacy_tip</span><p>Nenhuma solicitação pendente.</p></div>
             ` : requests.map(r => `
                 <div class="card">
                     <div class="card-header">
                         <span class="card-title">Solicitação de ${escapeHtml(r.userName || 'Usuário')}</span>
                         <span class="status-badge pending">Pendente</span>
                     </div>
-                    <div class="card-meta">
-                        <span>📧 ${escapeHtml(r.userEmail || '---')}</span>
-                        <span>📅 ${formatDate(r.createdAt)}</span>
-                    </div>
+                    <div class="card-meta"><span>📧 ${escapeHtml(r.userEmail || '---')}</span><span>📅 ${formatDate(r.createdAt)}</span></div>
                     ${r.reason ? `<div class="card-preview">Motivo: ${escapeHtml(r.reason)}</div>` : ''}
                     <div style="margin-top:8px;display:flex;gap:8px;">
                         <button class="btn btn-sm btn-success" onclick="processLGPD('${r.id}','approved')">✅ Aprovar</button>
@@ -2368,7 +2902,7 @@ async function renderAdminLGPD() {
 }
 
 window.processLGPD = async function(requestId, status) {
-    if (!confirm(`Confirmar ação: ${status === 'approved' ? 'APROVAR' : 'REJEITAR'}?`)) return;
+    if (!confirm(`Confirmar: ${status === 'approved' ? 'APROVAR' : 'REJEITAR'}?`)) return;
     try {
         await db.collection('deletion_requests').doc(requestId).update({
             status: status,
@@ -2381,27 +2915,20 @@ window.processLGPD = async function(requestId, status) {
     }
 };
 
-// ============================================================
-// LGPD - Solicitação de exclusão para usuário
-// ============================================================
 window.requestDataDeletion = function() {
-    if (!confirm('⚠️ Esta ação solicitará a exclusão de todos os seus dados do sistema, conforme previsto na LGPD.\n\nDeseja continuar?')) return;
+    if (!confirm('⚠️ Solicitar exclusão de todos os seus dados (LGPD)?')) return;
     
     showModal(`
         <h2>🔒 Solicitação de Exclusão de Dados</h2>
         <p>Você está solicitando a exclusão de todos os seus dados pessoais, conforme previsto na <strong>LGPD</strong>.</p>
-        <p style="color:#888;font-size:0.85em;">Esta solicitação será analisada pela administração.</p>
         <form id="lgpdForm">
-            <div class="form-group">
-                <label>Motivo (opcional)</label>
-                <textarea class="form-control" id="lgpdReason" rows="3"></textarea>
-            </div>
+            <div class="form-group"><label>Motivo (opcional)</label><textarea class="form-control" id="lgpdReason" rows="3"></textarea></div>
             <button type="submit" class="btn btn-danger">Solicitar exclusão</button>
             <button type="button" class="btn btn-outline" onclick="hideModal()">Cancelar</button>
         </form>
     `);
     
-    document.getElementById('lgpdForm').addEventListener('submit', async (e) => {
+    document.getElementById('lgpdForm').onsubmit = async (e) => {
         e.preventDefault();
         const reason = document.getElementById('lgpdReason').value.trim();
         
@@ -2415,11 +2942,11 @@ window.requestDataDeletion = function() {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             hideModal();
-            alert('✅ Solicitação enviada! Você será notificado quando for processada.');
+            alert('✅ Solicitação enviada!');
         } catch (err) {
             alert('❌ Erro: ' + err.message);
         }
-    });
+    };
 };
 
 // ============================================================
@@ -2443,13 +2970,12 @@ auth.onAuthStateChanged(async (user) => {
         currentUser = null;
         isBanned = false;
         updateUI();
-        // Redirecionar para login se não autenticado
         window.location.href = 'login.html';
     }
 });
 
-console.log('🚀 Central do Usuário WazzimaGiygg - Versão Completa');
-console.log('📌 Ações do WikiZero integradas: Páginas, Artigos, Editor, Banimento, LGPD');
+console.log('🚀 Central do Usuário WazzimaGiygg - Versão Completa com Fórum');
+console.log('📌 Funcionalidades: Dashboard, Perfil, Fórum, Categorias, Tópicos, Posts, Comentários, Admin');
 </script>
 
 </body>
