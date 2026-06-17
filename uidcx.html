@@ -731,7 +731,7 @@ googleLoginBtn.addEventListener('click', async () => {
         
         // Login bem-sucedido
         hideLoading();
-        window.location.href = 'index.html';
+        window.location.href = 'beta.html';
         
     } catch (error) {
         hideLoading();
@@ -769,7 +769,7 @@ guestLoginBtn.addEventListener('click', () => {
         localStorage.setItem('wzzm_guest_expiry', expiry.toString());
         
         hideLoading();
-        window.location.href = 'index.html';
+        window.location.href = 'beta.html';
         
     } catch (error) {
         hideLoading();
@@ -788,7 +788,7 @@ function generateGuestUID() {
 
 // Continue Button - verifica se já está logado
 continueBtn.addEventListener('click', () => {
-    window.location.href = 'index.html';
+    window.location.href = 'beta.html';
 });
 
 // ============================================================
