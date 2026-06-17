@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="description" content="Jornal Regional - Notícias de Santa Fé do Sul e região com credibilidade e independência">
+    <meta name="keywords" content="jornal, notícias, Santa Fé do Sul, Regional, política, economia">
+    <meta name="author" content="Jornal Regional">
+    <title>Jornal Regional - Edição Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Lato:wght@300;400;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" href="https://jornalregionalsantafe.com.br/wp-content/uploads/2022/07/J.png" type="image/x-icon">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #e8e5df;
+            font-family: 'Lato', sans-serif;
+            color: #1a1a1a;
+            line-height: 1.5;
+        }
+
+        .newspaper-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fffcf8;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+        }
+
+        .newspaper-header {
+            border-bottom: 4px solid #c0392b;
+            background: white;
+            text-align: center;
+            padding: 20px 20px 10px;
+        }
+
+        .newspaper-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 68px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            color: #1a3c5e;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+
+        .newspaper-name span {
+            color: #c0392b;
+        }
+
+        .newspaper-motto {
+            font-family: 'Merriweather', serif;
+            font-size: 13px;
+            color: #666;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-top: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            display: inline-block;
+            padding: 6px 20px;
+            margin-top: 8px;
+        }
+
+        .issue-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #555;
+            text-transform: uppercase;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .issue-date {
+            font-weight: 600;
+        }
+
+        .nav-menu {
+            background: #1a3c5e;
+            padding: 0;
+            margin-top: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-menu ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-menu li {
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-menu li:last-child {
+            border-right: none;
+        }
+
+        .nav-menu a {
+            display: block;
+            padding: 12px 24px;
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-menu a:hover, .nav-menu a.active {
+            background: #c0392b;
+        }
+
+        .user-bar {
+            background: #2c3e50;
+            padding: 8px 30px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: white;
+            font-size: 13px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #c0392b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .user-avatar img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .btn {
+            padding: 6px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-google {
+            background: #4285F4;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-google:hover {
+            background: #357ae8;
+        }
+
+        .btn-primary {
+            background: #c0392b;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #a93226;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .btn-danger {
+            background: #c0392b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #a93226;
+        }
+
+        .btn-share {
+            background: #1a3c5e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-share:hover {
+            background: #c0392b;
+        }
+
+        .btn-logout-user {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-logout-user:hover {
+            background: #c0392b;
+        }
+
+        .newspaper-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .sidebar-left, .sidebar-right {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .article-card {
+            background: white;
+            border-bottom: 2px solid #e0dcd5;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .article-card:last-child {
+            border-bottom: none;
+        }
+
+        .article-tag {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #c0392b;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .article-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 10px;
+            color: #1a3c5e;
+        }
+
+        .article-title a {
+            text-decoration: none;
+            color: inherit;
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+
+        .article-title a:hover {
+            color: #c0392b;
+        }
+
+        .article-meta {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .article-meta i {
+            margin-right: 4px;
+        }
+
+        .article-excerpt {
+            font-family: 'Merriweather', serif;
+            font-size: 14px;
+            line-height: 1.55;
+            color: #3a3a3a;
+            margin-bottom: 12px;
+        }
+
+        .article-image {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .article-image img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .image-caption {
+            font-size: 11px;
+            color: #777;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .main-article {
+            background: white;
+        }
+
+        .main-article .article-tag {
+            font-size: 14px;
+        }
+
+        .main-article .article-title {
+            font-size: 36px;
+        }
+
+        .main-article .article-excerpt {
+            font-size: 17px;
+            line-height: 1.6;
+        }
+
+        .read-more {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #c0392b;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+        }
+
+        .read-more:hover {
+            text-decoration: underline;
+        }
+
+        .admin-actions {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            gap: 5px;
+        }
+
+        .admin-btn {
+            background: #1a3c5e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-btn:hover {
+            background: #c0392b;
+        }
+
+        .admin-btn.delete {
+            background: #c0392b;
+        }
+
+        .admin-btn.delete:hover {
+            background: #a93226;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .modal-content h2 {
+            color: #1a3c5e;
+            margin-bottom: 20px;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        .share-url-container {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .google-login-btn {
+            background: #4285F4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .google-login-btn:hover {
+            background: #357ae8;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+
+        .btn-close {
+            background: #666;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #eee;
+            border-top-color: #c0392b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .newspaper-footer {
+            background: #1a1a1a;
+            color: #aaa;
+            text-align: center;
+            padding: 25px;
+            font-size: 12px;
+            border-top: 3px solid #c0392b;
+        }
+
+        .newspaper-footer a {
+            color: #ddd;
+            text-decoration: none;
+        }
+
+        .newspaper-footer a:hover {
+            color: #c0392b;
+        }
+
+        .footer-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        @media (max-width: 992px) {
+            .newspaper-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            .newspaper-name {
+                font-size: 48px;
+            }
+            .main-article .article-title {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .issue-info {
+                flex-direction: column;
+                align-items: center;
+            }
+            .newspaper-name {
+                font-size: 36px;
+            }
+            .nav-menu a {
+                padding: 10px 15px;
+                font-size: 11px;
+            }
+            .user-bar {
+                padding: 8px 15px;
+            }
+            .btn {
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 2000;
+            display: none;
+            animation: fadeInOut 3s ease;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        .banned-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .banned-overlay.show {
+            display: flex;
+        }
+
+        .banned-box {
+            background: #1a1a1a;
+            border: 2px solid #c0392b;
+            border-radius: 16px;
+            padding: 50px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            color: white;
+        }
+
+        .banned-box .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .banned-box h2 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+
+        .banned-box p {
+            color: #aaa;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .banned-box .btn-logout-banned {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .banned-box .btn-logout-banned:hover {
+            background: #e74c3c;
+        }
+
+        .article-content {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #1a1a1a;
+        }
+
+        .article-content p {
+            margin-bottom: 15px;
+        }
+
+        .article-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+        }
+
+        .btn-warning {
+            background: #e67e22;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d35400;
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            margin: 15px 0;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<div id="bannedOverlay" class="banned-overlay">
+    <div class="banned-box">
+        <div class="icon">🚫</div>
+        <h2>⚠️ Conta Banida</h2>
+        <p>Sua conta foi banida permanentemente do sistema.</p>
+        <div id="banDetails" class="ban-details">
+            Motivo: Violação das políticas de uso
+        </div>
+        <p style="font-size: 14px; color: #666;">Se você acredita que isso é um erro, entre em contato com o suporte.</p>
+        <button class="btn-logout-banned" onclick="logoutBanned()">🚪 Sair da conta</button>
+    </div>
+</div>
+
+<div class="newspaper-container">
+    <!-- CABEÇALHO -->
+    <div class="newspaper-header">
+        <div class="newspaper-name" onclick="navigateToHome()">JORNAL <span>REGIONAL</span></div>
+        <div class="newspaper-motto">O JORNAL DA REGIÃO!</div>
+        <div class="issue-info">
+            <span class="issue-date"><i class="far fa-calendar-alt"></i> <span id="currentDate"></span></span>
+            <span><i class="fas fa-map-marker-alt"></i> Santa Fé do Sul - São Paulo - Brazil</span>
+        </div>
+    </div>
+
+    <!-- Barra de Usuário -->
+    <div class="user-bar">
+        <div class="user-info" id="userInfo">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            <span id="userName">Visitante</span>
+        </div>
+        <div id="authButtons">
+            <button class="btn btn-google" onclick="loginWithGoogle()">
+                <i class="fab fa-google"></i> Entrar com Google
+            </button>
+        </div>
+        <div id="userButtons" style="display: none;">
+            <button class="btn btn-primary" onclick="showNewArticleModal()" id="adminNewArticleBtn" style="display: none;">
+                <i class="fas fa-plus"></i> Nova Matéria
+            </button>
+            <button class="btn btn-logout-user" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+    </div>
+
+    <!-- Menu de Navegação -->
+    <div class="nav-menu">
+        <ul>
+            <li><a onclick="filterByCategory('todos')" class="active" data-cat="todos">📰 TODOS</a></li>
+            <li><a onclick="filterByCategory('política')" data-cat="política">🏛️ POLÍTICA</a></li>
+            <li><a onclick="filterByCategory('internacional')" data-cat="internacional">🌍 INTERNACIONAL</a></li>
+            <li><a onclick="filterByCategory('economia')" data-cat="economia">📊 ECONOMIA</a></li>
+            <li><a onclick="filterByCategory('justiça')" data-cat="justiça">⚖️ JUSTIÇA</a></li>
+            <li><a onclick="filterByCategory('cultura')" data-cat="cultura">🎭 CULTURA</a></li>
+            <li><a onclick="filterByCategory('investigação')" data-cat="investigação">🔍 INVESTIGAÇÃO</a></li>
+            <li><a onclick="filterByCategory('opinião')" data-cat="opinião">✍️ OPINIÃO</a></li>
+            <li><a onclick="filterByCategory('esporte')" data-cat="esporte">⚽ ESPORTE</a></li>
+            <li><a onclick="filterByCategory('tecnologia')" data-cat="tecnologia">💻 TECNOLOGIA</a></li>
+            <li><a onclick="filterByCategory('redes-sociais')" data-cat="redes-sociais">📱 REDES SOCIAIS</a></li>
+            <li><a onclick="filterByCategory('saúde')" data-cat="saúde">🏥 SAÚDE</a></li>
+            <li><a onclick="filterByCategory('educação')" data-cat="educação">📚 EDUCAÇÃO</a></li>
+        </ul>
+    </div>
+
+    <!-- Grid Principal -->
+    <div class="newspaper-grid" id="newspaperGrid">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Carregando notícias...</p>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <div class="newspaper-footer">
+        <p><strong>JORNAL REGIONAL</strong> — O Jornal da Região</p>
+        <div class="footer-links">
+            <a href="https://jornalregionalsantafe.com.br/quem-somos/">Quem Somos</a>
+            <a href="mailto:jornalregional@terra.com.br">Contato</a>
+            <a href="https://jornalregionalsantafe.com.br/classificados/">Classificados</a>
+            <a href="https://jornalregionalsantafe.com.br/eventos/">Eventos</a>
+        </div>
+        <p style="margin-top: 15px; font-size: 10px;">© 2026 Jornal Regional - Todos os direitos reservados</p>
+    </div>
+</div>
+
+<!-- Modal Login -->
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <h2><i class="fab fa-google"></i> Entrar com Google</h2>
+        <p>Faça login com sua conta Google para acessar recursos administrativos.</p>
+        <button class="google-login-btn" onclick="loginWithGoogle()">
+            <i class="fab fa-google"></i> Entrar com Google
+        </button>
+        <button class="btn-close" onclick="closeModals()">Fechar</button>
+    </div>
+</div>
+
+<!-- Modal Compartilhar -->
+<div id="shareModal" class="modal">
+    <div class="modal-content">
+        <h2><i class="fas fa-share-alt"></i> Compartilhar Matéria</h2>
+        <p>Copie o link abaixo para compartilhar esta matéria:</p>
+        <div class="share-url-container" id="shareUrlContainer"></div>
+        <button class="btn btn-primary" onclick="copyShareUrl()" style="width: 100%; margin-bottom: 10px;">
+            <i class="fas fa-copy"></i> Copiar Link
+        </button>
+        <button class="btn-close" onclick="closeModals()">Fechar</button>
+    </div>
+</div>
+
+<!-- Modal Nova Matéria -->
+<div id="articleModal" class="modal">
+    <div class="modal-content">
+        <h2><i class="fas fa-edit"></i> <span id="modalTitle">Nova Matéria</span></h2>
+        <div class="form-group">
+            <label>Título da Matéria</label>
+            <input type="text" id="articleTitle" placeholder="Título principal">
+        </div>
+        <div class="form-group">
+            <label>Tipo de Matéria</label>
+            <select id="articleCategory">
+                <option value="política">🏛️ Política</option>
+                <option value="internacional">🌍 Internacional</option>
+                <option value="economia">📊 Economia</option>
+                <option value="justiça">⚖️ Justiça</option>
+                <option value="cultura">🎭 Cultura</option>
+                <option value="investigação">🔍 Investigação</option>
+                <option value="opinião">✍️ Opinião</option>
+                <option value="esporte">⚽ Esporte</option>
+                <option value="tecnologia">💻 Tecnologia</option>
+                <option value="redes-sociais">📱 Redes Sociais</option>
+                <option value="saúde">🏥 Saúde</option>
+                <option value="educação">📚 Educação</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Resumo/Descrição</label>
+            <textarea id="articleExcerpt" placeholder="Breve resumo da matéria..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>Conteúdo Completo (HTML)</label>
+            <textarea id="articleContent" placeholder="Conteúdo completo da matéria com formatação HTML..."></textarea>
+        </div>
+        <div class="form-group">
+            <label>URL da Imagem (opcional)</label>
+            <input type="text" id="articleImage" placeholder="https://exemplo.com/imagem.jpg">
+        </div>
+        <button class="btn btn-primary" onclick="saveArticle()" style="width: 100%;">Publicar Matéria</button>
+        <button class="btn-close" onclick="closeModals()">Cancelar</button>
+    </div>
+</div>
+
+<!-- Modal Visualizar Matéria -->
+<div id="viewArticleModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+        <div id="viewArticleContent"></div>
+        <div id="viewAdminActions" style="margin-top: 20px; display: none;">
+            <hr>
+            <div style="display: flex; gap: 10px; justify-content: space-between; flex-wrap: wrap;">
+                <button class="btn-share" onclick="showShareModal()">
+                    <i class="fas fa-share-alt"></i> Compartilhar
+                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-warning" onclick="editCurrentArticle()">✏️ Editar</button>
+                    <button class="btn btn-danger" onclick="deleteCurrentArticle()">🗑️ Excluir</button>
+                </div>
+            </div>
+        </div>
+        <div id="viewUserActions" style="margin-top: 20px; display: none;">
+            <hr>
+            <button class="btn-share" onclick="showShareModal()" style="width: 100%;">
+                <i class="fas fa-share-alt"></i> Compartilhar esta matéria
+            </button>
+        </div>
+        <button class="btn-close" onclick="closeModals()">Fechar</button>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+    // ============================================
+    // CONFIGURAÇÃO DO FIREBASE
+    // ============================================
+    const firebaseConfig = {
+        apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+        authDomain: "wzzm-ce3fc.firebaseapp.com",
+        projectId: "wzzm-ce3fc",
+        storageBucket: "wzzm-ce3fc.appspot.com",
+        messagingSenderId: "249427877153",
+        appId: "1:249427877153:web:0e4297294794a5aadeb260"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+    // ============================================
+    // CONSTANTES E VARIÁVEIS GLOBAIS
+    // ============================================
+    const COLLECTION_NEWS = 'demonstrationnews';
+    const SUB_COLLECTION = 'jornalregional';
+    const ADMIN_UID = 'sZxfMuOBPbXdR8nttVPXIN8QOOl1';
+
+    let currentUser = null;
+    let currentUserIsAdmin = false;
+    let currentUserIsBanned = false;
+    let currentCategory = 'todos';
+    let currentEditArticleId = null;
+    let currentViewArticleId = null;
+    let currentViewArticleData = null;
+
+    // ============================================
+    // FUNÇÕES AUXILIARES DO BANCO DE DADOS
+    // ============================================
+    function getNewsCollection() {
+        // Estrutura: demonstrationnews / jornalregional / documentos
+        return db.collection(COLLECTION_NEWS).doc(SUB_COLLECTION).collection('articles');
+    }
+
+    function getUsersCollection() {
+        // Estrutura: demonstrationnews / jornalregional / users
+        return db.collection(COLLECTION_NEWS).doc(SUB_COLLECTION).collection('users');
+    }
+
+    // ============================================
+    // REGISTRO DE USUÁRIO
+    // ============================================
+    async function registerUser(user) {
+        try {
+            const uid = user.uid;
+            const usersRef = getUsersCollection();
+            const userDoc = await usersRef.doc(uid).get();
+            const existingData = userDoc.exists ? userDoc.data() : {};
+            
+            let isAdminValue = false;
+            if (uid === ADMIN_UID) {
+                isAdminValue = true;
+            } else if (existingData.isAdmin === true) {
+                isAdminValue = true;
+            }
+            
+            let isBannedValue = existingData.isBanned || false;
+            
+            const userData = {
+                uid: uid,
+                email: user.email || '',
+                name: user.displayName || 'Usuário',
+                profilePictureUrl: user.photoURL || '',
+                isAdmin: isAdminValue,
+                isBanned: isBannedValue,
+                createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await usersRef.doc(uid).set(userData, { merge: true });
+            console.log(`Usuário ${uid} registrado/atualizado. isAdmin: ${isAdminValue}, isBanned: ${isBannedValue}`);
+            return userData;
+        } catch (error) {
+            console.error('Erro ao registrar usuário:', error);
+            return null;
+        }
+    }
+
+    // ============================================
+    // VERIFICAÇÃO DE BANIMENTO
+    // ============================================
+    async function checkIfUserIsBanned(user) {
+        if (!user) return false;
+        try {
+            const usersRef = getUsersCollection();
+            const userDoc = await usersRef.doc(user.uid).get();
+            if (userDoc.exists) {
+                const data = userDoc.data();
+                return data.isBanned === true;
+            }
+        } catch (error) {
+            console.log("Erro ao verificar banimento:", error);
+        }
+        return false;
+    }
+
+    // ============================================
+    // VERIFICAÇÃO DE ADMIN
+    // ============================================
+    async function checkIfUserIsAdmin(user) {
+        if (!user) return false;
+        if (user.uid === ADMIN_UID) return true;
+        try {
+            const usersRef = getUsersCollection();
+            const userDoc = await usersRef.doc(user.uid).get();
+            if (userDoc.exists && userDoc.data().isAdmin === true) {
+                return true;
+            }
+        } catch (error) {
+            console.log("Erro ao verificar admin:", error);
+        }
+        return false;
+    }
+
+    // ============================================
+    // TOAST E UTILIDADES
+    // ============================================
+    function showToast(message, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.style.background = isError ? '#c0392b' : '#27ae60';
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function getCategoryIcon(cat) {
+        const icons = {
+            'política': '🏛️', 'internacional': '🌍', 'economia': '📊',
+            'justiça': '⚖️', 'cultura': '🎭', 'investigação': '🔍', 
+            'opinião': '✍️', 'esporte': '⚽', 'tecnologia': '💻',
+            'redes-sociais': '📱', 'saúde': '🏥', 'educação': '📚'
+        };
+        return icons[cat] || '📰';
+    }
+
+    function formatDate(timestamp) {
+        if (!timestamp) return 'Data desconhecida';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    // ============================================
+    // NAVEGAÇÃO POR URL
+    // ============================================
+    function getUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        return {
+            categoria: params.get('categoria'),
+            id: params.get('id')
+        };
+    }
+
+    function updateUrl(categoria, id = null) {
+        let url = window.location.pathname;
+        const params = [];
+        if (categoria && categoria !== 'todos') {
+            params.push(`categoria=${encodeURIComponent(categoria)}`);
+        }
+        if (id) {
+            params.push(`id=${encodeURIComponent(id)}`);
+        }
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+        window.history.pushState({ categoria, id }, '', url);
+    }
+
+    function navigateToHome() {
+        window.location.href = window.location.pathname;
+    }
+
+    // ============================================
+    // AUTENTICAÇÃO
+    // ============================================
+    async function loginWithGoogle() {
+        try {
+            const result = await auth.signInWithPopup(googleProvider);
+            const user = result.user;
+            await registerUser(user);
+            showToast(`Bem-vindo, ${user.displayName || user.email}!`);
+            closeModals();
+            location.reload();
+        } catch (error) {
+            console.error("Erro no login com Google:", error);
+            showToast('Erro ao fazer login: ' + error.message, true);
+        }
+    }
+
+    async function logout() {
+        try {
+            await auth.signOut();
+            showToast('Logout realizado com sucesso!');
+            setTimeout(() => {
+                navigateToHome();
+            }, 500);
+        } catch (error) {
+            console.error("Erro ao fazer logout:", error);
+            showToast('Erro ao sair: ' + error.message, true);
+        }
+    }
+
+    function logoutBanned() {
+        auth.signOut().then(() => {
+            location.reload();
+        });
+    }
+
+    function showBannedScreen(reason = 'Violação das políticas de uso') {
+        const overlay = document.getElementById('bannedOverlay');
+        const details = document.getElementById('banDetails');
+        details.textContent = `Motivo: ${reason}`;
+        overlay.classList.add('show');
+        document.querySelector('.newspaper-container').style.opacity = '0.5';
+        document.querySelector('.newspaper-container').style.pointerEvents = 'none';
+    }
+
+    // ============================================
+    // ESTADO DE AUTENTICAÇÃO
+    // ============================================
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            currentUser = user;
+            const userData = await registerUser(user);
+            
+            currentUserIsBanned = await checkIfUserIsBanned(user);
+            if (currentUserIsBanned) {
+                showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
+                return;
+            }
+            
+            currentUserIsAdmin = await checkIfUserIsAdmin(user);
+            if (userData && userData.isAdmin === true) {
+                currentUserIsAdmin = true;
+            }
+            
+            const displayName = user.displayName || user.email?.split('@')[0] || 'Usuário';
+            const photoURL = user.photoURL;
+            
+            document.getElementById('userName').textContent = displayName;
+            if (photoURL) {
+                document.getElementById('userAvatar').innerHTML = `<img src="${photoURL}" alt="Avatar">`;
+            } else {
+                document.getElementById('userAvatar').textContent = displayName.charAt(0).toUpperCase();
+            }
+            
+            document.getElementById('authButtons').style.display = 'none';
+            document.getElementById('userButtons').style.display = 'flex';
+            
+            const newArticleBtn = document.getElementById('adminNewArticleBtn');
+            if (currentUserIsAdmin) {
+                newArticleBtn.style.display = 'inline-block';
+                console.log('✅ Usuário é ADMIN');
+            } else {
+                newArticleBtn.style.display = 'none';
+                console.log('👤 Usuário comum');
+            }
+        } else {
+            currentUser = null;
+            currentUserIsAdmin = false;
+            currentUserIsBanned = false;
+            document.getElementById('userName').textContent = 'Visitante';
+            document.getElementById('userAvatar').innerHTML = '👤';
+            document.getElementById('authButtons').style.display = 'flex';
+            document.getElementById('userButtons').style.display = 'none';
+            
+            document.getElementById('bannedOverlay').classList.remove('show');
+            document.querySelector('.newspaper-container').style.opacity = '1';
+            document.querySelector('.newspaper-container').style.pointerEvents = 'auto';
+        }
+        
+        if (!currentUserIsBanned) {
+            const params = getUrlParams();
+            if (params.id) {
+                await loadArticleById(params.id);
+            } else if (params.categoria) {
+                currentCategory = params.categoria;
+                highlightActiveCategory(currentCategory);
+                await loadArticles();
+            } else {
+                currentCategory = 'todos';
+                highlightActiveCategory('todos');
+                await loadArticles();
+            }
+        }
+    });
+
+    function highlightActiveCategory(category) {
+        document.querySelectorAll('.nav-menu a').forEach(a => {
+            const isActive = a.dataset.cat === category;
+            a.classList.toggle('active', isActive);
+        });
+    }
+
+    // ============================================
+    // CARREGAR MATÉRIA POR ID
+    // ============================================
+    async function loadArticleById(articleId) {
+        const grid = document.getElementById('newspaperGrid');
+        grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando matéria...</p></div>';
+        
+        try {
+            const articlesRef = getNewsCollection();
+            const doc = await articlesRef.doc(articleId).get();
+            
+            if (!doc.exists) {
+                grid.innerHTML = '<div class="loading"><p>📭 Matéria não encontrada. <a onclick="navigateToHome()" style="color:#c0392b; cursor:pointer;">Voltar para página inicial</a></p></div>';
+                return;
+            }
+            
+            const article = { id: doc.id, ...doc.data() };
+            currentViewArticleId = articleId;
+            currentViewArticleData = article;
+            
+            if (!currentUserIsAdmin) {
+                try {
+                    const novasViews = (article.visualizacoes || 0) + 1;
+                    await articlesRef.doc(articleId).update({ visualizacoes: novasViews });
+                } catch (e) {
+                    console.log("Não foi possível incrementar visualizações:", e);
+                }
+            }
+            
+            renderSingleArticle(article);
+        } catch (error) {
+            grid.innerHTML = `<div class="loading"><p>❌ Erro ao carregar: ${error.message}</p></div>`;
+        }
+    }
+
+    function renderSingleArticle(article) {
+        const date = article.dataPublicacao?.toDate?.() ? article.dataPublicacao.toDate().toLocaleDateString('pt-BR') : 'Data desconhecida';
+        const categoryIcon = getCategoryIcon(article.categoria);
+        
+        const adminButtonsHtml = currentUserIsAdmin ? `
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
+                <button class="admin-btn" onclick="editArticle('${article.id}')">✏️ Editar</button>
+                <button class="admin-btn delete" onclick="deleteArticle('${article.id}')">🗑️ Excluir</button>
+            </div>
+        ` : '';
+        
+        document.getElementById('newspaperGrid').innerHTML = `
+            <div style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
+                ${adminButtonsHtml}
+                <div class="main-article">
+                    <div class="article-tag">${categoryIcon} ${article.categoria?.toUpperCase() || 'GERAL'}</div>
+                    <div class="article-title">${escapeHtml(article.titulo)}</div>
+                    <div class="article-meta">
+                        <span><i class="far fa-user"></i> Por ${escapeHtml(article.autorNome || 'Redação')}</span>
+                        <span><i class="far fa-calendar"></i> ${date}</span>
+                        <span><i class="fas fa-eye"></i> ${article.visualizacoes || 0} visualizações</span>
+                    </div>
+                    ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">Foto: Divulgação</div></div>` : ''}
+                    <div class="article-content">
+                        ${article.conteudo || article.resumo || 'Conteúdo não disponível.'}
+                    </div>
+                    <hr style="margin: 30px 0 20px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                        <button class="btn-share" onclick="showShareModal()">
+                            <i class="fas fa-share-alt"></i> Compartilhar esta matéria
+                        </button>
+                        <button onclick="navigateToHome()" style="background: #1a3c5e; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-home"></i> Voltar para página inicial
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // ============================================
+    // CARREGAR ARTIGOS
+    // ============================================
+    async function loadArticles() {
+        const grid = document.getElementById('newspaperGrid');
+        grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando notícias...</p></div>';
+        
+        try {
+            const articlesRef = getNewsCollection();
+            let query = articlesRef.orderBy('dataPublicacao', 'desc');
+            
+            if (currentCategory !== 'todos') {
+                query = articlesRef.where('categoria', '==', currentCategory).orderBy('dataPublicacao', 'desc');
+            }
+            
+            const snapshot = await query.get();
+            const articles = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                articles.push({ id: doc.id, ...data });
+            });
+            
+            if (articles.length === 0) {
+                grid.innerHTML = '<div class="loading"><p>📭 Nenhuma matéria encontrada nesta categoria.</p></div>';
+                return;
+            }
+            
+            renderArticles(articles);
+        } catch (error) {
+            grid.innerHTML = `<div class="loading"><p>❌ Erro ao carregar: ${error.message}</p></div>`;
+        }
+    }
+
+    function renderArticles(articles) {
+        const mainArticle = articles[0];
+        const leftArticles = articles.slice(1, 4);
+        const rightArticles = articles.slice(4, 8);
+
+        const renderAdminActions = (articleId) => {
+            if (!currentUserIsAdmin) return '';
+            return `
+                <div class="admin-actions">
+                    <button class="admin-btn" onclick="event.stopPropagation(); editArticle('${articleId}')">✏️</button>
+                    <button class="admin-btn delete" onclick="event.stopPropagation(); deleteArticle('${articleId}')">🗑️</button>
+                </div>
+            `;
+        };
+
+        const renderArticleCard = (article, isMain = false) => {
+            const tag = getCategoryIcon(article.categoria) + ' ' + (article.categoria || 'geral').toUpperCase();
+            const date = formatDate(article.dataPublicacao);
+            
+            if (isMain) {
+                return `
+                    <div class="main-article" style="position: relative;">
+                        ${renderAdminActions(article.id)}
+                        <div class="article-tag">${tag} · DESTAQUE</div>
+                        <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
+                        <div class="article-meta">
+                            <span><i class="far fa-user"></i> Por ${escapeHtml(article.autorNome || 'Redação')}</span>
+                            <span><i class="far fa-calendar"></i> ${date}</span>
+                            <span><i class="fas fa-eye"></i> ${article.visualizacoes || 0} visualizações</span>
+                        </div>
+                        ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">Foto: Divulgação</div></div>` : ''}
+                        <div class="article-excerpt">${escapeHtml((article.resumo || article.conteudo || '').substring(0, 300))}${(article.resumo || article.conteudo || '').length > 300 ? '...' : ''}</div>
+                        <a class="read-more" onclick="openArticleById('${article.id}')">Continue lendo →</a>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="article-card" style="position: relative;">
+                    ${renderAdminActions(article.id)}
+                    <div class="article-tag">${tag}</div>
+                    <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
+                    <div class="article-meta">
+                        <span><i class="far fa-user"></i> ${escapeHtml(article.autorNome || 'Redação')}</span>
+                        <span><i class="far fa-calendar"></i> ${date}</span>
+                    </div>
+                    <div class="article-excerpt">${escapeHtml((article.resumo || article.conteudo || '').substring(0, 150))}${(article.resumo || article.conteudo || '').length > 150 ? '...' : ''}</div>
+                    <a class="read-more" onclick="openArticleById('${article.id}')">Continue lendo →</a>
+                </div>
+            `;
+        };
+
+        const leftHtml = leftArticles.map(a => renderArticleCard(a, false)).join('');
+        const rightHtml = rightArticles.map(a => renderArticleCard(a, false)).join('');
+
+        document.getElementById('newspaperGrid').innerHTML = `
+            <div class="sidebar-left">${leftHtml || '<div class="article-card"><p>📭 Mais matérias em breve...</p></div>'}</div>
+            <div>${renderArticleCard(mainArticle, true)}</div>
+            <div class="sidebar-right">${rightHtml || '<div class="article-card"><p>📭 Aguardem novas publicações...</p></div>'}</div>
+        `;
+    }
+
+    window.openArticleById = function(articleId) {
+        updateUrl(currentCategory, articleId);
+        loadArticleById(articleId);
+    };
+
+    // ============================================
+    // COMPARTILHAMENTO
+    // ============================================
+    function getCurrentArticleUrl() {
+        if (currentViewArticleId) {
+            return `${window.location.origin}${window.location.pathname}?id=${currentViewArticleId}`;
+        }
+        return window.location.href;
+    }
+
+    window.showShareModal = function() {
+        const url = getCurrentArticleUrl();
+        document.getElementById('shareUrlContainer').innerHTML = url;
+        document.getElementById('shareModal').classList.add('show');
+    };
+
+    window.copyShareUrl = function() {
+        const url = document.getElementById('shareUrlContainer').textContent;
+        navigator.clipboard.writeText(url).then(() => {
+            showToast('Link copiado para compartilhar!');
+            closeModals();
+        }).catch(() => {
+            showToast('Erro ao copiar link', true);
+        });
+    };
+
+    // ============================================
+    // EDIÇÃO DE ARTIGOS
+    // ============================================
+    window.editArticle = async function(articleId) {
+        if (!currentUserIsAdmin) {
+            showToast('Apenas administradores podem editar matérias!', true);
+            return;
+        }
+        
+        try {
+            const articlesRef = getNewsCollection();
+            const doc = await articlesRef.doc(articleId).get();
+            if (!doc.exists) {
+                showToast('Matéria não encontrada!', true);
+                return;
+            }
+            
+            const article = doc.data();
+            currentEditArticleId = articleId;
+            
+            document.getElementById('modalTitle').textContent = 'Editar Matéria';
+            document.getElementById('articleTitle').value = article.titulo || '';
+            document.getElementById('articleCategory').value = article.categoria || 'política';
+            document.getElementById('articleExcerpt').value = article.resumo || '';
+            document.getElementById('articleContent').value = article.conteudo || '';
+            document.getElementById('articleImage').value = article.imagemUrl || '';
+            
+            document.getElementById('articleModal').classList.add('show');
+        } catch (error) {
+            showToast('Erro ao carregar matéria para edição: ' + error.message, true);
+        }
+    };
+
+    window.deleteArticle = async function(articleId) {
+        if (!currentUserIsAdmin) {
+            showToast('Apenas administradores podem excluir matérias!', true);
+            return;
+        }
+        
+        if (!confirm('Tem certeza que deseja excluir esta matéria? Esta ação não pode ser desfeita!')) {
+            return;
+        }
+        
+        try {
+            const articlesRef = getNewsCollection();
+            await articlesRef.doc(articleId).delete();
+            showToast('Matéria excluída com sucesso!');
+            closeModals();
+            
+            const params = getUrlParams();
+            if (params.id === articleId) {
+                navigateToHome();
+            } else {
+                loadArticles();
+            }
+        } catch (error) {
+            showToast('Erro ao excluir: ' + error.message, true);
+        }
+    };
+
+    window.editCurrentArticle = function() {
+        closeModals();
+        setTimeout(() => {
+            editArticle(currentViewArticleId);
+        }, 300);
+    };
+
+    window.deleteCurrentArticle = function() {
+        closeModals();
+        setTimeout(() => {
+            deleteArticle(currentViewArticleId);
+        }, 300);
+    };
+
+    // ============================================
+    // SALVAR ARTIGO
+    // ============================================
+    async function saveArticle() {
+        if (!currentUserIsAdmin) {
+            showToast('Apenas administradores podem publicar matérias!', true);
+            return;
+        }
+        
+        const articleData = {
+            titulo: document.getElementById('articleTitle').value,
+            categoria: document.getElementById('articleCategory').value,
+            resumo: document.getElementById('articleExcerpt').value,
+            conteudo: document.getElementById('articleContent').value,
+            imagemUrl: document.getElementById('articleImage').value || null,
+            autorId: currentUser.uid,
+            autorNome: currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrador',
+            autorEmail: currentUser.email,
+            dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
+            ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
+            visualizacoes: 0
+        };
+        
+        if (!articleData.titulo || !articleData.resumo) {
+            showToast('Preencha pelo menos o título e o resumo da matéria!', true);
+            return;
+        }
+        
+        try {
+            const articlesRef = getNewsCollection();
+            if (currentEditArticleId) {
+                await articlesRef.doc(currentEditArticleId).update(articleData);
+                showToast('Matéria atualizada com sucesso!');
+            } else {
+                await articlesRef.add(articleData);
+                showToast('Matéria publicada com sucesso!');
+            }
+            closeModals();
+            resetArticleForm();
+            loadArticles();
+        } catch (error) {
+            showToast('Erro ao salvar: ' + error.message, true);
+        }
+    }
+
+    function resetArticleForm() {
+        currentEditArticleId = null;
+        document.getElementById('modalTitle').textContent = 'Nova Matéria';
+        document.getElementById('articleTitle').value = '';
+        document.getElementById('articleCategory').value = 'política';
+        document.getElementById('articleExcerpt').value = '';
+        document.getElementById('articleContent').value = '';
+        document.getElementById('articleImage').value = '';
+    }
+
+    // ============================================
+    // FILTROS E NAVEGAÇÃO
+    // ============================================
+    window.filterByCategory = function(category) {
+        currentCategory = category;
+        updateUrl(category);
+        highlightActiveCategory(category);
+        loadArticles();
+    };
+
+    window.showNewArticleModal = function() {
+        if (!currentUserIsAdmin) {
+            showToast('Apenas administradores podem criar matérias!', true);
+            return;
+        }
+        resetArticleForm();
+        document.getElementById('articleModal').classList.add('show');
+    };
+    
+    window.closeModals = function() {
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+    };
+    
+    window.onclick = (e) => {
+        if (e.target.classList.contains('modal')) closeModals();
+    };
+    
+    window.onpopstate = (event) => {
+        const params = getUrlParams();
+        if (params.id) {
+            loadArticleById(params.id);
+        } else if (params.categoria) {
+            currentCategory = params.categoria;
+            highlightActiveCategory(currentCategory);
+            loadArticles();
+        } else {
+            currentCategory = 'todos';
+            highlightActiveCategory('todos');
+            loadArticles();
+        }
+    };
+
+    // ============================================
+    // INICIALIZAÇÃO
+    // ============================================
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    // Expor funções globalmente
+    window.logoutBanned = logoutBanned;
+    window.logout = logout;
+    window.loginWithGoogle = loginWithGoogle;
+</script>
+</body>
+</html>
