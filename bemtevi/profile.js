@@ -23,7 +23,6 @@ async function loadProfile() {
     const userId = params.userId;
     const userName = params.userName;
 
-    // Se não tiver userId, tenta usar o usuário atual
     if (!userId && currentUser) {
         window.location.href = `profile.html?id=${currentUser.uid}&name=${encodeURIComponent(currentUser.displayName || 'Usuário')}`;
         return;
@@ -55,11 +54,10 @@ async function renderProfile(userId, userName) {
     container.innerHTML = '<div class="loading">Carregando perfil...</div>';
 
     try {
-        // Buscar dados do usuário
-        let userData = { nome: userName || 'Usuário', seguidores: [], seguindo: [] };
+        let userData = { nome: userName || 'Usuário', seguidores: [], seguindo: [], bio: '' };
         
         try {
-            const userDoc = await db.collection('usuários').doc(userId).get();
+            const userDoc = await db.collection('usuarios').doc(userId).get();
             if (userDoc.exists) {
                 userData = userDoc.data();
             }
@@ -67,11 +65,20 @@ async function renderProfile(userId, userName) {
             console.warn('Erro ao buscar usuário:', error);
         }
 
-        // Verificar se o usuário atual segue esta pessoa
+        // Tentar buscar bio da subcoleção perfil (se existir)
+        try {
+            const perfilDoc = await db.collection('usuarios').doc(userId).collection('perfil').doc('dados').get();
+            if (perfilDoc.exists) {
+                userData.bio = perfilDoc.data().bio || userData.bio || '';
+            }
+        } catch (error) {
+            console.warn('Erro ao buscar bio:', error);
+        }
+
         let isFollowing = false;
         if (currentUser && userId !== currentUser.uid && !isBanned) {
             try {
-                const followDoc = await db.collection('usuários').doc(currentUser.uid)
+                const followDoc = await db.collection('usuarios').doc(currentUser.uid)
                     .collection('seguindo').doc(userId).get();
                 isFollowing = followDoc.exists;
             } catch (error) {
@@ -79,7 +86,6 @@ async function renderProfile(userId, userName) {
             }
         }
 
-        // Buscar postagens do usuário
         let posts = [];
         try {
             const postsSnapshot = await db.collection('Bemtevi')
@@ -95,7 +101,6 @@ async function renderProfile(userId, userName) {
             console.warn('Erro ao buscar posts:', error);
         }
 
-        // Contar seguidores e seguindo
         let seguidoresCount = 0;
         let seguindoCount = 0;
         try {
@@ -108,10 +113,8 @@ async function renderProfile(userId, userName) {
             console.warn('Erro ao contar seguidores:', error);
         }
 
-        // Verificar se o perfil é do próprio usuário
         const isOwnProfile = currentUser && userId === currentUser.uid;
 
-        // Montar HTML do perfil
         const displayName = userData.nome || userName || 'Usuário';
         const displayAvatar = userData.profilePictureUrl || null;
         const userInitial = displayName.charAt(0).toUpperCase() || '?';
@@ -166,12 +169,12 @@ async function renderProfile(userId, userName) {
                     <div class="profile-name-area">
                         <h1>${escapeHtml(displayName)}</h1>
                         <div class="profile-username">@${userId.substring(0, 12)}</div>
-                        ${userData.bio ? `<p class="profile-bio">${escapeHtml(userData.bio)}</p>` : ''}
+                        ${userData.bio ? `<p class="profile-bio">${escapeHtml(userData.bio)}</p>` : '<p class="profile-bio" style="color:#666; font-style:italic;">Nenhuma bio definida</p>'}
                     </div>
                     <div class="profile-actions">
                         ${isOwnProfile ? `
                             <button class="btn-primary" onclick="goHome()">📱 Ir para o Feed</button>
-                            <button class="btn-secondary" onclick="editProfile()">✏️ Editar Perfil</button>
+                            <button class="btn-secondary" onclick="editProfile()">✏️ Editar Bio</button>
                         ` : `
                             ${currentUser && !isBanned ? `
                                 <button class="follow-btn ${isFollowing ? 'following' : ''}" onclick="toggleFollowProfile('${userId}')">
@@ -205,7 +208,6 @@ async function renderProfile(userId, userName) {
             </div>
         `;
 
-        // Atualizar título da página
         document.title = `${displayName} - Bemtevi`;
 
     } catch (error) {
@@ -219,6 +221,57 @@ async function renderProfile(userId, userName) {
             </div>
         `;
     }
+}
+
+// ============================================
+// EDITAR PERFIL - VERSÃO CORRIGIDA
+// ============================================
+function editProfile() {
+    if (!currentUser) {
+        alert('Faça login para editar seu perfil.');
+        return;
+    }
+    
+    const newBio = prompt('Digite sua nova bio (máx. 160 caracteres):');
+    
+    if (newBio === null) return;
+    
+    if (newBio.length > 160) {
+        alert('A bio deve ter no máximo 160 caracteres.');
+        return;
+    }
+    
+    const container = document.getElementById('profileContent');
+    if (container) {
+        container.innerHTML = '<div class="loading">Atualizando bio...</div>';
+    }
+    
+    // Tentar salvar no documento principal
+    db.collection('usuarios').doc(currentUser.uid).update({
+        bio: newBio.trim()
+    })
+    .then(() => {
+        console.log('✅ Bio atualizada com sucesso!');
+        renderProfile(currentUser.uid, currentUser.displayName);
+    })
+    .catch(error => {
+        console.warn('Erro ao salvar bio no documento principal, tentando subcoleção...', error);
+        
+        // Tentar salvar na subcoleção perfil
+        db.collection('usuarios').doc(currentUser.uid).collection('perfil').doc('dados').set({
+            bio: newBio.trim(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
+        .then(() => {
+            console.log('✅ Bio atualizada na subcoleção!');
+            renderProfile(currentUser.uid, currentUser.displayName);
+        })
+        .catch(error2 => {
+            console.error('❌ Erro ao atualizar bio:', error2);
+            alert('Erro ao atualizar bio: ' + error2.message);
+            renderProfile(currentUser.uid, currentUser.displayName);
+        });
+    });
 }
 
 // ============================================
@@ -250,27 +303,10 @@ async function toggleFollowProfile(userIdToFollow) {
             });
         }
 
-        // Recarregar perfil
         await renderProfile(profileUserId, '');
     } catch (error) {
         console.error('Erro ao seguir:', error);
         alert('Erro ao seguir usuário: ' + error.message);
-    }
-}
-
-// ============================================
-// EDITAR PERFIL (Função básica)
-// ============================================
-function editProfile() {
-    const newBio = prompt('Digite sua nova bio:');
-    if (newBio !== null) {
-        db.collection('usuários').doc(currentUser.uid).update({
-            bio: newBio
-        }).then(() => {
-            renderProfile(currentUser.uid, currentUser.displayName);
-        }).catch(error => {
-            alert('Erro ao atualizar bio: ' + error.message);
-        });
     }
 }
 
@@ -313,7 +349,6 @@ auth.onAuthStateChanged(async (user) => {
         unreadCount = 0;
         updateNotificationBadge();
         removeBannedOverlay();
-        // Mostrar mensagem para fazer login
         document.getElementById('profileContent').innerHTML = `
             <div class="profile-error">
                 <span class="material-icons" style="font-size:64px; color:#667eea;">lock</span>
@@ -324,3 +359,7 @@ auth.onAuthStateChanged(async (user) => {
         `;
     }
 });
+
+// ============================================
+// PERFIL DO USUÁRIO
+// ============================================
