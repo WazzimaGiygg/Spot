@@ -1136,5 +1136,28 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+// ============================================
+// REDIRECIONAR PARA PÁGINA DE PERFIL
+// ============================================
+window.openProfilePage = function(userId, userName) {
+    const encodedName = encodeURIComponent(userName || 'Usuário');
+    window.location.href = `profile.html?id=${userId}&name=${encodedName}`;
+};
+
+// Substituir a função openProfile existente para redirecionar
+// ou manter ambas, mas modificar a que abre o modal
+window.openProfileModal = window.openProfile; // Guardar referência antiga
+
+// Nova função openProfile que redireciona para a página dedicada
+window.openProfile = function(userId, userName) {
+    if (isBanned) {
+        alert('Sua conta está banida.');
+        return;
+    }
+    // Redirecionar para a página de perfil
+    const encodedName = encodeURIComponent(userName || 'Usuário');
+    window.location.href = `profile.html?id=${userId}&name=${encodedName}`;
+};
+
 console.log('🐦 Bemtevi - Rede Social Beta inicializada com sucesso!');
 console.log('🔔 Notificações integradas via coleção "notifications"');
