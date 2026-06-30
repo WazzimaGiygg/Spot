@@ -163,6 +163,9 @@ let isBanned = false;
 let notifications = [];
 let unreadCount = 0;
 let notificationListener = null;
+let userKarma = 0;
+let savedPosts = [];
+let chatListener = null;
 
 // Categorias
 const categories = ['Geral', 'Tecnologia', 'Ciência', 'Arte', 'Música', 'Esportes', 'Games', 'Educação', 'Política', 'Entretenimento'];
@@ -174,6 +177,16 @@ const categoryColors = {
     'Games': '#795548', 'Educação': '#00bcd4', 'Política': '#607d8b',
     'Entretenimento': '#e91e63'
 };
+
+// Níveis de Karma
+const KARMA_LEVELS = [
+    { min: 0, name: 'Novato', emoji: '🌱', class: 'bronze' },
+    { min: 100, name: 'Iniciante', emoji: '📚', class: 'bronze' },
+    { min: 500, name: 'Entusiasta', emoji: '⭐', class: 'silver' },
+    { min: 1000, name: 'Membro Ativo', emoji: '🌟', class: 'gold' },
+    { min: 5000, name: 'Veterano', emoji: '🏆', class: 'platinum' },
+    { min: 10000, name: 'Lendário', emoji: '👑', class: 'diamond' }
+];
 
 // ============================================
 // FUNÇÕES DE UTILIDADE
@@ -202,7 +215,12 @@ function getTimeAgo(date) {
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h`;
     const days = Math.floor(hours / 24);
-    return `${days}d`;
+    if (days < 7) return `${days}d`;
+    const weeks = Math.floor(days / 7);
+    if (weeks < 4) return `${weeks}sem`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mes`;
+    return `${Math.floor(months / 12)}ano`;
 }
 
 function extractLinks(text) {
@@ -215,9 +233,278 @@ function removeLinks(text) {
     return text.replace(/(https?:\/\/[^\s]+)/g, '').trim();
 }
 
+function getKarmaLevel(karma) {
+    let level = KARMA_LEVELS[0];
+    for (const lvl of KARMA_LEVELS) {
+        if (karma >= lvl.min) level = lvl;
+    }
+    return level;
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    if (toast) {
+        toast.textContent = message;
+        toast.style.background = type === 'error' ? '#c0392b' : 
+                                type === 'success' ? '#27ae60' : '#2980b9';
+        toast.style.display = 'block';
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => toast.style.display = 'none', 3000);
+    } else {
+        alert(message);
+    }
+}
+
+// ============================================
+// SISTEMA DE KARMA
+// ============================================
+async function updateUserKarma(userId, amount) {
+    try {
+        const userRef = db.collection('usuarios').doc(userId);
+        await userRef.update({
+            karma: firebase.firestore.FieldValue.increment(amount)
+        });
+        
+        if (userId === currentUser?.uid) {
+            userKarma += amount;
+            updateUI();
+        }
+        
+        const userDoc = await userRef.get();
+        if (userDoc.exists) {
+            const data = userDoc.data();
+            const karma = data.karma || 0;
+            const level = getKarmaLevel(karma);
+            
+            if (karma >= 100 && karma - amount < 100) {
+                await createNotification(
+                    userId,
+                    '🌟 Novo Nível!',
+                    `Parabéns! Você alcançou o nível "${level.name}"! Continue assim!`
+                );
+            }
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Erro ao atualizar karma:', error);
+        return false;
+    }
+}
+
+async function getUserKarma(userId) {
+    try {
+        const userDoc = await db.collection('usuarios').doc(userId).get();
+        if (userDoc.exists) {
+            return userDoc.data().karma || 0;
+        }
+        return 0;
+    } catch (error) {
+        console.error('Erro ao buscar karma:', error);
+        return 0;
+    }
+}
+
+// ============================================
+// SISTEMA DE SALVOS
+// ============================================
+async function loadSavedPosts() {
+    if (!currentUser) return;
+    
+    try {
+        const snapshot = await db.collection('usuarios').doc(currentUser.uid)
+            .collection('savedPosts').get();
+        savedPosts = snapshot.docs.map(doc => doc.id);
+    } catch (error) {
+        console.error('Erro ao carregar salvos:', error);
+    }
+}
+
+async function toggleSavePost(postId) {
+    if (!currentUser || isBanned) {
+        showToast('Faça login para salvar posts!');
+        return;
+    }
+    
+    try {
+        const saveRef = db.collection('usuarios').doc(currentUser.uid)
+            .collection('savedPosts').doc(postId);
+        const saveDoc = await saveRef.get();
+        
+        if (saveDoc.exists) {
+            await saveRef.delete();
+            savedPosts = savedPosts.filter(id => id !== postId);
+            showToast('Post removido dos salvos');
+        } else {
+            await saveRef.set({
+                postId: postId,
+                savedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            savedPosts.push(postId);
+            showToast('Post salvo com sucesso!');
+        }
+        
+        refreshFeed();
+    } catch (error) {
+        console.error('Erro ao salvar post:', error);
+        showToast('Erro ao salvar post', 'error');
+    }
+}
+
+// ============================================
+// SISTEMA DE COMUNIDADES
+// ============================================
+async function createCommunity(name, description, category) {
+    if (!currentUser || isBanned) {
+        showToast('Faça login para criar uma comunidade!');
+        return null;
+    }
+    
+    if (!name || name.length < 3) {
+        showToast('O nome da comunidade deve ter pelo menos 3 caracteres.', 'error');
+        return null;
+    }
+    
+    try {
+        const communityData = {
+            name: name.trim(),
+            description: description?.trim() || '',
+            category: category || 'Geral',
+            creatorId: currentUser.uid,
+            creatorName: currentUser.displayName || 'Usuário',
+            members: [currentUser.uid],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            memberCount: 1,
+            postCount: 0,
+            isPrivate: false,
+            rules: []
+        };
+        
+        const docRef = await db.collection('comunidades').add(communityData);
+        showToast(`Comunidade "${name}" criada com sucesso!`);
+        return docRef.id;
+    } catch (error) {
+        console.error('Erro ao criar comunidade:', error);
+        showToast('Erro ao criar comunidade', 'error');
+        return null;
+    }
+}
+
+async function joinCommunity(communityId) {
+    if (!currentUser || isBanned) return;
+    
+    try {
+        const communityRef = db.collection('comunidades').doc(communityId);
+        const communityDoc = await communityRef.get();
+        
+        if (!communityDoc.exists) {
+            showToast('Comunidade não encontrada.', 'error');
+            return;
+        }
+        
+        const data = communityDoc.data();
+        const members = data.members || [];
+        
+        if (members.includes(currentUser.uid)) {
+            await communityRef.update({
+                members: firebase.firestore.FieldValue.arrayRemove(currentUser.uid),
+                memberCount: firebase.firestore.FieldValue.increment(-1)
+            });
+            showToast('Você saiu da comunidade.');
+        } else {
+            await communityRef.update({
+                members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
+                memberCount: firebase.firestore.FieldValue.increment(1)
+            });
+            showToast(`Bem-vindo à comunidade "${data.name}"!`);
+        }
+    } catch (error) {
+        console.error('Erro ao entrar/sair da comunidade:', error);
+        showToast('Erro ao processar ação.', 'error');
+    }
+}
+
+async function getCommunityPosts(communityId, limit = 20) {
+    try {
+        const snapshot = await db.collection('Bemtevi')
+            .where('communityId', '==', communityId)
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+        
+        const posts = [];
+        snapshot.forEach(doc => {
+            posts.push({ id: doc.id, ...doc.data() });
+        });
+        return posts;
+    } catch (error) {
+        console.error('Erro ao buscar posts da comunidade:', error);
+        return [];
+    }
+}
+
+// ============================================
+// SISTEMA DE TRENDING TOPICS
+// ============================================
+async function getTrendingTopics(limit = 10) {
+    try {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        const snapshot = await db.collection('Bemtevi')
+            .where('createdAt', '>=', yesterday)
+            .orderBy('createdAt', 'desc')
+            .limit(100)
+            .get();
+        
+        const topics = {};
+        snapshot.forEach(doc => {
+            const post = doc.data();
+            const text = post.conteudo || '';
+            
+            const hashtags = text.match(/#[a-zA-Z0-9_]+/g) || [];
+            hashtags.forEach(tag => {
+                const key = tag.toLowerCase();
+                topics[key] = (topics[key] || 0) + 1;
+            });
+            
+            const words = text.split(' ').filter(w => w.length > 3);
+            for (let i = 0; i < Math.min(words.length - 1, 5); i++) {
+                const phrase = words.slice(i, i + 2).join(' ').toLowerCase();
+                if (phrase.length > 5) {
+                    topics[phrase] = (topics[phrase] || 0) + 1;
+                }
+            }
+        });
+        
+        const sorted = Object.entries(topics)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, limit);
+        
+        return sorted.map(([name, count]) => ({ name, count }));
+    } catch (error) {
+        console.error('Erro ao buscar trending topics:', error);
+        return [];
+    }
+}
 // ============================================
 // NOTIFICAÇÕES
 // ============================================
+async function createNotification(userId, title, message, link = null) {
+    try {
+        await db.collection('notifications').add({
+            userId: userId,
+            titulo: title,
+            mensagem: message,
+            link: link,
+            lida: false,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (error) {
+        console.error('Erro ao criar notificação:', error);
+    }
+}
+
 async function loadNotifications() {
     if (!currentUser) return;
     try {
@@ -345,22 +632,19 @@ async function registerUser(user) {
                 isAdmin: existingData.isAdmin || false,
                 isBan: existingData.isBan || false,
                 isBanned: existingData.isBanned || false,
-                isTeacher: false,
-                isTeatcher: false,
+                karma: existingData.karma || 0,
                 createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
-                cookiePreferences: CookieManager.getConsent() || null
+                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             await userRef.set(userData, { merge: true });
-            console.log(`Usuário ${uid} registrado na coleção users`);
         } catch (error) {
             console.warn('Erro ao escrever na coleção users:', error.message);
         }
         
         try {
-            const userRef = db.collection('usuários').doc(uid);
+            const userRef = db.collection('usuarios').doc(uid);
             const userDoc = await userRef.get();
             const existingData = userDoc.exists ? userDoc.data() : {};
             
@@ -372,20 +656,18 @@ async function registerUser(user) {
                 isAdmin: existingData.isAdmin || false,
                 isBan: existingData.isBan || false,
                 isBanned: existingData.isBanned || false,
-                isTeacher: false,
-                isTeatcher: false,
+                karma: existingData.karma || 0,
                 createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
-                cookiePreferences: CookieManager.getConsent() || null
+                lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
             await userRef.set(userData, { merge: true });
-            console.log(`Usuário ${uid} registrado na coleção usuários`);
         } catch (error) {
             console.warn('Erro ao escrever na coleção usuários:', error.message);
         }
         
+        userKarma = await getUserKarma(uid);
         return true;
     } catch (error) {
         console.error('Erro ao registrar usuário:', error);
@@ -405,7 +687,6 @@ async function checkIfUserIsBanned(user) {
             if (userDoc.exists) {
                 const data = userDoc.data();
                 if (data.isBanned === true || data.isBan === true) {
-                    console.log('⚠️ Usuário banido detectado na coleção users');
                     return true;
                 }
             }
@@ -414,11 +695,10 @@ async function checkIfUserIsBanned(user) {
         }
         
         try {
-            const userDoc = await db.collection('usuários').doc(user.uid).get();
+            const userDoc = await db.collection('usuarios').doc(user.uid).get();
             if (userDoc.exists) {
                 const data = userDoc.data();
                 if (data.isBanned === true || data.isBan === true) {
-                    console.log('⚠️ Usuário banido detectado na coleção usuários');
                     return true;
                 }
             }
@@ -433,12 +713,11 @@ async function checkIfUserIsBanned(user) {
 }
 
 // ============================================
-// FUNÇÃO PARA USUÁRIO BANIDO
+// BANNED OVERLAY
 // ============================================
 function showBannedScreen(reason = 'Violação das políticas de uso') {
     const overlay = document.getElementById('bannedOverlay');
     if (!overlay) {
-        console.warn('Overlay de banido não encontrado');
         alert('⚠️ Sua conta foi banida. Motivo: ' + reason);
         return;
     }
@@ -466,8 +745,6 @@ function showBannedScreen(reason = 'Violação das políticas de uso') {
         footer.style.opacity = '0.3';
         footer.style.pointerEvents = 'none';
     }
-    
-    console.log('⚠️ Usuário banido detectado:', reason);
 }
 
 function removeBannedOverlay() {
@@ -529,6 +806,8 @@ function updateUI() {
         if (badge) {
             let badges = '';
             if (isBanned) badges += '<span class="badge-banned">🚫 Banido</span> ';
+            const level = getKarmaLevel(userKarma);
+            badges += `<span class="badge-karma">${level.emoji} ${userKarma}</span>`;
             badge.innerHTML = badges;
         }
         if (btnLogin) btnLogin.style.display = 'none';
@@ -548,9 +827,6 @@ function showLoginModal() {
     if (modal) {
         modal.style.display = 'flex';
         modal.classList.add('show');
-    } else {
-        console.warn('Modal de login não encontrado');
-        alert('Por favor, faça login clicando no botão "Entrar"');
     }
 }
 
@@ -578,6 +854,8 @@ async function loginWithGoogle() {
             return; 
         }
         
+        userKarma = await getUserKarma(currentUser.uid);
+        await loadSavedPosts();
         updateUI();
         closeLoginModal();
         await loadNotifications();
@@ -585,7 +863,7 @@ async function loginWithGoogle() {
         renderMainApp();
     } catch (error) {
         console.error('Erro no login:', error);
-        alert('Erro ao fazer login: ' + error.message);
+        showToast('Erro ao fazer login: ' + error.message, 'error');
     }
 }
 
@@ -594,27 +872,30 @@ async function logout() {
         await auth.signOut();
         currentUser = null;
         isBanned = false;
+        userKarma = 0;
         if (notificationListener) { notificationListener(); notificationListener = null; }
+        if (chatListener) { chatListener(); chatListener = null; }
         notifications = [];
         unreadCount = 0;
+        savedPosts = [];
         updateNotificationBadge();
         updateUI();
         renderWelcomeScreen();
     } catch (error) {
         console.error('Erro no logout:', error);
-        alert('Erro ao sair: ' + error.message);
+        showToast('Erro ao sair: ' + error.message, 'error');
     }
 }
 
 // ============================================
 // CRIAÇÃO DE POST
 // ============================================
-async function createPost(conteudo, link = null, categoria = 'Geral') {
+async function createPost(conteudo, link = null, categoria = 'Geral', communityId = null) {
     if (!currentUser || isBanned) {
         if (isBanned) {
-            alert('Sua conta está banida. Não é possível postar.');
+            showToast('Sua conta está banida. Não é possível postar.', 'error');
         } else {
-            alert('Faça login para postar!');
+            showToast('Faça login para postar!');
         }
         return false;
     }
@@ -624,12 +905,12 @@ async function createPost(conteudo, link = null, categoria = 'Geral') {
     if (!extractedLink) postText = removeLinks(postText);
 
     if (postText.length > 127) {
-        alert('O texto deve ter no máximo 127 caracteres!');
+        showToast('O texto deve ter no máximo 127 caracteres!', 'error');
         return false;
     }
 
     if (postText.length === 0 && !extractedLink) {
-        alert('Digite algo para postar!');
+        showToast('Digite algo para postar!', 'error');
         return false;
     }
 
@@ -645,13 +926,23 @@ async function createPost(conteudo, link = null, categoria = 'Geral') {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             likes: 0,
             comentarios: 0,
-            usuariosQueCurtiram: []
+            usuariosQueCurtiram: [],
+            communityId: communityId || null
         };
+        
         await db.collection('Bemtevi').add(postData);
+        
+        if (communityId) {
+            await db.collection('comunidades').doc(communityId).update({
+                postCount: firebase.firestore.FieldValue.increment(1)
+            });
+        }
+        
+        await updateUserKarma(currentUser.uid, 5);
         return true;
     } catch (error) {
         console.error('Erro ao postar:', error);
-        alert('Erro ao postar. Tente novamente.');
+        showToast('Erro ao postar. Tente novamente.', 'error');
         return false;
     }
 }
@@ -662,9 +953,9 @@ async function createPost(conteudo, link = null, categoria = 'Geral') {
 async function likePost(postId) {
     if (!currentUser || isBanned) {
         if (isBanned) {
-            alert('Sua conta está banida.');
+            showToast('Sua conta está banida.', 'error');
         } else {
-            alert('Faça login para curtir!');
+            showToast('Faça login para curtir!');
         }
         return;
     }
@@ -678,21 +969,31 @@ async function likePost(postId) {
             likes: firebase.firestore.FieldValue.increment(-1),
             usuariosQueCurtiram: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
         });
+        await updateUserKarma(currentUser.uid, -1);
     } else {
         await postRef.update({
             likes: firebase.firestore.FieldValue.increment(1),
             usuariosQueCurtiram: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
         });
+        await updateUserKarma(currentUser.uid, 1);
+        
+        const postData = postDoc.data();
+        if (postData.userId !== currentUser.uid) {
+            await createNotification(
+                postData.userId,
+                '❤️ Nova curtida',
+                `${currentUser.displayName || 'Alguém'} curtiu seu post: "${postData.conteudo?.substring(0, 30)}..."`
+            );
+        }
     }
     refreshFeed();
 }
-
 // ============================================
 // COMENTÁRIOS
 // ============================================
 async function openComments(postId, postUserId, postUserNome) {
     if (isBanned) {
-        alert('Sua conta está banida.');
+        showToast('Sua conta está banida.', 'error');
         return;
     }
     currentViewingPost = { id: postId, userId: postUserId, userNome: postUserNome };
@@ -737,7 +1038,7 @@ async function openComments(postId, postUserId, postUserNome) {
 
 async function sendComment() {
     if (isBanned) {
-        alert('Sua conta está banida. Não é possível comentar.');
+        showToast('Sua conta está banida. Não é possível comentar.', 'error');
         return;
     }
     const commentInput = document.getElementById('comment-input');
@@ -745,12 +1046,12 @@ async function sendComment() {
     
     const commentText = commentInput.value.trim();
     if (!commentText) {
-        alert('Digite um comentário!');
+        showToast('Digite um comentário!', 'error');
         return;
     }
 
     if (commentText.length > 280) {
-        alert('Comentário muito longo! Máximo 280 caracteres.');
+        showToast('Comentário muito longo! Máximo 280 caracteres.', 'error');
         return;
     }
 
@@ -766,93 +1067,39 @@ async function sendComment() {
             comentarios: firebase.firestore.FieldValue.increment(1)
         });
 
+        await updateUserKarma(currentUser.uid, 2);
+        
+        await createNotification(
+            currentViewingPost.userId,
+            '💬 Novo comentário',
+            `${currentUser.displayName || 'Alguém'} comentou no seu post: "${commentText.substring(0, 30)}..."`
+        );
+
         commentInput.value = '';
         await openComments(currentViewingPost.id, currentViewingPost.userId, currentViewingPost.userNome);
         refreshFeed();
     } catch (error) {
         console.error('Erro ao comentar:', error);
-        alert('Erro ao enviar comentário.');
+        showToast('Erro ao enviar comentário.', 'error');
     }
 }
 
 // ============================================
 // PERFIL E SEGUIR
 // ============================================
-async function openProfile(userId, userName) {
+function openProfile(userId, userName) {
     if (isBanned) {
-        alert('Sua conta está banida.');
+        showToast('Sua conta está banida.', 'error');
         return;
     }
-    currentViewingProfile = userId;
-    
-    try {
-        const userDoc = await db.collection('usuarios').doc(userId).get();
-        const userData = userDoc.exists ? userDoc.data() : { nome: userName, seguidores: [], seguindo: [] };
-        
-        let isFollowing = false;
-        if (currentUser && userId !== currentUser.uid && !isBanned) {
-            const followDoc = await db.collection('usuarios').doc(currentUser.uid)
-                .collection('seguindo').doc(userId).get();
-            isFollowing = followDoc.exists;
-        }
-
-        const postsSnapshot = await db.collection('Bemtevi')
-            .where('userId', '==', userId)
-            .orderBy('createdAt', 'desc')
-            .limit(10)
-            .get();
-
-        let postsHtml = '';
-        postsSnapshot.forEach(doc => {
-            const post = doc.data();
-            postsHtml += `
-                <div class="post-card" style="padding:15px;">
-                    <div class="post-content" style="padding-left:0">
-                        ${escapeHtml(post.conteudo)}
-                        ${post.link ? `<a href="${post.link}" target="_blank" class="post-link" style="margin-top:8px;">🔗 ${post.link.substring(0, 40)}</a>` : ''}
-                    </div>
-                    <div class="post-stats" style="padding-left:0">
-                        <span>❤️ ${post.likes || 0}</span>
-                        <span>💬 ${post.comentarios || 0}</span>
-                    </div>
-                </div>
-            `;
-        });
-
-        const modal = document.getElementById('profile-modal');
-        const content = document.getElementById('profile-content');
-        if (!modal || !content) return;
-        
-        content.innerHTML = `
-            <div class="profile-header">
-                <div class="profile-avatar">${(userData.nome || userName)?.charAt(0).toUpperCase() || '?'}</div>
-                <h3>${escapeHtml(userData.nome || userName)}</h3>
-                <div style="opacity:0.8;">@${userId.substring(0, 8)}</div>
-                ${currentUser && userId !== currentUser.uid && !isBanned ? `
-                    <button class="follow-btn ${isFollowing ? 'following' : ''}" onclick="toggleFollow('${userId}')">
-                        ${isFollowing ? '✓ Seguindo' : '+ Seguir'}
-                    </button>
-                ` : ''}
-                <div class="profile-stats">
-                    <div><div class="stat-number">${userData.seguidores?.length || 0}</div><div>Seguidores</div></div>
-                    <div><div class="stat-number">${userData.seguindo?.length || 0}</div><div>Seguindo</div></div>
-                    <div><div class="stat-number">${postsSnapshot.size}</div><div>Posts</div></div>
-                </div>
-            </div>
-            <h4 style="margin: 20px 0 10px; color:#ffffff;">📝 Últimas postagens</h4>
-            <div id="profile-posts">${postsHtml || '<div class="loading">Nenhuma postagem ainda.</div>'}</div>
-        `;
-        modal.style.display = 'flex';
-    } catch (error) {
-        console.error('Erro ao abrir perfil:', error);
-        alert('Erro ao carregar perfil');
-    }
+    const encodedName = encodeURIComponent(userName || 'Usuário');
+    window.location.href = `profile.html?id=${userId}&name=${encodedName}`;
 }
 
 async function toggleFollow(userIdToFollow) {
     if (!currentUser || userIdToFollow === currentUser.uid || isBanned) {
         if (isBanned) {
-            alert('Sua conta está banida.');
+            showToast('Sua conta está banida.', 'error');
         }
         return;
     }
@@ -866,7 +1113,6 @@ async function toggleFollow(userIdToFollow) {
         if (followingDoc.exists) {
             await followingRef.delete();
             await followersRef.delete();
-            console.log('Deixou de seguir com sucesso');
         } else {
             await followingRef.set({
                 userId: userIdToFollow,
@@ -876,22 +1122,20 @@ async function toggleFollow(userIdToFollow) {
                 seguidorId: currentUser.uid,
                 seguidoDesde: firebase.firestore.FieldValue.serverTimestamp()
             });
-            console.log('Seguiu com sucesso');
+            
+            await createNotification(
+                userIdToFollow,
+                '👤 Novo seguidor',
+                `${currentUser.displayName || 'Alguém'} começou a seguir você!`
+            );
         }
 
-        if (currentViewingProfile === userIdToFollow) {
-            await openProfile(userIdToFollow, '');
-        }
         await loadSuggestions();
-        await refreshFeed();
+        refreshFeed();
         
     } catch (error) {
-        console.error('Erro detalhado ao seguir:', error);
-        if (error.code === 'permission-denied') {
-            alert('Erro de permissão. Por favor, recarregue a página e tente novamente.');
-        } else {
-            alert('Erro ao seguir usuário: ' + error.message);
-        }
+        console.error('Erro ao seguir:', error);
+        showToast('Erro ao seguir usuário: ' + error.message, 'error');
     }
 }
 
@@ -909,7 +1153,10 @@ async function loadSuggestions() {
         const followingIds = followingSnapshot.docs.map(doc => doc.id);
         followingIds.push(currentUser.uid);
 
-        const usersSnapshot = await db.collection('usuarios').limit(10).get();
+        const usersSnapshot = await db.collection('usuarios')
+            .orderBy('karma', 'desc')
+            .limit(20)
+            .get();
         const suggestions = usersSnapshot.docs.filter(doc => !followingIds.includes(doc.id)).slice(0, 5);
 
         if (suggestions.length === 0) {
@@ -919,13 +1166,15 @@ async function loadSuggestions() {
 
         container.innerHTML = suggestions.map(doc => {
             const userData = doc.data();
+            const karma = userData.karma || 0;
+            const level = getKarmaLevel(karma);
             return `
                 <div class="suggestion-user">
-                    <div class="suggestion-info" onclick="openProfile('${doc.id}', '${userData.nome}')">
-                        <div class="suggestion-avatar">${userData.nome?.charAt(0).toUpperCase() || '?'}</div>
+                    <div class="suggestion-info" onclick="openProfile('${doc.id}', '${userData.name}')">
+                        <div class="suggestion-avatar">${userData.name?.charAt(0).toUpperCase() || '?'}</div>
                         <div>
-                            <div style="font-weight:600; font-size:14px; color:#ffffff;">${escapeHtml(userData.nome || 'Usuário')}</div>
-                            <div style="font-size:11px; color:#888888;">@${doc.id.substring(0, 8)}</div>
+                            <div style="font-weight:600; font-size:14px; color:#ffffff;">${escapeHtml(userData.name || 'Usuário')}</div>
+                            <div style="font-size:11px; color:#888888;">${level.emoji} ${karma} karma</div>
                         </div>
                     </div>
                     <button class="follow-small-btn" onclick="toggleFollow('${doc.id}')">Seguir</button>
@@ -941,6 +1190,37 @@ async function loadSuggestions() {
 // ============================================
 // CARREGAR POSTS
 // ============================================
+async function loadTrendingTopics() {
+    const container = document.getElementById('trending-container');
+    if (!container) return;
+    
+    try {
+        const topics = await getTrendingTopics(8);
+        if (topics.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#888; font-size:13px;">Nenhum trending no momento</div>';
+            return;
+        }
+        
+        container.innerHTML = topics.map((topic, index) => `
+            <div class="trending-topic" onclick="searchTrending('${topic.name}')">
+                <span class="trending-rank">#${index + 1}</span>
+                <span class="trending-name">${escapeHtml(topic.name)}</span>
+                <span class="trending-count">${topic.count} posts</span>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Erro ao carregar trending:', error);
+        container.innerHTML = '<div style="text-align:center; color:#888; font-size:13px;">Erro ao carregar</div>';
+    }
+}
+
+function searchTrending(topic) {
+    const searchTerm = topic.replace('#', '').trim();
+    if (searchTerm.length > 0) {
+        window.location.href = `explore.html?q=${encodeURIComponent(searchTerm)}`;
+    }
+}
+
 async function loadPosts(reset = false) {
     if (loading || isBanned) return;
     if (reset) {
@@ -986,19 +1266,38 @@ async function loadPosts(reset = false) {
         lastDoc = snapshot.docs[snapshot.docs.length - 1];
         hasMore = snapshot.docs.length === 20;
 
+        await loadSavedPosts();
+
         snapshot.forEach(doc => {
             const post = { id: doc.id, ...doc.data() };
             const postDate = post.createdAt?.toDate() || new Date();
             const isLiked = currentUser && post.usuariosQueCurtiram?.includes(currentUser.uid) && !isBanned;
+            const isSaved = savedPosts.includes(post.id);
             
             const postHtml = `
-                <div class="post-card">
-                    <div class="post-header" onclick="openProfile('${post.userId}', '${post.userNome}')">
-                        <div class="post-avatar-img">${post.userNome?.charAt(0).toUpperCase() || '?'}</div>
-                        <div>
-                            <span class="post-user-name">${escapeHtml(post.userNome)}</span>
+                <div class="post-card" id="post-${post.id}">
+                    <div class="post-header">
+                        <div class="post-avatar-img" onclick="openProfile('${post.userId}', '${post.userNome}')">
+                            ${post.userNome?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <div style="flex:1;">
+                            <span class="post-user-name" onclick="openProfile('${post.userId}', '${post.userNome}')">${escapeHtml(post.userNome)}</span>
                             <span class="post-user-id">@${post.userId?.substring(0, 8)}</span>
                             <span class="post-time">• ${getTimeAgo(postDate)}</span>
+                            ${post.communityId ? `<span class="post-community-tag" onclick="viewCommunity('${post.communityId}')">🏛️ Comunidade</span>` : ''}
+                        </div>
+                        <div class="post-options">
+                            <button class="post-options-btn" onclick="togglePostOptions('${post.id}')">
+                                <span class="material-icons" style="font-size:18px;">more_horiz</span>
+                            </button>
+                            <div class="post-options-dropdown" id="options-${post.id}">
+                                ${post.userId === currentUser?.uid ? `
+                                    <button onclick="deletePost('${post.id}')">🗑️ Excluir</button>
+                                ` : `
+                                    <button onclick="reportPost('${post.id}')">🚨 Denunciar</button>
+                                `}
+                                <button onclick="toggleSavePost('${post.id}')">${isSaved ? '📁 Remover dos salvos' : '📁 Salvar'}</button>
+                            </div>
                         </div>
                     </div>
                     <div class="post-category" style="background:${categoryColors[post.categoria] || '#666'}20; color:${categoryColors[post.categoria] || '#666'}">
@@ -1017,6 +1316,9 @@ async function loadPosts(reset = false) {
                         </span>
                         <span class="stat-action" onclick="sharePost('${post.id}')">
                             <span class="material-icons" style="font-size:18px;">share</span>
+                        </span>
+                        <span class="stat-action ${isSaved ? 'saved' : ''}" onclick="toggleSavePost('${post.id}')">
+                            <span class="material-icons" style="font-size:18px;">${isSaved ? 'bookmark' : 'bookmark_border'}</span>
                         </span>
                     </div>
                 </div>
@@ -1038,10 +1340,55 @@ async function loadPosts(reset = false) {
 
 async function sharePost(postId) {
     try {
-        await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
-        alert('Link copiado!');
+        const postRef = db.collection('Bemtevi').doc(postId);
+        const postDoc = await postRef.get();
+        if (postDoc.exists) {
+            const data = postDoc.data();
+            const shareText = `${data.conteudo || ''} - Bemtevi`;
+            await navigator.clipboard.writeText(shareText);
+            showToast('Link copiado para a área de transferência!');
+        }
     } catch (error) {
-        alert('Erro ao copiar link.');
+        showToast('Erro ao copiar link.', 'error');
+    }
+}
+
+function togglePostOptions(postId) {
+    const dropdown = document.getElementById(`options-${postId}`);
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
+}
+
+async function deletePost(postId) {
+    if (!confirm('Tem certeza que deseja excluir este post?')) return;
+    
+    try {
+        await db.collection('Bemtevi').doc(postId).delete();
+        showToast('Post excluído com sucesso!');
+        refreshFeed();
+    } catch (error) {
+        console.error('Erro ao excluir post:', error);
+        showToast('Erro ao excluir post.', 'error');
+    }
+}
+
+async function reportPost(postId) {
+    const reason = prompt('Descreva o motivo da denúncia:');
+    if (!reason) return;
+    
+    try {
+        await db.collection('reports').add({
+            postId: postId,
+            reporterId: currentUser?.uid || 'anonymous',
+            reason: reason,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending'
+        });
+        showToast('Denúncia enviada! Iremos analisar.');
+    } catch (error) {
+        console.error('Erro ao denunciar:', error);
+        showToast('Erro ao enviar denúncia.', 'error');
     }
 }
 
@@ -1050,6 +1397,98 @@ function refreshFeed() {
     hasMore = true;
     loadPosts(true);
 }
+// ============================================
+// NAVEGAÇÃO
+// ============================================
+function changeFeed(feed) {
+    if (isBanned) return;
+    currentFeed = feed;
+    currentCategoryFilter = null;
+    lastDoc = null;
+    hasMore = true;
+    renderMainApp();
+}
+
+function filterByCategory(category) {
+    if (isBanned) return;
+    currentCategoryFilter = category;
+    currentFeed = 'for-you';
+    lastDoc = null;
+    hasMore = true;
+    renderMainApp();
+}
+
+function clearCategoryFilter() {
+    if (isBanned) return;
+    currentCategoryFilter = null;
+    lastDoc = null;
+    hasMore = true;
+    renderMainApp();
+}
+
+function openExplore() {
+    window.location.href = 'explore.html';
+}
+
+function openCommunities() {
+    window.location.href = 'communities.html';
+}
+
+function openMessages() {
+    window.location.href = 'messages.html';
+}
+
+function openSavedPosts() {
+    window.location.href = 'saved.html';
+}
+
+function viewCommunity(communityId) {
+    window.location.href = `community.html?id=${communityId}`;
+}
+
+// ============================================
+// CRIAR COMUNIDADE - MODAL
+// ============================================
+function showCreateCommunityModal() {
+    if (!currentUser || isBanned) {
+        showToast('Faça login para criar uma comunidade!');
+        return;
+    }
+    
+    const modal = document.getElementById('createCommunityModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+    }
+}
+
+async function createCommunityFromModal() {
+    const nameInput = document.getElementById('communityName');
+    const descInput = document.getElementById('communityDescription');
+    const catSelect = document.getElementById('communityCategory');
+    
+    const name = nameInput?.value?.trim();
+    const description = descInput?.value?.trim();
+    const category = catSelect?.value || 'Geral';
+    
+    if (!name || name.length < 3) {
+        showToast('O nome da comunidade deve ter pelo menos 3 caracteres.', 'error');
+        nameInput?.focus();
+        return;
+    }
+    
+    const communityId = await createCommunity(name, description, category);
+    if (communityId) {
+        closeModal('createCommunityModal');
+        if (nameInput) nameInput.value = '';
+        if (descInput) descInput.value = '';
+        showToast(`Comunidade "${name}" criada com sucesso!`);
+        // Atualizar feed se estiver na página de comunidades
+        if (typeof loadCommunities === 'function') {
+            loadCommunities('all');
+        }
+    }
+}
 
 // ============================================
 // RENDERIZAÇÃO
@@ -1057,6 +1496,10 @@ function refreshFeed() {
 function renderMainApp() {
     const container = document.getElementById('app');
     if (!container) return;
+    
+    const userInitial = currentUser?.displayName?.charAt(0).toUpperCase() || 
+                        currentUser?.email?.charAt(0).toUpperCase() || '?';
+    const userName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Usuário';
     
     container.innerHTML = `
         <div class="app-container">
@@ -1073,13 +1516,32 @@ function renderMainApp() {
                         <li class="nav-item ${currentFeed === 'my-posts' ? 'active' : ''}" onclick="changeFeed('my-posts')">
                             <span class="material-icons">person</span> Minhas Postagens
                         </li>
+                        <li class="nav-item" onclick="openExplore()">
+                            <span class="material-icons">explore</span> Explorar
+                        </li>
+                        <li class="nav-item" onclick="openCommunities()">
+                            <span class="material-icons">groups</span> Comunidades
+                        </li>
+                        <li class="nav-item" onclick="openMessages()">
+                            <span class="material-icons">chat</span> Mensagens
+                        </li>
+                        <hr class="nav-divider">
+                        <li class="nav-item" onclick="showCreateCommunityModal()" style="color: #ffb347;">
+                            <span class="material-icons" style="color:#ffb347;">add_circle</span> Criar Comunidade
+                        </li>
+                        <li class="nav-item" onclick="openSavedPosts()">
+                            <span class="material-icons">bookmark</span> Salvos
+                        </li>
+                        <li class="nav-item" onclick="openProfile('${currentUser.uid}', '${userName}')">
+                            <span class="material-icons">account_circle</span> Meu Perfil
+                        </li>
                     </ul>
-                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid #2a2a2a; cursor:pointer;" onclick="openProfile('${currentUser.uid}', '${currentUser.displayName || currentUser.email.split('@')[0]}')">
+                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid #2a2a2a; cursor:pointer;" onclick="openProfile('${currentUser.uid}', '${userName}')">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <div class="post-avatar" style="width:40px; height:40px;">${currentUser.displayName?.charAt(0).toUpperCase() || currentUser.email.charAt(0).toUpperCase()}</div>
+                            <div class="post-avatar" style="width:40px; height:40px;">${userInitial}</div>
                             <div>
-                                <div style="font-weight:600; color:#ffffff;">${escapeHtml(currentUser.displayName || currentUser.email.split('@')[0])}</div>
-                                <div style="font-size:12px; color:#888888;">@${currentUser.uid.substring(0, 8)}</div>
+                                <div style="font-weight:600; color:#ffffff;">${escapeHtml(userName)}</div>
+                                <div style="font-size:12px; color:#888888;">${getKarmaLevel(userKarma).emoji} ${userKarma} karma</div>
                             </div>
                         </div>
                     </div>
@@ -1087,10 +1549,19 @@ function renderMainApp() {
             </div>
 
             <div>
-                <div class="feed-header"><div class="feed-title">📱 Feed</div></div>
+                <div class="feed-header">
+                    <div class="feed-header-top">
+                        <div class="feed-title">📱 ${currentFeed === 'my-posts' ? 'Minhas Postagens' : 'Feed'}</div>
+                    </div>
+                    <div class="feed-tabs">
+                        <span class="feed-tab ${currentFeed === 'for-you' ? 'active' : ''}" onclick="changeFeed('for-you')">Para Você</span>
+                        <span class="feed-tab ${currentFeed === 'latest' ? 'active' : ''}" onclick="changeFeed('latest')">Últimas</span>
+                        <span class="feed-tab ${currentFeed === 'my-posts' ? 'active' : ''}" onclick="changeFeed('my-posts')">Minhas</span>
+                    </div>
+                </div>
                 <div class="post-box">
                     <div class="post-input-area">
-                        <div class="post-avatar">${currentUser.displayName?.charAt(0).toUpperCase() || currentUser.email.charAt(0).toUpperCase()}</div>
+                        <div class="post-avatar">${userInitial}</div>
                         <div class="post-input-container">
                             <textarea id="postText" class="post-input" rows="3" placeholder="O que está acontecendo? (Máx. 127 caracteres)" maxlength="127"></textarea>
                             <div id="charCounter" class="char-counter">0/127</div>
@@ -1111,6 +1582,10 @@ function renderMainApp() {
                     <div class="box-title" style="font-weight:700; margin-bottom:15px;">📂 Categorias</div>
                     ${categories.map(cat => `<span class="category-chip ${currentCategoryFilter === cat ? 'selected' : ''}" onclick="filterByCategory('${cat}')">${cat}</span>`).join('')}
                     <span class="category-chip ${!currentCategoryFilter ? 'selected' : ''}" onclick="clearCategoryFilter()">Todos</span>
+                </div>
+                <div class="card">
+                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">🔥 Trending</div>
+                    <div id="trending-container">Carregando...</div>
                 </div>
                 <div class="card">
                     <div class="box-title" style="font-weight:700; margin-bottom:15px;">👥 Sugestões</div>
@@ -1134,6 +1609,7 @@ function renderMainApp() {
 
     loadPosts(true);
     loadSuggestions();
+    loadTrendingTopics();
     
     window.removeEventListener('scroll', handleScroll);
     window.addEventListener('scroll', handleScroll);
@@ -1160,6 +1636,7 @@ function renderWelcomeScreen() {
                 <p style="color:#aaaaaa; margin-bottom:30px;">Uma rede social livre e colaborativa</p>
                 <button id="google-login-welcome" class="btn-primary" style="width:100%;">🔑 Entrar com Google</button>
                 <div style="margin-top:20px; font-size:12px; color:#666666;">Postagens de até 127 caracteres • Comentários • Curtidas</div>
+                <div style="margin-top:10px; font-size:11px; color:#444;">Comunidades • Karma • Mensagens Diretas</div>
             </div>
         </div>
     `;
@@ -1169,37 +1646,11 @@ function renderWelcomeScreen() {
 }
 
 // ============================================
-// FUNÇÕES GLOBAIS (expostas para HTML)
+// SUBMISSÃO DE POST
 // ============================================
-window.changeFeed = function(feed) {
-    if (isBanned) return;
-    currentFeed = feed;
-    currentCategoryFilter = null;
-    lastDoc = null;
-    hasMore = true;
-    renderMainApp();
-};
-
-window.filterByCategory = function(category) {
-    if (isBanned) return;
-    currentCategoryFilter = category;
-    currentFeed = 'for-you';
-    lastDoc = null;
-    hasMore = true;
-    renderMainApp();
-};
-
-window.clearCategoryFilter = function() {
-    if (isBanned) return;
-    currentCategoryFilter = null;
-    lastDoc = null;
-    hasMore = true;
-    renderMainApp();
-};
-
 window.submitPost = async function() {
     if (isBanned) {
-        alert('Sua conta está banida. Não é possível postar.');
+        showToast('Sua conta está banida. Não é possível postar.', 'error');
         return;
     }
     const text = document.getElementById('postText')?.value;
@@ -1214,9 +1665,15 @@ window.submitPost = async function() {
     }
 };
 
+// ============================================
+// FUNÇÕES GLOBAIS
+// ============================================
 window.closeModal = function(id) {
     const modal = document.getElementById(id);
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+    }
 };
 
 window.toggleFollow = toggleFollow;
@@ -1231,12 +1688,25 @@ window.showLoginModal = showLoginModal;
 window.loginWithGoogle = loginWithGoogle;
 window.markAllAsRead = markAllAsRead;
 window.toggleNotifications = toggleNotifications;
+window.toggleSavePost = toggleSavePost;
+window.deletePost = deletePost;
+window.reportPost = reportPost;
+window.searchTrending = searchTrending;
+window.changeFeed = changeFeed;
+window.filterByCategory = filterByCategory;
+window.clearCategoryFilter = clearCategoryFilter;
+window.openExplore = openExplore;
+window.openCommunities = openCommunities;
+window.openMessages = openMessages;
+window.openSavedPosts = openSavedPosts;
+window.viewCommunity = viewCommunity;
+window.showCreateCommunityModal = showCreateCommunityModal;
+window.createCommunityFromModal = createCommunityFromModal;
 
 // ============================================
 // INICIALIZAÇÃO
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar Cookie Manager
     CookieManager.init();
     
     const googleBtn = document.getElementById('google-login-btn');
@@ -1254,6 +1724,8 @@ auth.onAuthStateChanged(async (user) => {
             updateUI(); 
             return; 
         }
+        userKarma = await getUserKarma(user.uid);
+        await loadSavedPosts();
         updateUI();
         await loadNotifications();
         listenNotifications();
@@ -1261,24 +1733,23 @@ auth.onAuthStateChanged(async (user) => {
     } else {
         currentUser = null;
         isBanned = false;
+        userKarma = 0;
         updateUI();
         if (notificationListener) { notificationListener(); notificationListener = null; }
+        if (chatListener) { chatListener(); chatListener = null; }
         notifications = [];
         unreadCount = 0;
+        savedPosts = [];
         updateNotificationBadge();
         removeBannedOverlay();
         renderWelcomeScreen();
     }
 });
 
-// ============================================
-// REDIRECIONAR PARA PÁGINA DE PERFIL
-// ============================================
-window.openProfilePage = function(userId, userName) {
-    const encodedName = encodeURIComponent(userName || 'Usuário');
-    window.location.href = `profile.html?id=${userId}&name=${encodedName}`;
-};
-
 console.log('🐦 Bemtevi - Rede Social Beta inicializada com sucesso!');
-console.log('🔔 Notificações integradas via coleção "notifications"');
+console.log('🔔 Notificações integradas');
+console.log('🏛️ Comunidades disponíveis');
+console.log('⭐ Sistema de Karma ativo');
+console.log('📁 Sistema de salvos ativo');
+console.log('💬 Mensagens diretas disponíveis');
 console.log('🍪 Sistema de consentimento de cookies ativo');
