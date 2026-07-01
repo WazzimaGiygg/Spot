@@ -1093,7 +1093,7 @@ function openProfile(userId, userName) {
         return;
     }
     const encodedName = encodeURIComponent(userName || 'Usuário');
-    window.location.href = `profile.html?id=${userId}&name=${encodedName}`;
+    window.location.href = `https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/profile.html?id=${userId}&name=${encodedName}`;
 }
 
 async function toggleFollow(userIdToFollow) {
@@ -1217,7 +1217,7 @@ async function loadTrendingTopics() {
 function searchTrending(topic) {
     const searchTerm = topic.replace('#', '').trim();
     if (searchTerm.length > 0) {
-        window.location.href = `explore.html?q=${encodeURIComponent(searchTerm)}`;
+        window.location.href = `https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/explore.html?q=${encodeURIComponent(searchTerm)}`;
     }
 }
 
@@ -1427,23 +1427,23 @@ function clearCategoryFilter() {
 }
 
 function openExplore() {
-    window.location.href = 'explore.html';
+    window.location.href = 'https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/explore.html';
 }
 
 function openCommunities() {
-    window.location.href = 'communities.html';
+    window.location.href = 'https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/communities.html';
 }
 
 function openMessages() {
-    window.location.href = 'messages.html';
+    window.location.href = 'https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/messages.html';
 }
 
 function openSavedPosts() {
-    window.location.href = 'saved.html';
+    window.location.href = 'https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/saved.html';
 }
 
 function viewCommunity(communityId) {
-    window.location.href = `community.html?id=${communityId}`;
+    window.location.href = `https://gspotfverwazzimagiygg.wazzimagiygg.com/bemtevi/community.html?id=${communityId}`;
 }
 
 // ============================================
