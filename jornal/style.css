@@ -509,7 +509,7 @@ body {
 }
 
 /* ============================================
-   NAV MENU
+   NAV MENU - CATEGORIAS ESTILIZADAS
    ============================================ */
 .nav-menu {
     background: #1a3c5e;
@@ -519,6 +519,7 @@ body {
     top: 0;
     z-index: 100;
     overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .nav-menu ul {
@@ -526,14 +527,22 @@ body {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 0;
+    gap: 4px;
     margin: 0;
-    padding: 0;
+    padding: 6px 12px;
     min-width: max-content;
 }
 
 .nav-menu li {
-    border-right: 1px solid rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin: 2px 0;
+}
+
+.nav-menu li:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
 }
 
 .nav-menu li:last-child {
@@ -542,30 +551,83 @@ body {
 
 .nav-menu a {
     display: block;
-    padding: 12px 24px;
-    color: white;
+    padding: 8px 16px;
+    color: rgba(255, 255, 255, 0.75);
     text-decoration: none;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    transition: background 0.2s;
+    transition: all 0.25s ease;
     cursor: pointer;
     white-space: nowrap;
+    border-radius: 6px;
+    position: relative;
 }
 
-.nav-menu a:hover, .nav-menu a.active {
-    background: #c0392b;
+.nav-menu a::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #e94560, #c0392b);
+    transition: width 0.3s ease;
+    border-radius: 2px;
 }
 
+.nav-menu a:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+}
+
+.nav-menu a:hover::after {
+    width: 60%;
+}
+
+.nav-menu a.active {
+    color: #ffffff;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    box-shadow: 0 2px 12px rgba(192, 57, 43, 0.35);
+    transform: translateY(-1px);
+}
+
+.nav-menu a.active::after {
+    width: 70%;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.nav-menu a .cat-icon {
+    margin-right: 4px;
+    font-size: 13px;
+}
+
+/* Botão especial "NOVA MATÉRIA" */
 .nav-menu a.admin-btn {
-    background: #c0392b;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
     color: white;
     font-weight: 700;
+    box-shadow: 0 2px 10px rgba(192, 57, 43, 0.3);
+    padding: 8px 20px;
 }
 
 .nav-menu a.admin-btn:hover {
-    background: #e74c3c;
+    background: linear-gradient(135deg, #e74c3c, #ff6b6b);
+    box-shadow: 0 4px 20px rgba(192, 57, 43, 0.5);
+    transform: translateY(-2px);
+}
+
+.nav-menu a.admin-btn::after {
+    display: none;
+}
+
+/* Botão ativo da categoria "TODOS" */
+.nav-menu a[data-cat="todos"].active {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    box-shadow: 0 2px 12px rgba(44, 62, 80, 0.35);
 }
 
 /* ============================================
@@ -1263,13 +1325,6 @@ body {
         width: 300px;
         right: -20px;
     }
-    .nav-menu ul {
-        justify-content: flex-start;
-    }
-    .cookie-options {
-        flex-direction: column;
-        gap: 8px;
-    }
 }
 
 @media (max-width: 768px) {
@@ -1280,9 +1335,25 @@ body {
     .newspaper-name {
         font-size: 36px;
     }
+    .nav-menu ul {
+        padding: 4px 8px;
+        gap: 3px;
+    }
     .nav-menu a {
-        padding: 10px 15px;
+        padding: 6px 12px;
+        font-size: 10px;
+        letter-spacing: 0.3px;
+    }
+    .nav-menu a::after {
+        bottom: 2px;
+        height: 1.5px;
+    }
+    .nav-menu a .cat-icon {
         font-size: 11px;
+    }
+    .nav-menu a.admin-btn {
+        padding: 6px 14px;
+        font-size: 10px;
     }
     .weather-main {
         flex-wrap: wrap;
@@ -1313,6 +1384,10 @@ body {
     .cookie-text p {
         font-size: 13px;
     }
+    .cookie-options {
+        flex-direction: column;
+        gap: 8px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1328,9 +1403,23 @@ body {
     .footer-divider {
         display: none;
     }
+    .nav-menu ul {
+        padding: 3px 4px;
+        gap: 2px;
+    }
     .nav-menu a {
-        padding: 8px 12px;
+        padding: 5px 9px;
+        font-size: 9px;
+        letter-spacing: 0.2px;
+        border-radius: 4px;
+    }
+    .nav-menu a .cat-icon {
         font-size: 10px;
+        margin-right: 2px;
+    }
+    .nav-menu a.admin-btn {
+        padding: 5px 10px;
+        font-size: 9px;
     }
     .banned-box {
         padding: 30px 20px;
