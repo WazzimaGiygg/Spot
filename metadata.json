@@ -1,0 +1,6 @@
+{
+  "name": "SkyHTML",
+  "description": "Uma comunidade de código aberto para criar, compartilhar e colaborar em projetos HTML, CSS, JavaScript e React.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
