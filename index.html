@@ -1138,7 +1138,7 @@ let isBanned = false;
 let isCaptchaVerified = false;
 
 // ============================================================
-// 2. FLAPPY BIRD CAPTCHA
+// 2. FLAPPY BIRD CAPTCHA (CORRIGIDO)
 // ============================================================
 const captcha = {
     canvas: null,
@@ -1160,6 +1160,7 @@ const captcha = {
     PIPE_SPEED: 2.2,
     PIPE_SPAWN_INTERVAL: 85,
     BIRD_X: 65,
+    PIPE_SPACING: 280, // Espaçamento entre canos (CORRIGIDO)
     
     init() {
         this.canvas = document.getElementById('captchaCanvas');
@@ -1184,12 +1185,18 @@ const captcha = {
         document.getElementById('captchaStatusMsg').textContent = '⬆ Clique para voar';
         document.getElementById('captchaStatusMsg').style.color = '#ffd700';
         
-        // Spawn inicial de canos
-        for (let i = 0; i < 3; i++) {
+        // ===== SPAWN INICIAL CORRIGIDO =====
+        // Espaçamento adequado entre canos para permitir passagem
+        const initialPipes = 3;
+        for (let i = 0; i < initialPipes; i++) {
             this.spawnPipe();
-            this.pipes[i].x = 300 + i * 180;
+            // Espaçamento de 280px entre canos (antes era 180)
+            this.pipes[i].x = 400 + i * this.PIPE_SPACING;
         }
-        if (this.pipes.length > 0) this.pipes[0].x = 320;
+        // Ajusta o primeiro cano para aparecer mais cedo
+        if (this.pipes.length > 0) {
+            this.pipes[0].x = 380;
+        }
         this.frameCounter = 30;
     },
     
@@ -1246,10 +1253,14 @@ const captcha = {
             }
         }
         
-        // Spawn de novos canos
+        // Spawn de novos canos (com espaçamento controlado)
         this.frameCounter++;
         if (this.frameCounter >= this.PIPE_SPAWN_INTERVAL) {
-            this.spawnPipe();
+            // Verifica se o último cano já está longe o suficiente
+            const lastPipe = this.pipes[this.pipes.length - 1];
+            if (!lastPipe || lastPipe.x < 400 - this.PIPE_SPACING + 100) {
+                this.spawnPipe();
+            }
             this.frameCounter = 0;
         }
         
@@ -1455,7 +1466,6 @@ function hideCaptcha() {
 function verifyCaptcha() {
     if (captcha.score >= captcha.targetScore) {
         isCaptchaVerified = true;
-        // Salva no localStorage para não pedir novamente
         try {
             localStorage.setItem('skyhtml_captcha_verified', 'true');
             localStorage.setItem('skyhtml_captcha_date', Date.now().toString());
@@ -1572,7 +1582,6 @@ async function loginWithGoogle() {
         }
         updateAuthUI();
         hideLoginModal();
-        // Se já tiver verificado o captcha, carrega os projetos
         if (isCaptchaVerified) {
             loadProjects();
         }
@@ -2049,13 +2058,11 @@ document.addEventListener('keydown', (e) => {
 // ============================================================
 // 10. INICIALIZAÇÃO
 // ============================================================
-// Verifica se o captcha já foi verificado anteriormente
 try {
     const saved = localStorage.getItem('skyhtml_captcha_verified');
     const savedDate = localStorage.getItem('skyhtml_captcha_date');
     if (saved === 'true' && savedDate) {
         const diff = Date.now() - parseInt(savedDate);
-        // Expira após 24 horas (86400000 ms)
         if (diff < 86400000) {
             isCaptchaVerified = true;
         } else {
@@ -2065,7 +2072,6 @@ try {
     }
 } catch(e) {}
 
-// Autenticação
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
@@ -2080,7 +2086,6 @@ auth.onAuthStateChanged(async (user) => {
         if (isCaptchaVerified) {
             loadProjects();
         } else {
-            // Mostra o captcha se não estiver verificado
             setTimeout(showCaptcha, 500);
         }
     } else {
@@ -2103,7 +2108,6 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// Expor funções globalmente
 window.logoutBanned = logoutBanned;
 window.viewProject = viewProject;
 window.manageProject = manageProject;
@@ -2119,4 +2123,3 @@ window.verifyCaptcha = verifyCaptcha;
 <script src="https://gspotfverwazzimagiygg.wazzimagiygg.com/D6FefD0De/EfdFeF1ExcE0C/De0Var6H6f/QXdv0/dddcefb.js"></script>
 </body>
 </html>
-<!-- Fim do código HTML -->
