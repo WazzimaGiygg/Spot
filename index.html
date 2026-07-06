@@ -2,12 +2,13 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SkyHTML - Comunidade de Código Aberto</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="https://gspotfverwazzimagiygg.wazzimagiygg.com/skyhtml/Favicom.png" type="image/x-icon">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <style>
+        /* ===== ESTILOS ORIGINAIS (mantidos) ===== */
         * {
             margin: 0;
             padding: 0;
@@ -672,11 +673,201 @@
                 display: none;
             }
         }
+
+        /* ===== ESTILOS DO FLAPPY BIRD (CAPTCHA) ===== */
+        .flappy-captcha-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .flappy-captcha-overlay.show {
+            display: flex;
+        }
+
+        .flappy-captcha-box {
+            background: #1a1a2e;
+            border: 2px solid #667eea;
+            border-radius: 24px;
+            padding: 30px 30px 25px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(102, 126, 234, 0.3);
+        }
+
+        .flappy-captcha-box h2 {
+            color: #fff;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .flappy-captcha-box .subtitle {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .flappy-captcha-box .target-score {
+            color: #f5c842;
+            font-weight: bold;
+            font-size: 1.4rem;
+            background: rgba(245, 200, 66, 0.15);
+            padding: 8px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 1px solid rgba(245, 200, 66, 0.3);
+        }
+
+        .flappy-captcha-box .target-score span {
+            font-size: 1.8rem;
+        }
+
+        .flappy-captcha-box canvas {
+            display: block;
+            background: #4ec0ca;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            aspect-ratio: 400/600;
+            margin: 0 auto;
+            cursor: pointer;
+            touch-action: none;
+            border: 2px solid #2b7a7a;
+        }
+
+        .flappy-captcha-box .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding: 0 5px;
+            color: #f0e6d0;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .flappy-captcha-box .game-info .score-box {
+            background: #16213e;
+            padding: 4px 18px;
+            border-radius: 30px;
+            border: 2px solid #f5c842;
+        }
+
+        .flappy-captcha-box .game-info .status-msg {
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+
+        .flappy-captcha-box .hint {
+            color: #b9b3a0;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+
+        .flappy-captcha-box .captcha-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .flappy-captcha-box .btn-captcha {
+            padding: 10px 28px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .flappy-captcha-box .btn-captcha-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .flappy-captcha-box .btn-captcha-primary:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .flappy-captcha-box .btn-captcha-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .flappy-captcha-box .btn-captcha-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .flappy-captcha-box .btn-captcha-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .flappy-captcha-box .btn-captcha-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .flappy-captcha-box .btn-captcha-success:hover {
+            background: #2ecc71;
+        }
+
+        .flappy-captcha-box .btn-captcha-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .flappy-captcha-box .btn-captcha-danger:hover {
+            background: #c0392b;
+        }
+
+        .flappy-captcha-box .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin: 12px 0 8px;
+            overflow: hidden;
+        }
+
+        .flappy-captcha-box .progress-bar .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f5c842, #f39c12);
+            border-radius: 10px;
+            transition: width 0.1s;
+        }
+
+        .blurred-content {
+            filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
 
-<!-- BANNED OVERLAY -->
+<!-- ===== BANNED OVERLAY ===== -->
 <div id="bannedOverlay" class="banned-overlay">
     <div class="banned-box">
         <div class="icon">🚫</div>
@@ -690,7 +881,38 @@
     </div>
 </div>
 
-<div class="header">
+<!-- ===== FLAPPY BIRD CAPTCHA OVERLAY ===== -->
+<div id="flappyCaptchaOverlay" class="flappy-captcha-overlay">
+    <div class="flappy-captcha-box">
+        <h2>🐤 Verificação Anti-Bot</h2>
+        <div class="subtitle">Jogue Flappy Bird para liberar o acesso</div>
+        
+        <div class="target-score">
+            🎯 Meta: <span id="targetScoreDisplay">10</span> pontos
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <canvas id="captchaCanvas" width="400" height="600"></canvas>
+        
+        <div class="game-info">
+            <span class="score-box">🏆 <span id="captchaScoreDisplay">0</span></span>
+            <span class="status-msg" id="captchaStatusMsg">⬆ Clique para voar</span>
+        </div>
+        
+        <div class="hint">Clique, toque ou pressione Espaço para pular</div>
+        
+        <div class="captcha-actions">
+            <button class="btn-captcha btn-captcha-secondary" id="resetCaptchaBtn">🔄 Reiniciar</button>
+            <button class="btn-captcha btn-captcha-primary" id="verifyCaptchaBtn" disabled>✅ Verificar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== HEADER ===== -->
+<div class="header" id="mainHeader">
     <div class="header-container">
         <div class="logo" onclick="location.reload()">
             <span class="logo-icon material-icons">code</span>
@@ -734,7 +956,8 @@
     </div>
 </div>
 
-<div class="main-container">
+<!-- ===== MAIN CONTENT (bloqueado inicialmente) ===== -->
+<div class="main-container" id="mainContent">
     <div class="flex-container">
         <div class="sidebar">
             <div class="filter-card">
@@ -789,8 +1012,8 @@
     </div>
 </div>
 
-<!-- FOOTER COM CONTATO POR TICKET ADICIONADO (IGUAL AO MASPIA FORUM) -->
-<div class="footer">
+<!-- ===== FOOTER ===== -->
+<div class="footer" id="mainFooter">
     <div class="footer-links">
         <a href="https://wazzimagiygg.com/donate/" style="color:white;">💝 Faça sua doação!</a>
         <span class="footer-divider">|</span>
@@ -810,7 +1033,7 @@
     </div>
 </div>
 
-<!-- Modal Novo Projeto -->
+<!-- ===== MODALS ===== -->
 <div id="project-modal" class="modal">
     <div class="modal-content">
         <h2><span class="material-icons">code</span> Criar Novo Projeto</h2>
@@ -861,7 +1084,6 @@
     </div>
 </div>
 
-<!-- Modal Visualizar Projeto -->
 <div id="view-modal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div id="view-content"></div>
@@ -871,7 +1093,6 @@
     </div>
 </div>
 
-<!-- Modal Login -->
 <div id="login-modal" class="modal">
     <div class="modal-content">
         <h2><span class="material-icons">login</span> Entrar no SkyHTML</h2>
@@ -893,6 +1114,9 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
 <script>
+// ============================================================
+// 1. CONFIGURAÇÃO DO FIREBASE
+// ============================================================
 const firebaseConfig = {
     apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
     authDomain: "wzzm-ce3fc.firebaseapp.com",
@@ -911,15 +1135,345 @@ let currentUser = null;
 let allProjects = [];
 let currentFilter = { type: '', status: '', mine: false, search: '' };
 let isBanned = false;
+let isCaptchaVerified = false;
 
-// ============================================
-// FUNÇÃO PARA REGISTRAR USUÁRIO (PRESERVANDO BAN)
-// ============================================
+// ============================================================
+// 2. FLAPPY BIRD CAPTCHA
+// ============================================================
+const captcha = {
+    canvas: null,
+    ctx: null,
+    bird: { x: 65, y: 300, vy: 0, radius: 15 },
+    pipes: [],
+    score: 0,
+    targetScore: 0,
+    gameOver: false,
+    frameCounter: 0,
+    animationId: null,
+    isRunning: false,
+    
+    // Constantes
+    GRAVITY: 0.25,
+    JUMP_FORCE: -5.2,
+    PIPE_WIDTH: 52,
+    GAP_HEIGHT: 145,
+    PIPE_SPEED: 2.2,
+    PIPE_SPAWN_INTERVAL: 85,
+    BIRD_X: 65,
+    
+    init() {
+        this.canvas = document.getElementById('captchaCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.targetScore = Math.floor(Math.random() * 20) + 1; // 1 a 20
+        document.getElementById('targetScoreDisplay').textContent = this.targetScore;
+        this.reset();
+        this.start();
+    },
+    
+    reset() {
+        this.bird.y = 300;
+        this.bird.vy = 0;
+        this.pipes = [];
+        this.score = 0;
+        this.gameOver = false;
+        this.frameCounter = 0;
+        this.isRunning = true;
+        document.getElementById('captchaScoreDisplay').textContent = '0';
+        document.getElementById('progressFill').style.width = '0%';
+        document.getElementById('verifyCaptchaBtn').disabled = true;
+        document.getElementById('captchaStatusMsg').textContent = '⬆ Clique para voar';
+        document.getElementById('captchaStatusMsg').style.color = '#ffd700';
+        
+        // Spawn inicial de canos
+        for (let i = 0; i < 3; i++) {
+            this.spawnPipe();
+            this.pipes[i].x = 300 + i * 180;
+        }
+        if (this.pipes.length > 0) this.pipes[0].x = 320;
+        this.frameCounter = 30;
+    },
+    
+    spawnPipe() {
+        const minTop = 60;
+        const maxTop = 600 - this.GAP_HEIGHT - 60;
+        const topHeight = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
+        this.pipes.push({
+            x: 400,
+            topHeight: topHeight,
+            scored: false
+        });
+    },
+    
+    jump() {
+        if (this.gameOver) {
+            this.reset();
+            return;
+        }
+        if (!this.isRunning) return;
+        this.bird.vy = this.JUMP_FORCE;
+    },
+    
+    update() {
+        if (this.gameOver || !this.isRunning) return;
+        
+        // Física do pássaro
+        this.bird.vy += this.GRAVITY;
+        this.bird.y += this.bird.vy;
+        
+        // Movimento dos canos e pontuação
+        for (let i = this.pipes.length - 1; i >= 0; i--) {
+            const p = this.pipes[i];
+            p.x -= this.PIPE_SPEED;
+            
+            if (!p.scored && p.x + this.PIPE_WIDTH < this.bird.x - this.bird.radius) {
+                p.scored = true;
+                this.score++;
+                document.getElementById('captchaScoreDisplay').textContent = this.score;
+                const progress = Math.min((this.score / this.targetScore) * 100, 100);
+                document.getElementById('progressFill').style.width = progress + '%';
+                
+                if (this.score >= this.targetScore) {
+                    this.isRunning = false;
+                    this.gameOver = true;
+                    document.getElementById('verifyCaptchaBtn').disabled = false;
+                    document.getElementById('captchaStatusMsg').textContent = '✅ Meta atingida! Clique em "Verificar"';
+                    document.getElementById('captchaStatusMsg').style.color = '#2ecc71';
+                }
+            }
+            
+            if (p.x + this.PIPE_WIDTH < 0) {
+                this.pipes.splice(i, 1);
+            }
+        }
+        
+        // Spawn de novos canos
+        this.frameCounter++;
+        if (this.frameCounter >= this.PIPE_SPAWN_INTERVAL) {
+            this.spawnPipe();
+            this.frameCounter = 0;
+        }
+        
+        // Colisões
+        if (this.checkCollisions()) {
+            this.gameOver = true;
+            this.isRunning = false;
+            document.getElementById('captchaStatusMsg').textContent = '💀 Game Over! Reinicie para tentar';
+            document.getElementById('captchaStatusMsg').style.color = '#e74c3c';
+        }
+    },
+    
+    checkCollisions() {
+        if (this.bird.y - this.bird.radius < 0 || this.bird.y + this.bird.radius > 600) {
+            return true;
+        }
+        
+        for (let p of this.pipes) {
+            const topPipe = { x: p.x, y: 0, w: this.PIPE_WIDTH, h: p.topHeight };
+            const bottomPipe = { x: p.x, y: p.topHeight + this.GAP_HEIGHT, w: this.PIPE_WIDTH, h: 600 - (p.topHeight + this.GAP_HEIGHT) };
+            
+            if (this.circleRectCollision(this.bird.x, this.bird.y, this.bird.radius, topPipe) ||
+                this.circleRectCollision(this.bird.x, this.bird.y, this.bird.radius, bottomPipe)) {
+                return true;
+            }
+        }
+        return false;
+    },
+    
+    circleRectCollision(cx, cy, r, rect) {
+        let closestX = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+        let closestY = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+        let dx = cx - closestX;
+        let dy = cy - closestY;
+        return (dx * dx + dy * dy) < (r * r);
+    },
+    
+    draw() {
+        const ctx = this.ctx;
+        const W = 400, H = 600;
+        ctx.clearRect(0, 0, W, H);
+        
+        // Fundo
+        const grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, '#6dd5ed');
+        grad.addColorStop(0.7, '#b3e5f0');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+        
+        // Nuvens
+        ctx.fillStyle = 'rgba(255,255,240,0.25)';
+        for (let i = 0; i < 4; i++) {
+            let x = (i * 130 + this.frameCounter * 0.2) % 500 - 100;
+            let y = 40 + i * 40;
+            ctx.beginPath();
+            ctx.arc(x, y, 35, 0, Math.PI*2);
+            ctx.arc(x+40, y-10, 30, 0, Math.PI*2);
+            ctx.arc(x+70, y+5, 28, 0, Math.PI*2);
+            ctx.fill();
+        }
+        
+        // Canos
+        for (let p of this.pipes) {
+            const x = p.x;
+            const topH = p.topHeight;
+            
+            ctx.fillStyle = '#3d8c40';
+            ctx.fillRect(x, 0, this.PIPE_WIDTH, topH);
+            ctx.fillStyle = '#2e6b30';
+            ctx.fillRect(x - 4, topH - 28, this.PIPE_WIDTH + 8, 22);
+            ctx.fillStyle = '#5ca85f';
+            ctx.fillRect(x + 4, topH - 24, this.PIPE_WIDTH - 8, 12);
+            ctx.fillStyle = '#78c97a';
+            ctx.fillRect(x + 8, topH - 18, 8, 8);
+            
+            const bottomY = topH + this.GAP_HEIGHT;
+            ctx.fillStyle = '#3d8c40';
+            ctx.fillRect(x, bottomY, this.PIPE_WIDTH, 600 - bottomY);
+            ctx.fillStyle = '#2e6b30';
+            ctx.fillRect(x - 4, bottomY, this.PIPE_WIDTH + 8, 22);
+            ctx.fillStyle = '#5ca85f';
+            ctx.fillRect(x + 4, bottomY + 4, this.PIPE_WIDTH - 8, 12);
+            ctx.fillStyle = '#78c97a';
+            ctx.fillRect(x + 8, bottomY + 8, 8, 8);
+        }
+        
+        // Pássaro
+        ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(this.bird.x, this.bird.y, this.bird.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#f5d742';
+        ctx.fill();
+        ctx.strokeStyle = '#b38f2a';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        ctx.shadowBlur = 6;
+        const wingAngle = Math.sin(this.frameCounter * 0.25) * 0.5 + 0.8;
+        ctx.beginPath();
+        ctx.ellipse(this.bird.x - 6, this.bird.y - 4, 12, 7 * wingAngle, -0.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#e6b830';
+        ctx.fill();
+        ctx.strokeStyle = '#b38f2a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(this.bird.x + 6, this.bird.y - 6, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#fcf9f0';
+        ctx.fill();
+        ctx.strokeStyle = '#222';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(this.bird.x + 9, this.bird.y - 8, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = '#1f2a3a';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(this.bird.x + 11, this.bird.y - 10, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        
+        ctx.fillStyle = '#e0851f';
+        ctx.beginPath();
+        ctx.moveTo(this.bird.x + 15, this.bird.y - 2);
+        ctx.lineTo(this.bird.x + 25, this.bird.y + 2);
+        ctx.lineTo(this.bird.x + 15, this.bird.y + 8);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+        
+        // Game Over overlay
+        if (this.gameOver && this.score < this.targetScore) {
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#f5e9d8';
+            ctx.font = 'bold 44px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💀 GAME OVER', 200, 240);
+            ctx.font = '20px "Courier New", monospace';
+            ctx.fillText('clique para reiniciar', 200, 320);
+        }
+        
+        // Chão
+        ctx.fillStyle = '#7cb342';
+        ctx.fillRect(0, 590, W, 10);
+        ctx.fillStyle = '#558b2f';
+        for (let i=0; i<W; i+=20) {
+            ctx.fillRect(i + (this.frameCounter*0.5)%20, 590, 6, 6);
+        }
+        
+        // Indicador de progresso no canvas
+        if (this.score > 0 && this.score < this.targetScore) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(10, 10, 120, 28);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`🎯 ${this.score}/${this.targetScore}`, 18, 27);
+        }
+    },
+    
+    loop() {
+        this.update();
+        this.draw();
+        this.animationId = requestAnimationFrame(() => this.loop());
+    },
+    
+    start() {
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+        this.loop();
+    }
+};
+
+// ============================================================
+// 3. CONTROLES DO CAPTCHA
+// ============================================================
+function showCaptcha() {
+    const overlay = document.getElementById('flappyCaptchaOverlay');
+    overlay.classList.add('show');
+    document.getElementById('mainHeader').classList.add('blurred-content');
+    document.getElementById('mainContent').classList.add('blurred-content');
+    document.getElementById('mainFooter').classList.add('blurred-content');
+    captcha.init();
+}
+
+function hideCaptcha() {
+    const overlay = document.getElementById('flappyCaptchaOverlay');
+    overlay.classList.remove('show');
+    document.getElementById('mainHeader').classList.remove('blurred-content');
+    document.getElementById('mainContent').classList.remove('blurred-content');
+    document.getElementById('mainFooter').classList.remove('blurred-content');
+    if (captcha.animationId) {
+        cancelAnimationFrame(captcha.animationId);
+        captcha.animationId = null;
+    }
+}
+
+function verifyCaptcha() {
+    if (captcha.score >= captcha.targetScore) {
+        isCaptchaVerified = true;
+        // Salva no localStorage para não pedir novamente
+        try {
+            localStorage.setItem('skyhtml_captcha_verified', 'true');
+            localStorage.setItem('skyhtml_captcha_date', Date.now().toString());
+        } catch(e) {}
+        hideCaptcha();
+        loadProjects();
+        alert('✅ Verificação concluída! Acesso liberado.');
+    } else {
+        alert(`❌ Você ainda não atingiu a meta de ${captcha.targetScore} pontos. Continue jogando!`);
+    }
+}
+
+// ============================================================
+// 4. FUNÇÕES DE USUÁRIO (Firebase)
+// ============================================================
 async function registerUser(user) {
     try {
         const uid = user.uid;
-        
-        // Verifica se o usuário já existe para preservar o status de ban
         const userDoc = await db.collection('users').doc(uid).get();
         const existingData = userDoc.exists ? userDoc.data() : {};
         
@@ -938,13 +1492,8 @@ async function registerUser(user) {
             lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // Registra na coleção 'users'
         await db.collection('users').doc(uid).set(userData, { merge: true });
-        
-        // Registra na coleção 'usuários'
         await db.collection('usuários').doc(uid).set(userData, { merge: true });
-
-        console.log(`Usuário ${uid} registrado com sucesso! isBanned: ${userData.isBanned}`);
         return userData;
     } catch (error) {
         console.error('Erro ao registrar usuário:', error);
@@ -952,12 +1501,8 @@ async function registerUser(user) {
     }
 }
 
-// ============================================
-// FUNÇÃO PARA VERIFICAR SE USUÁRIO ESTÁ BANIDO
-// ============================================
 async function checkIfUserIsBanned(user) {
     if (!user) return false;
-    
     try {
         const userDoc = await db.collection('users').doc(user.uid).get();
         if (userDoc.exists) {
@@ -967,20 +1512,13 @@ async function checkIfUserIsBanned(user) {
     } catch (error) {
         console.log("Erro ao verificar banimento:", error);
     }
-    
     return false;
 }
 
-// ============================================
-// FUNÇÃO PARA USUÁRIO BANIDO
-// ============================================
 function showBannedScreen(reason = 'Violação das políticas de uso') {
     const overlay = document.getElementById('bannedOverlay');
-    const details = document.getElementById('banDetails');
-    details.textContent = `Motivo: ${reason}`;
+    document.getElementById('banDetails').textContent = `Motivo: ${reason}`;
     overlay.classList.add('show');
-    
-    // Esconde o conteúdo principal
     document.querySelector('.header').style.opacity = '0.3';
     document.querySelector('.header').style.pointerEvents = 'none';
     document.querySelector('.main-container').style.opacity = '0.3';
@@ -990,14 +1528,9 @@ function showBannedScreen(reason = 'Violação das políticas de uso') {
 }
 
 function logoutBanned() {
-    auth.signOut().then(() => {
-        location.reload();
-    });
+    auth.signOut().then(() => location.reload());
 }
 
-// ============================================
-// AUTENTICAÇÃO
-// ============================================
 function updateAuthUI() {
     const notLoggedDiv = document.getElementById('not-logged-content');
     const loggedDiv = document.getElementById('logged-content');
@@ -1030,21 +1563,19 @@ async function loginWithGoogle() {
     try {
         const result = await auth.signInWithPopup(googleProvider);
         currentUser = result.user;
-        
-        // Registra o usuário no Firestore
         await registerUser(result.user);
-        
-        // Verifica banimento
         isBanned = await checkIfUserIsBanned(result.user);
         if (isBanned) {
             showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
             updateAuthUI();
             return;
         }
-        
         updateAuthUI();
         hideLoginModal();
-        loadProjects();
+        // Se já tiver verificado o captcha, carrega os projetos
+        if (isCaptchaVerified) {
+            loadProjects();
+        }
     } catch (error) {
         alert('Erro no login: ' + error.message);
     }
@@ -1055,7 +1586,9 @@ function guestLogin() {
     isBanned = false;
     updateAuthUI();
     hideLoginModal();
-    loadProjects();
+    if (isCaptchaVerified) {
+        loadProjects();
+    }
 }
 
 async function logout() {
@@ -1064,7 +1597,6 @@ async function logout() {
     }
     currentUser = null;
     isBanned = false;
-    // Remove overlay de banido
     document.getElementById('bannedOverlay').classList.remove('show');
     document.querySelector('.header').style.opacity = '1';
     document.querySelector('.header').style.pointerEvents = 'auto';
@@ -1073,14 +1605,16 @@ async function logout() {
     document.querySelector('.footer').style.opacity = '1';
     document.querySelector('.footer').style.pointerEvents = 'auto';
     updateAuthUI();
-    loadProjects();
+    if (isCaptchaVerified) {
+        loadProjects();
+    }
 }
 
-// ============================================
-// PROJETOS
-// ============================================
+// ============================================================
+// 5. PROJETOS
+// ============================================================
 async function loadProjects() {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     
     const container = document.getElementById('projects-grid');
     container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando projetos...</p></div>';
@@ -1112,18 +1646,16 @@ async function loadProjects() {
 }
 
 function applyFilters() {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     
     let filtered = [...allProjects];
     
     if (currentFilter.type) {
         filtered = filtered.filter(p => p.type === currentFilter.type);
     }
-    
     if (currentFilter.status) {
         filtered = filtered.filter(p => p.status === currentFilter.status);
     }
-    
     if (currentFilter.search) {
         const searchLower = currentFilter.search.toLowerCase();
         filtered = filtered.filter(p => 
@@ -1132,7 +1664,6 @@ function applyFilters() {
             (p.authorName && p.authorName.toLowerCase().includes(searchLower))
         );
     }
-    
     if (currentFilter.mine && currentUser && !currentUser.isGuest) {
         filtered = filtered.filter(p => p.authorId === currentUser.uid);
     }
@@ -1141,7 +1672,7 @@ function applyFilters() {
 }
 
 function renderProjects(projects) {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     
     const container = document.getElementById('projects-grid');
     
@@ -1185,9 +1716,12 @@ function renderProjects(projects) {
     }).join('');
 }
 
+// ============================================================
+// 6. FUNÇÕES DE PROJETO (view, manage, etc)
+// ============================================================
 window.viewProject = async function(projectId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
+    if (isBanned || !isCaptchaVerified) {
+        if (!isCaptchaVerified) showCaptcha();
         return;
     }
     if (!currentUser) {
@@ -1254,10 +1788,7 @@ window.viewProject = async function(projectId) {
 };
 
 window.manageProject = function(projectId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
-        return;
-    }
+    if (isBanned || !isCaptchaVerified) return;
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
     
@@ -1292,10 +1823,7 @@ window.manageProject = function(projectId) {
 };
 
 window.saveProjectSettings = async function(projectId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
-        return;
-    }
+    if (isBanned || !isCaptchaVerified) return;
     const statusRadio = document.querySelector('input[name="manage-status"]:checked');
     const lockedCheck = document.getElementById('lock-project');
     
@@ -1311,10 +1839,7 @@ window.saveProjectSettings = async function(projectId) {
 };
 
 window.editProject = async function(projectId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
-        return;
-    }
+    if (isBanned || !isCaptchaVerified) return;
     const project = allProjects.find(p => p.id === projectId);
     if (!project) return;
     
@@ -1331,10 +1856,7 @@ window.editProject = async function(projectId) {
 };
 
 window.lockProject = async function(projectId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
-        return;
-    }
+    if (isBanned || !isCaptchaVerified) return;
     if (confirm('Trancar o projeto fará com que apenas você possa visualizá-lo. Continuar?')) {
         await db.collection('skyhtml').doc(projectId).update({ locked: true });
         loadProjects();
@@ -1343,10 +1865,7 @@ window.lockProject = async function(projectId) {
 };
 
 window.unlockProject = async function(projectId) {
-    if (isBanned) {
-        alert('Sua conta está banida. Acesso negado.');
-        return;
-    }
+    if (isBanned || !isCaptchaVerified) return;
     if (confirm('Destrancar o projeto permitirá que todos visualizem. Continuar?')) {
         await db.collection('skyhtml').doc(projectId).update({ locked: false });
         loadProjects();
@@ -1354,12 +1873,14 @@ window.unlockProject = async function(projectId) {
     }
 };
 
-// Criar novo projeto
+// ============================================================
+// 7. CRIAR PROJETO
+// ============================================================
 async function createProject(event) {
     event.preventDefault();
     
-    if (isBanned) {
-        alert('Sua conta está banida. Não é possível criar projetos.');
+    if (isBanned || !isCaptchaVerified) {
+        if (!isCaptchaVerified) showCaptcha();
         return;
     }
     
@@ -1398,9 +1919,9 @@ async function createProject(event) {
     loadProjects();
 }
 
-// ============================================
-// UTILIDADES
-// ============================================
+// ============================================================
+// 8. UTILIDADES
+// ============================================================
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -1414,17 +1935,21 @@ function formatDate(date) {
 }
 
 function searchContent() {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     currentFilter.search = document.getElementById('search-input').value;
     applyFilters();
 }
 
-// ============================================
-// EVENTOS
-// ============================================
+// ============================================================
+// 9. EVENTOS
+// ============================================================
 document.getElementById('new-project-btn').onclick = () => {
     if (isBanned) {
         alert('Sua conta está banida. Não é possível criar projetos.');
+        return;
+    }
+    if (!isCaptchaVerified) {
+        showCaptcha();
         return;
     }
     if (!currentUser || currentUser.isGuest) {
@@ -1443,7 +1968,9 @@ document.getElementById('close-view-modal').onclick = () => {
     document.getElementById('view-modal').classList.remove('show');
 };
 
-document.getElementById('refresh-btn').onclick = () => loadProjects();
+document.getElementById('refresh-btn').onclick = () => {
+    if (isCaptchaVerified) loadProjects();
+};
 document.getElementById('search-btn').onclick = searchContent;
 document.getElementById('search-input').onkeypress = (e) => {
     if (e.key === 'Enter') searchContent();
@@ -1451,17 +1978,17 @@ document.getElementById('search-input').onkeypress = (e) => {
 
 // Filtros
 document.getElementById('filter-type').onchange = (e) => {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     currentFilter.type = e.target.value;
     applyFilters();
 };
 document.getElementById('filter-status').onchange = (e) => {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     currentFilter.status = e.target.value;
     applyFilters();
 };
 document.getElementById('filter-mine').onchange = (e) => {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     currentFilter.mine = e.target.checked;
     applyFilters();
 };
@@ -1481,7 +2008,7 @@ document.getElementById('login-btn').onclick = showLoginModal;
 document.getElementById('guest-login-btn').onclick = guestLogin;
 document.getElementById('logout-btn').onclick = logout;
 document.getElementById('my-projects-btn').onclick = () => {
-    if (isBanned) return;
+    if (isBanned || !isCaptchaVerified) return;
     currentFilter.mine = true;
     document.getElementById('filter-mine').checked = true;
     applyFilters();
@@ -1491,30 +2018,74 @@ document.getElementById('google-login-modal-btn').onclick = loginWithGoogle;
 document.getElementById('guest-login-modal-btn').onclick = guestLogin;
 document.getElementById('close-login-modal').onclick = hideLoginModal;
 
-// Inicialização
+// Botões do Captcha
+document.getElementById('resetCaptchaBtn').onclick = () => {
+    captcha.reset();
+    captcha.start();
+};
+document.getElementById('verifyCaptchaBtn').onclick = verifyCaptcha;
+
+// Eventos do canvas do captcha
+document.getElementById('captchaCanvas').addEventListener('click', (e) => {
+    e.preventDefault();
+    captcha.jump();
+});
+document.getElementById('captchaCanvas').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    captcha.jump();
+});
+
+// Evento de tecla para o captcha
+document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Space') {
+        const overlay = document.getElementById('flappyCaptchaOverlay');
+        if (overlay.classList.contains('show')) {
+            e.preventDefault();
+            captcha.jump();
+        }
+    }
+});
+
+// ============================================================
+// 10. INICIALIZAÇÃO
+// ============================================================
+// Verifica se o captcha já foi verificado anteriormente
+try {
+    const saved = localStorage.getItem('skyhtml_captcha_verified');
+    const savedDate = localStorage.getItem('skyhtml_captcha_date');
+    if (saved === 'true' && savedDate) {
+        const diff = Date.now() - parseInt(savedDate);
+        // Expira após 24 horas (86400000 ms)
+        if (diff < 86400000) {
+            isCaptchaVerified = true;
+        } else {
+            localStorage.removeItem('skyhtml_captcha_verified');
+            localStorage.removeItem('skyhtml_captcha_date');
+        }
+    }
+} catch(e) {}
+
+// Autenticação
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
-        
-        // Registra o usuário no Firestore
         await registerUser(user);
-        
-        // VERIFICA BANIMENTO PRIMEIRO
         isBanned = await checkIfUserIsBanned(user);
-        
         if (isBanned) {
-            // Usuário banido - mostra tela de bloqueio
             showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
             updateAuthUI();
             return;
         }
-        
         updateAuthUI();
-        loadProjects();
+        if (isCaptchaVerified) {
+            loadProjects();
+        } else {
+            // Mostra o captcha se não estiver verificado
+            setTimeout(showCaptcha, 500);
+        }
     } else {
         currentUser = null;
         isBanned = false;
-        // Remove overlay de banido
         document.getElementById('bannedOverlay').classList.remove('show');
         document.querySelector('.header').style.opacity = '1';
         document.querySelector('.header').style.pointerEvents = 'auto';
@@ -1523,7 +2094,12 @@ auth.onAuthStateChanged(async (user) => {
         document.querySelector('.footer').style.opacity = '1';
         document.querySelector('.footer').style.pointerEvents = 'auto';
         updateAuthUI();
-        loadProjects();
+        
+        if (!isCaptchaVerified) {
+            setTimeout(showCaptcha, 500);
+        } else {
+            loadProjects();
+        }
     }
 });
 
@@ -1535,6 +2111,8 @@ window.saveProjectSettings = saveProjectSettings;
 window.editProject = editProject;
 window.lockProject = lockProject;
 window.unlockProject = unlockProject;
+window.showCaptcha = showCaptcha;
+window.verifyCaptcha = verifyCaptcha;
 </script>
 
 <!-- Iframe do verificador/logs -->
