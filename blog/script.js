@@ -978,20 +978,59 @@ function setupEditor(uid) {
                 <html>
                     <head>
                         <style>
-                            body { padding: 1.5rem; font-family: 'Inter', sans-serif; line-height: 1.6; color: #1e293b; max-width: 100%; overflow-x: auto; }
-                            h1, h2, h3 { margin: 1rem 0 0.5rem; }
-                            h1 { font-size: 2rem; }
-                            h2 { font-size: 1.5rem; }
-                            h3 { font-size: 1.2rem; }
-                            pre { background: #f1f5f9; padding: 1rem; border-radius: 8px; overflow-x: auto; }
-                            code { font-family: 'Courier New', monospace; }
-                            img { max-width: 100%; height: auto; border-radius: 8px; }
-                            a { color: #1a73e8; }
-                            ul, ol { padding-left: 1.5rem; }
-                            blockquote { border-left: 4px solid #1a73e8; padding-left: 1rem; margin: 1rem 0; color: #475569; }
+                            * { margin: 0; padding: 0; box-sizing: border-box; }
+                            body { 
+                                padding: 2rem; 
+                                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                                line-height: 1.8;
+                                color: #1e293b;
+                                max-width: 100%;
+                                min-height: 400px;
+                                background: #ffffff;
+                                overflow-x: auto;
+                            }
+                            h1 { font-size: 2rem; margin: 1.2rem 0 0.8rem; font-weight: 700; color: #0f172a; }
+                            h2 { font-size: 1.6rem; margin: 1rem 0 0.6rem; font-weight: 600; color: #1e293b; }
+                            h3 { font-size: 1.3rem; margin: 0.8rem 0 0.5rem; font-weight: 600; color: #334155; }
+                            p { margin: 0.8rem 0; }
+                            pre { 
+                                background: #f1f5f9; 
+                                padding: 1rem; 
+                                border-radius: 8px; 
+                                overflow-x: auto;
+                                margin: 1rem 0;
+                            }
+                            code { 
+                                font-family: 'Courier New', monospace;
+                                background: #f1f5f9;
+                                padding: 0.2rem 0.4rem;
+                                border-radius: 4px;
+                                font-size: 0.9rem;
+                            }
+                            pre code { 
+                                background: transparent;
+                                padding: 0;
+                            }
+                            img { 
+                                max-width: 100%; 
+                                height: auto; 
+                                border-radius: 8px;
+                                margin: 1rem 0;
+                            }
+                            a { color: #2563eb; text-decoration: none; }
+                            a:hover { text-decoration: underline; }
+                            ul, ol { padding-left: 1.8rem; margin: 0.8rem 0; }
+                            li { margin: 0.4rem 0; }
+                            blockquote { 
+                                border-left: 4px solid #2563eb; 
+                                padding: 0.8rem 1.2rem; 
+                                margin: 1rem 0; 
+                                color: #475569;
+                                background: #f8fafc;
+                            }
                         </style>
                     </head>
-                    <body>${content || '<p style="color:#94a3b8;">Nenhum conteúdo para pré-visualizar.</p>'}</body>
+                    <body>${content || '<p style="color:#94a3b8; text-align:center; padding:2rem 0;">✏️ Comece a escrever seu post no editor ao lado...</p>'}</body>
                 </html>
             `;
         }, 300);
