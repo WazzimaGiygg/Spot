@@ -652,7 +652,15 @@ body {
     background: white;
 }
 
-.editor-preview iframe { width: 100%; min-height: 300px; border: none; background: white; }
+/* ============================================
+   EDITOR - PRÉ-VISUALIZAÇÃO MAIOR
+   ============================================ */
+.editor-preview iframe {
+    width: 100%;
+    min-height: 500px;  /* ⬆️ AUMENTADO - era 300px */
+    border: none;
+    background: white;
+}
 
 .editor-preview-label {
     background: #f8fafc;
@@ -679,7 +687,7 @@ body {
 .editor-input input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
 
 /* ============================================
-   POSTS
+   POSTS - FRAME MAIOR
    ============================================ */
 .post-list { margin-top: 1.8rem; display: flex; flex-direction: column; gap: 1.5rem; }
 
@@ -714,12 +722,24 @@ body {
 
 .post-content { margin: 0.8rem 0; background: white; border-radius: 12px; overflow: hidden; }
 
+/* ⭐ FRAME DA POSTAGEM - MAIOR */
 .post-content iframe {
     width: 100%;
-    min-height: 200px;
+    min-height: 600px;  /* ⬆️ AUMENTADO - era 200px */
+    max-height: 900px;   /* ⬆️ ALTURA MÁXIMA */
     border: 1px solid #e9edf4;
     border-radius: 12px;
     background: white;
+    resize: vertical;    /* ⬆️ PERMITE REDIMENSIONAR */
+    overflow: auto;
+}
+
+/* Responsivo para telas menores */
+@media (max-width: 768px) {
+    .post-content iframe {
+        min-height: 450px;
+        max-height: 700px;
+    }
 }
 
 .post-actions { display: flex; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
