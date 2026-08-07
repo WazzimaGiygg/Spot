@@ -165,6 +165,8 @@ let previewTimeout = null;
 let notifications = [];
 let unreadCount = 0;
 let notificationListener = null;
+let allPostsCache = []; // Cache para paginação
+let currentUidCache = null;
 
 const ADMIN_UIDS = ['sZxfMuOBPbXdR8nttVPXIN8QOOl1', '6aPqWVh8JVYL5NqEb78iDGPD7dH3'];
 
@@ -615,7 +617,7 @@ function renderBlog() {
 }
 
 // ============================================
-// RENDER USER BLOG - COM PAGINAÇÃO (1 POST POR PÁGINA)
+// RENDER USER BLOG - COM PAGINAÇÃO CORRIGIDA
 // ============================================
 function renderUserBlog(uid, page = 1) {
     const isOwner = currentUser && uid === currentUser.uid;
@@ -623,314 +625,322 @@ function renderUserBlog(uid, page = 1) {
     const blogUrl = getBlogUrl(uid, page);
     const postsPerPage = 1; // ⭐ APENAS 1 POST POR PÁGINA
 
+    // Se o uid mudou, limpa o cache
+    if (currentUidCache !== uid) {
+        allPostsCache = [];
+        currentUidCache = uid;
+    }
+
     const postsRef = db.collection('blog').doc(uid).collection('posts');
     
-    // Primeiro, pega o total de posts para calcular páginas
-    postsRef.get().then(async (allSnapshot) => {
-        const totalPosts = allSnapshot.size;
-        const totalPages = Math.max(1, Math.ceil(totalPosts / postsPerPage));
-        const currentPage = Math.min(Math.max(1, page), totalPages);
-        
-        // Busca apenas os posts da página atual
-        const startAt = (currentPage - 1) * postsPerPage;
-        
-        postsRef
-            .orderBy('createdAt', 'desc')
-            .limit(postsPerPage)
-            .offset(startAt)
-            .get()
-            .then(async (snapshot) => {
-                let html = `
-                    <div class="card">
-                        <div class="flex-between">
-                            <div>
-                                <h2><i class="fas fa-user"></i> Blog de ${uid.substring(0, 12)}...</h2>
-                                <span class="text-muted">${isOwner ? 'Seu blog' : 'Blog público'} • ${totalPosts} posts</span>
-                            </div>
-                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                                <span class="badge">Página ${currentPage} de ${totalPages}</span>
-                                <div class="share-dropdown" onclick="toggleShareDropdown(event, '${uid}')">
-                                    <button class="btn btn-share btn-sm">
-                                        <i class="fas fa-share-alt"></i> Compartilhar
-                                    </button>
-                                    <div class="share-dropdown-content" data-uid="${uid}">
-                                        <button class="btn" onclick="shareBlog('${uid}', 'whatsapp', ${currentPage})">
-                                            <i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp
-                                        </button>
-                                        <button class="btn" onclick="shareBlog('${uid}', 'twitter', ${currentPage})">
-                                            <i class="fab fa-twitter" style="color:#1DA1F2;"></i> Twitter
-                                        </button>
-                                        <button class="btn" onclick="shareBlog('${uid}', 'facebook', ${currentPage})">
-                                            <i class="fab fa-facebook" style="color:#1877F2;"></i> Facebook
-                                        </button>
-                                        <button class="btn" onclick="shareBlog('${uid}', 'linkedin', ${currentPage})">
-                                            <i class="fab fa-linkedin" style="color:#0A66C2;"></i> LinkedIn
-                                        </button>
-                                        <button class="btn" onclick="shareBlog('${uid}', 'telegram', ${currentPage})">
-                                            <i class="fab fa-telegram" style="color:#26A5E4;"></i> Telegram
-                                        </button>
-                                        <button class="btn" onclick="shareBlog('${uid}', 'email', ${currentPage})">
-                                            <i class="fas fa-envelope" style="color:#6c757d;"></i> E-mail
-                                        </button>
-                                        <button class="btn" onclick="shareBlog('${uid}', 'copy', ${currentPage})">
-                                            <i class="fas fa-copy" style="color:#6c757d;"></i> Copiar link
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+    // Busca TODOS os posts de uma vez e faz a paginação em memória
+    // Isso é mais simples e evita problemas com offset no Firestore
+    postsRef
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(async (snapshot) => {
+            // Cache dos posts
+            if (allPostsCache.length === 0 || currentUidCache !== uid) {
+                allPostsCache = [];
+                snapshot.forEach(doc => {
+                    allPostsCache.push({ id: doc.id, ...doc.data() });
+                });
+                currentUidCache = uid;
+            }
+            
+            const totalPosts = allPostsCache.length;
+            const totalPages = Math.max(1, Math.ceil(totalPosts / postsPerPage));
+            const currentPage = Math.min(Math.max(1, page), totalPages);
+            
+            // Pega apenas o post da página atual
+            const startIndex = (currentPage - 1) * postsPerPage;
+            const pagePosts = allPostsCache.slice(startIndex, startIndex + postsPerPage);
+            
+            let html = `
+                <div class="card">
+                    <div class="flex-between">
+                        <div>
+                            <h2><i class="fas fa-user"></i> Blog de ${uid.substring(0, 12)}...</h2>
+                            <span class="text-muted">${isOwner ? 'Seu blog' : 'Blog público'} • ${totalPosts} posts</span>
                         </div>
-                        <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-                            <code style="background: #f1f5f9; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; word-break: break-all;">
-                                🔗 ${blogUrl}
-                            </code>
-                            <button class="btn btn-outline btn-sm" onclick="shareBlog('${uid}', 'copy', ${currentPage})">
-                                <i class="fas fa-copy"></i> Copiar
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                if (isOwner) {
-                    html += `
-                        <div class="card">
-                            <h3><i class="fas fa-pen"></i> Novo Post</h3>
-                            <div class="editor-container" id="postForm">
-                                <div class="editor-input">
-                                    <input type="text" id="postTitleInput" placeholder="Título do post" maxlength="100" />
-                                </div>
-                                <div class="editor-toolbar">
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('h1')"><i class="fas fa-heading"></i> H1</button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('h2')"><i class="fas fa-heading"></i> H2</button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('h3')"><i class="fas fa-heading"></i> H3</button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('bold')"><i class="fas fa-bold"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('italic')"><i class="fas fa-italic"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('underline')"><i class="fas fa-underline"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('ul')"><i class="fas fa-list-ul"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('ol')"><i class="fas fa-list-ol"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('link')"><i class="fas fa-link"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="formatText('image')"><i class="fas fa-image"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="insertCodeBlock()"><i class="fas fa-code"></i></button>
-                                    <button class="btn btn-outline btn-sm" onclick="toggleMode()"><i class="fas fa-exchange-alt"></i> <span id="modeLabel">HTML</span></button>
-                                </div>
-                                <div class="editor-split">
-                                    <textarea id="postContentInput" class="editor-textarea" placeholder="Escreva seu post em HTML ou texto..." style="min-height: 300px;"></textarea>
-                                    <div class="editor-preview">
-                                        <div class="editor-preview-label">
-                                            <span><i class="fas fa-eye"></i> Pré-visualização</span>
-                                            <span style="font-size:0.7rem;"><i class="fas fa-sync-alt"></i> Atualiza automaticamente</span>
-                                        </div>
-                                        <iframe id="previewFrame" srcdoc="<html><body style='padding:1rem;font-family:Inter;'><p style='color:#94a3b8;'>Escreva HTML no editor ao lado para ver a prévia aqui...</p></body></html>"></iframe>
-                                    </div>
-                                </div>
-                                <div class="settings-row">
-                                    <label>
-                                        <input type="checkbox" id="allowComments" checked />
-                                        <i class="fas fa-comments"></i> Permitir comentários
-                                    </label>
-                                    <label>
-                                        <input type="checkbox" id="allowLikes" checked />
-                                        <i class="fas fa-heart"></i> Permitir curtidas
-                                    </label>
-                                </div>
-                                <button id="publishBtn" class="btn btn-success" style="align-self: flex-start;"><i class="fas fa-plus-circle"></i> Publicar Post</button>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                if (snapshot.empty) {
-                    html += `
-                        <div class="card">
-                            <div class="empty-state">
-                                <i class="fas fa-feather-alt"></i>
-                                <p>Nenhuma postagem ainda.</p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    html += `<div class="card"><div class="post-list" id="postsContainer">`;
-                    
-                    for (const doc of snapshot.docs) {
-                        const data = doc.data();
-                        const title = data.title || 'Sem título';
-                        const content = data.content || '';
-                        const date = data.createdAt ? data.createdAt.toDate().toLocaleString('pt-BR') : 'data desconhecida';
-                        const docId = doc.id;
-                        const commentsEnabled = data.allowComments !== false;
-                        const likesEnabled = data.allowLikes !== false;
-
-                        let commentCount = 0;
-                        let likeCount = 0;
-                        try {
-                            const commentsSnap = await db.collection('blog').doc(uid)
-                                .collection('posts').doc(docId)
-                                .collection('comments').get();
-                            commentCount = commentsSnap.size;
-
-                            const likesSnap = await db.collection('blog').doc(uid)
-                                .collection('posts').doc(docId)
-                                .collection('likes').get();
-                            likeCount = likesSnap.size;
-                        } catch (e) {}
-
-                        const iframeContent = `
-                            <html>
-                                <head>
-                                    <style>
-                                        body { padding: 1rem; font-family: 'Inter', sans-serif; line-height: 1.6; color: #1e293b; max-width: 100%; overflow-x: auto; }
-                                        h1, h2, h3 { margin: 1rem 0 0.5rem; }
-                                        h1 { font-size: 1.8rem; }
-                                        h2 { font-size: 1.4rem; }
-                                        h3 { font-size: 1.1rem; }
-                                        pre { background: #f1f5f9; padding: 1rem; border-radius: 8px; overflow-x: auto; }
-                                        code { font-family: 'Courier New', monospace; }
-                                        img { max-width: 100%; height: auto; border-radius: 8px; }
-                                        a { color: #1a73e8; }
-                                        ul, ol { padding-left: 1.5rem; }
-                                        blockquote { border-left: 4px solid #1a73e8; padding-left: 1rem; margin: 1rem 0; color: #475569; }
-                                    </style>
-                                </head>
-                                <body>${content || '<p style="color:#94a3b8;">Sem conteúdo.</p>'}</body>
-                            </html>
-                        `;
-
-                        const iframeSrcDoc = iframeContent
-                            .replace(/&/g, '&amp;')
-                            .replace(/"/g, '&quot;')
-                            .replace(/'/g, '&#39;')
-                            .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;');
-
-                        const actionsHtml = isOwner ? `
-                            <button class="btn btn-outline btn-sm edit-post-btn" data-id="${docId}"><i class="fas fa-edit"></i> Editar</button>
-                            <button class="btn btn-danger btn-sm delete-post-btn" data-id="${docId}"><i class="fas fa-trash-alt"></i> Excluir</button>
-                        ` : '';
-
-                        html += `
-                            <div class="post-item" data-id="${docId}">
-                                <div class="post-header">
-                                    <span class="post-title">${escapeHtml(title)}</span>
-                                    <span class="post-meta">
-                                        <i class="far fa-calendar-alt"></i> ${date}
-                                        ${commentsEnabled ? `<span class="tag"><i class="fas fa-comments"></i> ${commentCount}</span>` : ''}
-                                        ${likesEnabled ? `<span class="tag"><i class="fas fa-heart"></i> ${likeCount}</span>` : ''}
-                                    </span>
-                                </div>
-                                <div class="post-content">
-                                    <iframe srcdoc="${iframeSrcDoc}"></iframe>
-                                </div>
-                                <div class="post-actions">${actionsHtml}</div>
-                                ${commentsEnabled ? renderComments(uid, docId, isOwner) : ''}
-                            </div>
-                        `;
-                    }
-                    html += `</div></div>`;
-                }
-
-                // ===== NAVEGAÇÃO DE PÁGINAS =====
-                html += `
-                    <div class="card" style="text-align: center;">
-                        <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
-                            <button class="btn btn-outline" 
-                                    onclick="navigateToPage('${uid}', ${currentPage - 1})" 
-                                    ${currentPage <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                                <i class="fas fa-chevron-left"></i> Anterior
-                            </button>
-                            <span style="font-size: 0.9rem; color: #5f6b7a;">
-                                Página ${currentPage} de ${totalPages}
-                            </span>
-                            <button class="btn btn-outline" 
-                                    onclick="navigateToPage('${uid}', ${currentPage + 1})" 
-                                    ${currentPage >= totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
-                                Próximo <i class="fas fa-chevron-right"></i>
-                            </button>
-                        </div>
-                        ${totalPages > 1 ? `
-                        <div style="margin-top: 12px; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
-                            ${Array.from({length: Math.min(totalPages, 10)}, (_, i) => i + 1).map(p => `
-                                <button class="btn ${p === currentPage ? 'btn-primary' : 'btn-outline'}" 
-                                        style="min-width: 36px; padding: 0.3rem 0.6rem; font-size: 0.8rem;"
-                                        onclick="navigateToPage('${uid}', ${p})">
-                                    ${p}
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <span class="badge">Página ${currentPage} de ${totalPages}</span>
+                            <div class="share-dropdown" onclick="toggleShareDropdown(event, '${uid}')">
+                                <button class="btn btn-share btn-sm">
+                                    <i class="fas fa-share-alt"></i> Compartilhar
                                 </button>
-                            `).join('')}
-                            ${totalPages > 10 ? `<span style="color:#999;">...</span>` : ''}
+                                <div class="share-dropdown-content" data-uid="${uid}">
+                                    <button class="btn" onclick="shareBlog('${uid}', 'whatsapp', ${currentPage})">
+                                        <i class="fab fa-whatsapp" style="color:#25D366;"></i> WhatsApp
+                                    </button>
+                                    <button class="btn" onclick="shareBlog('${uid}', 'twitter', ${currentPage})">
+                                        <i class="fab fa-twitter" style="color:#1DA1F2;"></i> Twitter
+                                    </button>
+                                    <button class="btn" onclick="shareBlog('${uid}', 'facebook', ${currentPage})">
+                                        <i class="fab fa-facebook" style="color:#1877F2;"></i> Facebook
+                                    </button>
+                                    <button class="btn" onclick="shareBlog('${uid}', 'linkedin', ${currentPage})">
+                                        <i class="fab fa-linkedin" style="color:#0A66C2;"></i> LinkedIn
+                                    </button>
+                                    <button class="btn" onclick="shareBlog('${uid}', 'telegram', ${currentPage})">
+                                        <i class="fab fa-telegram" style="color:#26A5E4;"></i> Telegram
+                                    </button>
+                                    <button class="btn" onclick="shareBlog('${uid}', 'email', ${currentPage})">
+                                        <i class="fas fa-envelope" style="color:#6c757d;"></i> E-mail
+                                    </button>
+                                    <button class="btn" onclick="shareBlog('${uid}', 'copy', ${currentPage})">
+                                        <i class="fas fa-copy" style="color:#6c757d;"></i> Copiar link
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        ` : ''}
+                    </div>
+                    <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <code style="background: #f1f5f9; padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; word-break: break-all;">
+                            🔗 ${blogUrl}
+                        </code>
+                        <button class="btn btn-outline btn-sm" onclick="shareBlog('${uid}', 'copy', ${currentPage})">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            if (isOwner) {
+                html += `
+                    <div class="card">
+                        <h3><i class="fas fa-pen"></i> Novo Post</h3>
+                        <div class="editor-container" id="postForm">
+                            <div class="editor-input">
+                                <input type="text" id="postTitleInput" placeholder="Título do post" maxlength="100" />
+                            </div>
+                            <div class="editor-toolbar">
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('h1')"><i class="fas fa-heading"></i> H1</button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('h2')"><i class="fas fa-heading"></i> H2</button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('h3')"><i class="fas fa-heading"></i> H3</button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('bold')"><i class="fas fa-bold"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('italic')"><i class="fas fa-italic"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('underline')"><i class="fas fa-underline"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('ul')"><i class="fas fa-list-ul"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('ol')"><i class="fas fa-list-ol"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('link')"><i class="fas fa-link"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.formatText('image')"><i class="fas fa-image"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.insertCodeBlock()"><i class="fas fa-code"></i></button>
+                                <button class="btn btn-outline btn-sm" onclick="window.toggleMode()"><i class="fas fa-exchange-alt"></i> <span id="modeLabel">HTML</span></button>
+                            </div>
+                            <div class="editor-split">
+                                <textarea id="postContentInput" class="editor-textarea" placeholder="Escreva seu post em HTML ou texto..." style="min-height: 300px;"></textarea>
+                                <div class="editor-preview">
+                                    <div class="editor-preview-label">
+                                        <span><i class="fas fa-eye"></i> Pré-visualização</span>
+                                        <span style="font-size:0.7rem;"><i class="fas fa-sync-alt"></i> Atualiza automaticamente</span>
+                                    </div>
+                                    <iframe id="previewFrame" srcdoc="<html><body style='padding:1rem;font-family:Inter;'><p style='color:#94a3b8;'>Escreva HTML no editor ao lado para ver a prévia aqui...</p></body></html>"></iframe>
+                                </div>
+                            </div>
+                            <div class="settings-row">
+                                <label>
+                                    <input type="checkbox" id="allowComments" checked />
+                                    <i class="fas fa-comments"></i> Permitir comentários
+                                </label>
+                                <label>
+                                    <input type="checkbox" id="allowLikes" checked />
+                                    <i class="fas fa-heart"></i> Permitir curtidas
+                                </label>
+                            </div>
+                            <button id="publishBtn" class="btn btn-success" style="align-self: flex-start;"><i class="fas fa-plus-circle"></i> Publicar Post</button>
+                        </div>
                     </div>
                 `;
+            }
 
-                container.innerHTML = html;
+            if (pagePosts.length === 0) {
+                html += `
+                    <div class="card">
+                        <div class="empty-state">
+                            <i class="fas fa-feather-alt"></i>
+                            <p>Nenhuma postagem ainda.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `<div class="card"><div class="post-list" id="postsContainer">`;
+                
+                for (const doc of pagePosts) {
+                    const data = doc;
+                    const title = data.title || 'Sem título';
+                    const content = data.content || '';
+                    const date = data.createdAt ? data.createdAt.toDate().toLocaleString('pt-BR') : 'data desconhecida';
+                    const docId = data.id;
+                    const commentsEnabled = data.allowComments !== false;
+                    const likesEnabled = data.allowLikes !== false;
 
-                if (isOwner) {
-                    setupEditor(uid);
+                    let commentCount = 0;
+                    let likeCount = 0;
+                    try {
+                        const commentsSnap = await db.collection('blog').doc(uid)
+                            .collection('posts').doc(docId)
+                            .collection('comments').get();
+                        commentCount = commentsSnap.size;
+
+                        const likesSnap = await db.collection('blog').doc(uid)
+                            .collection('posts').doc(docId)
+                            .collection('likes').get();
+                        likeCount = likesSnap.size;
+                    } catch (e) {}
+
+                    const iframeContent = `
+                        <html>
+                            <head>
+                                <style>
+                                    body { padding: 1rem; font-family: 'Inter', sans-serif; line-height: 1.6; color: #1e293b; max-width: 100%; overflow-x: auto; }
+                                    h1, h2, h3 { margin: 1rem 0 0.5rem; }
+                                    h1 { font-size: 1.8rem; }
+                                    h2 { font-size: 1.4rem; }
+                                    h3 { font-size: 1.1rem; }
+                                    pre { background: #f1f5f9; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+                                    code { font-family: 'Courier New', monospace; }
+                                    img { max-width: 100%; height: auto; border-radius: 8px; }
+                                    a { color: #1a73e8; }
+                                    ul, ol { padding-left: 1.5rem; }
+                                    blockquote { border-left: 4px solid #1a73e8; padding-left: 1rem; margin: 1rem 0; color: #475569; }
+                                </style>
+                            </head>
+                            <body>${content || '<p style="color:#94a3b8;">Sem conteúdo.</p>'}</body>
+                        </html>
+                    `;
+
+                    const iframeSrcDoc = iframeContent
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+
+                    const actionsHtml = isOwner ? `
+                        <button class="btn btn-outline btn-sm edit-post-btn" data-id="${docId}"><i class="fas fa-edit"></i> Editar</button>
+                        <button class="btn btn-danger btn-sm delete-post-btn" data-id="${docId}"><i class="fas fa-trash-alt"></i> Excluir</button>
+                    ` : '';
+
+                    html += `
+                        <div class="post-item" data-id="${docId}">
+                            <div class="post-header">
+                                <span class="post-title">${escapeHtml(title)}</span>
+                                <span class="post-meta">
+                                    <i class="far fa-calendar-alt"></i> ${date}
+                                    ${commentsEnabled ? `<span class="tag"><i class="fas fa-comments"></i> ${commentCount}</span>` : ''}
+                                    ${likesEnabled ? `<span class="tag"><i class="fas fa-heart"></i> ${likeCount}</span>` : ''}
+                                </span>
+                            </div>
+                            <div class="post-content">
+                                <iframe srcdoc="${iframeSrcDoc}"></iframe>
+                            </div>
+                            <div class="post-actions">${actionsHtml}</div>
+                            ${commentsEnabled ? renderComments(uid, docId, isOwner) : ''}
+                        </div>
+                    `;
                 }
+                html += `</div></div>`;
+            }
 
-                if (isOwner) {
-                    document.querySelectorAll('.delete-post-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            if (confirm('Excluir esta postagem?')) {
-                                deletePost(uid, btn.dataset.id).then(() => {
-                                    renderUserBlog(uid, currentPage);
-                                });
-                            }
-                        });
-                    });
+            // ===== NAVEGAÇÃO DE PÁGINAS =====
+            html += `
+                <div class="card" style="text-align: center;">
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-outline" 
+                                onclick="navigateToPage('${uid}', ${currentPage - 1})" 
+                                ${currentPage <= 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                            <i class="fas fa-chevron-left"></i> Anterior
+                        </button>
+                        <span style="font-size: 0.9rem; color: #5f6b7a;">
+                            Página ${currentPage} de ${totalPages}
+                        </span>
+                        <button class="btn btn-outline" 
+                                onclick="navigateToPage('${uid}', ${currentPage + 1})" 
+                                ${currentPage >= totalPages ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+                            Próximo <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    ${totalPages > 1 ? `
+                    <div style="margin-top: 12px; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap;">
+                        ${Array.from({length: Math.min(totalPages, 10)}, (_, i) => i + 1).map(p => `
+                            <button class="btn ${p === currentPage ? 'btn-primary' : 'btn-outline'}" 
+                                    style="min-width: 36px; padding: 0.3rem 0.6rem; font-size: 0.8rem;"
+                                    onclick="navigateToPage('${uid}', ${p})">
+                                ${p}
+                            </button>
+                        `).join('')}
+                        ${totalPages > 10 ? `<span style="color:#999;">...</span>` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
 
-                    document.querySelectorAll('.edit-post-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const postDiv = btn.closest('.post-item');
-                            const title = postDiv.querySelector('.post-title').textContent;
-                            const iframe = postDiv.querySelector('.post-content iframe');
-                            const srcdoc = iframe.getAttribute('srcdoc');
-                            const bodyMatch = srcdoc.match(/<body>([\s\S]*?)<\/body>/);
-                            const content = bodyMatch ? bodyMatch[1] : '';
-                            document.getElementById('postTitleInput').value = title;
-                            document.getElementById('postContentInput').value = content;
-                            updatePreview();
-                            if (confirm('Editar: o post atual será removido e um novo será criado.')) {
-                                deletePost(uid, btn.dataset.id).then(() => publishPost(uid));
-                            }
-                        });
-                    });
-                }
+            container.innerHTML = html;
 
-                document.querySelectorAll('.comment-form').forEach(form => {
-                    form.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        const input = form.querySelector('input');
-                        const postId = form.dataset.postId;
-                        const userId = form.dataset.userId;
-                        if (input.value.trim()) {
-                            addComment(userId, postId, input.value.trim());
-                            input.value = '';
+            if (isOwner) {
+                setupEditor(uid);
+            }
+
+            if (isOwner) {
+                document.querySelectorAll('.delete-post-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (confirm('Excluir esta postagem?')) {
+                            deletePost(uid, btn.dataset.id).then(() => {
+                                // Recarrega limpando o cache
+                                allPostsCache = [];
+                                renderUserBlog(uid, currentPage);
+                            });
                         }
                     });
                 });
 
-            })
-            .catch(err => {
-                console.error('Erro ao carregar posts:', err);
-                mainContainer.innerHTML = `
-                    <div class="card">
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <p>Erro ao carregar posts: ${err.message}</p>
-                        </div>
-                    </div>
-                `;
+                document.querySelectorAll('.edit-post-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const postDiv = btn.closest('.post-item');
+                        const title = postDiv.querySelector('.post-title').textContent;
+                        const iframe = postDiv.querySelector('.post-content iframe');
+                        const srcdoc = iframe.getAttribute('srcdoc');
+                        const bodyMatch = srcdoc.match(/<body>([\s\S]*?)<\/body>/);
+                        const content = bodyMatch ? bodyMatch[1] : '';
+                        document.getElementById('postTitleInput').value = title;
+                        document.getElementById('postContentInput').value = content;
+                        window.updatePreview();
+                        if (confirm('Editar: o post atual será removido e um novo será criado.')) {
+                            deletePost(uid, btn.dataset.id).then(() => {
+                                allPostsCache = [];
+                                publishPost(uid);
+                            });
+                        }
+                    });
+                });
+            }
+
+            document.querySelectorAll('.comment-form').forEach(form => {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const input = form.querySelector('input');
+                    const postId = form.dataset.postId;
+                    const userId = form.dataset.userId;
+                    if (input.value.trim()) {
+                        addComment(userId, postId, input.value.trim());
+                        input.value = '';
+                    }
+                });
             });
-    }).catch(err => {
-        console.error('Erro ao contar posts:', err);
-        mainContainer.innerHTML = `
-            <div class="card">
-                <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Erro ao carregar posts: ${err.message}</p>
+
+        })
+        .catch(err => {
+            console.error('Erro ao carregar posts:', err);
+            mainContainer.innerHTML = `
+                <div class="card">
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Erro ao carregar posts: ${err.message}</p>
+                    </div>
                 </div>
-            </div>
-        `;
-    });
+            `;
+        });
 }
 
 // ============================================
@@ -956,8 +966,6 @@ function setupEditor(uid) {
     const postContentInput = document.getElementById('postContentInput');
     const previewFrame = document.getElementById('previewFrame');
     const publishBtn = document.getElementById('publishBtn');
-    const allowComments = document.getElementById('allowComments');
-    const allowLikes = document.getElementById('allowLikes');
 
     window.updatePreview = function() {
         clearTimeout(previewTimeout);
@@ -1080,7 +1088,7 @@ function publishPost(uid) {
     .then(() => {
         document.getElementById('postTitleInput').value = '';
         document.getElementById('postContentInput').value = '';
-        // Volta para a primeira página após publicar
+        allPostsCache = []; // Limpa cache
         renderUserBlog(uid, 1);
     })
     .catch(err => {
@@ -1093,7 +1101,7 @@ function deletePost(uid, docId) {
     const postsRef = db.collection('blog').doc(uid).collection('posts');
     return postsRef.doc(docId).delete()
         .then(() => {
-            // Recarrega a página atual
+            allPostsCache = []; // Limpa cache
             const currentPage = getPageFromUrl();
             renderUserBlog(uid, currentPage);
         })
@@ -1118,6 +1126,7 @@ async function addComment(uid, postId, text) {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         const currentPage = getPageFromUrl();
+        allPostsCache = []; // Limpa cache para recarregar comentários
         renderUserBlog(uid, currentPage);
     } catch (error) {
         alert('Erro ao comentar: ' + error.message);
@@ -1196,6 +1205,17 @@ auth.onAuthStateChanged(async (user) => {
         unreadCount = 0;
         updateNotificationBadge();
         bannedOverlay.classList.remove('show');
+        renderBlog();
+    }
+});
+
+// ============================================
+// SUPORTE A HISTÓRICO DO NAVEGADOR
+// ============================================
+window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.uid) {
+        renderUserBlog(event.state.uid, event.state.page || 1);
+    } else {
         renderBlog();
     }
 });
