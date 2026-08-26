@@ -135,7 +135,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast('✅ Todos os cookies foram aceitos!');
+        this.showToast(LanguageManager.translate('cookie_aceitos'));
     },
     
     rejectAll() {
@@ -143,7 +143,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast('ℹ️ Cookies não essenciais foram recusados.', 'info');
+        this.showToast(LanguageManager.translate('cookie_recusados'), false);
     },
     
     customize() {
@@ -153,21 +153,12 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast('✅ Suas preferências foram salvas!', 'success');
+        this.showToast(LanguageManager.translate('cookie_preferencias'));
     },
     
-    showToast(message, type = 'info') {
+    showToast(message, isError = false) {
         if (typeof showToast === 'function') {
-            showToast(message, type === 'error');
-        } else {
-            const toast = document.getElementById('toast');
-            if (toast) {
-                toast.textContent = message;
-                toast.style.background = type === 'error' ? '#c0392b' : 
-                                        type === 'success' ? '#27ae60' : '#2980b9';
-                toast.style.display = 'block';
-                setTimeout(() => toast.style.display = 'none', 3000);
-            }
+            showToast(message, isError);
         }
     },
     
@@ -219,9 +210,9 @@ function getCategoryIcon(cat) {
 }
 
 function formatDate(timestamp) {
-    if (!timestamp) return 'Data desconhecida';
+    if (!timestamp) return LanguageManager.translate('data_desconhecida');
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('pt-BR');
+    return LanguageManager.formatDate(date);
 }
 
 function showToast(message, isError = false) {
@@ -263,7 +254,8 @@ async function registerUser(user) {
             createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
-            cookiePreferences: CookieManager.getConsent() || null
+            cookiePreferences: CookieManager.getConsent() || null,
+            language: existingData.language || LanguageManager.currentLang || 'pt'
         };
 
         await db.collection('users').doc(uid).set(userData, { merge: true });
@@ -361,7 +353,7 @@ function renderNotifications() {
         list.innerHTML = `
             <div class="notification-empty">
                 <span class="material-icons">notifications_off</span>
-                <p>Nenhuma notificação</p>
+                <p data-i18n="nenhuma_notificacao">${LanguageManager.translate('nenhuma_notificacao')}</p>
             </div>
         `;
         return;
@@ -370,7 +362,7 @@ function renderNotifications() {
     const recentNotifs = notifications.slice(0, 10);
     list.innerHTML = recentNotifs.map(notif => `
         <div class="notification-item ${notif.lida ? '' : 'unread'}" onclick="markAsRead('${notif.id}')">
-            <div class="notif-title">${escapeHtml(notif.titulo || 'Notificação')}</div>
+            <div class="notif-title">${escapeHtml(notif.titulo || LanguageManager.translate('notificacao'))}</div>
             <div class="notif-message">${escapeHtml(notif.mensagem || '')}</div>
             <div class="notif-time">${getTimeAgo(notif.timestamp)}</div>
         </div>
@@ -501,7 +493,7 @@ function updateUI() {
         btnLogout.style.display = 'inline-block';
     } else {
         userAvatar.innerHTML = '👤';
-        userName.textContent = 'Visitante';
+        userName.textContent = LanguageManager.translate('visitante');
         userEmail.textContent = '';
         userBadge.innerHTML = '';
         btnLogin.style.display = 'inline-block';
@@ -560,7 +552,7 @@ function logout() {
         unreadCount = 0;
         updateNotificationBadge();
         updateUI();
-        showToast('Logout realizado com sucesso!');
+        showToast(LanguageManager.translate('logout_sucesso'));
         setTimeout(() => navigateToHome(), 500);
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
@@ -574,7 +566,7 @@ function logout() {
 function showBannedScreen(reason = 'Violação das políticas de uso') {
     const overlay = document.getElementById('bannedOverlay');
     const details = document.getElementById('banDetails');
-    details.textContent = `Motivo: ${reason}`;
+    details.textContent = `${LanguageManager.translate('motivo')} ${reason}`;
     overlay.classList.add('show');
     document.querySelector('.newspaper-container').style.opacity = '0.5';
     document.querySelector('.newspaper-container').style.pointerEvents = 'none';
@@ -725,12 +717,12 @@ async function renderWeather() {
     
     weatherContainer.innerHTML = `
         <div class="weather-header">
-            <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
+            <h3><i class="fas fa-cloud-sun"></i> ${LanguageManager.translate('previsao_tempo')}</h3>
             <i class="fas fa-map-pin"></i>
         </div>
         <div class="weather-loading">
             <div class="spinner-small"></div>
-            <p style="font-size:12px; opacity:0.7;">Carregando previsão...</p>
+            <p style="font-size:12px; opacity:0.7;">${LanguageManager.translate('carregando_previsao')}</p>
         </div>
     `;
     
@@ -746,12 +738,12 @@ async function updateWeatherContent(widget) {
     if (!data || !data.current) {
         widget.innerHTML = `
             <div class="weather-header">
-                <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
+                <h3><i class="fas fa-cloud-sun"></i> ${LanguageManager.translate('previsao_tempo')}</h3>
                 <i class="fas fa-map-pin"></i>
             </div>
             <div class="weather-error">
                 <i class="fas fa-exclamation-triangle"></i>
-                Não foi possível carregar a previsão do tempo.
+                ${LanguageManager.translate('erro_previsao')}
             </div>
             <div class="weather-update">Santa Fé do Sul - SP</div>
         `;
@@ -770,7 +762,7 @@ async function updateWeatherContent(widget) {
     
     widget.innerHTML = `
         <div class="weather-header">
-            <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
+            <h3><i class="fas fa-cloud-sun"></i> ${LanguageManager.translate('previsao_tempo')}</h3>
             <i class="fas fa-map-pin"></i>
         </div>
         <div class="weather-main">
@@ -786,32 +778,204 @@ async function updateWeatherContent(widget) {
             <div class="detail-item">
                 <i class="fas fa-tint"></i>
                 <div class="value">${humidity}%</div>
-                <div class="label">Umidade</div>
+                <div class="label">${LanguageManager.translate('umidade')}</div>
             </div>
             <div class="detail-item">
                 <i class="fas fa-wind"></i>
                 <div class="value">${Math.round(windSpeed)} km/h</div>
-                <div class="label">Vento</div>
+                <div class="label">${LanguageManager.translate('vento')}</div>
             </div>
             <div class="detail-item">
                 <i class="fas ${iconClass}"></i>
                 <div class="value">${desc}</div>
-                <div class="label">Condição</div>
+                <div class="label">${LanguageManager.translate('condicao')}</div>
             </div>
         </div>
         <div class="weather-update">
-            <i class="far fa-clock"></i> Atualizado agora • Santa Fé do Sul - SP
+            <i class="far fa-clock"></i> ${LanguageManager.translate('atualizado_agora')} • Santa Fé do Sul - SP
         </div>
     `;
     weatherLoaded = true;
 }
 
 // ============================================
-// ARTIGOS
+// ARTIGOS MULTI-IDIOMA
+// ============================================
+class MultiLanguageArticles {
+    constructor() {
+        this.languages = ['pt', 'en', 'es', 'fr', 'de', 'it', 'ja', 'zh'];
+        this.defaultLanguage = 'pt';
+        this.currentLanguage = window.LanguageManager?.currentLang || 'pt';
+        
+        // Escuta mudanças de idioma
+        document.addEventListener('languageChanged', (e) => {
+            this.currentLanguage = e.detail.language;
+            this.refreshArticles();
+        });
+    }
+    
+    // Salva um artigo com suporte multi-idioma
+    async saveArticleWithLanguages(articleData, languages = ['pt']) {
+        if (!articleData.titulo || !articleData.resumo) {
+            throw new Error('Título e resumo são obrigatórios');
+        }
+        
+        // Se for apenas um idioma, salva normalmente
+        if (languages.length === 1 && languages[0] === 'pt') {
+            return await this.saveSingleLanguageArticle(articleData);
+        }
+        
+        // Cria um artigo mestre com referências
+        const masterData = {
+            titulo: articleData.titulo,
+            categoria: articleData.categoria,
+            resumo: articleData.resumo,
+            conteudo: articleData.conteudo,
+            imagemUrl: articleData.imagemUrl,
+            autorId: articleData.autorId,
+            autorNome: articleData.autorNome,
+            autorEmail: articleData.autorEmail,
+            dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
+            ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
+            visualizacoes: 0,
+            isMultiLanguage: true,
+            languages: languages,
+            defaultLanguage: 'pt',
+            translations: {}
+        };
+        
+        // Adiciona traduções para cada idioma
+        for (const lang of languages) {
+            if (lang === 'pt') {
+                masterData.translations[lang] = {
+                    titulo: articleData.titulo,
+                    resumo: articleData.resumo,
+                    conteudo: articleData.conteudo
+                };
+            } else {
+                // Para outros idiomas, as traduções precisam ser fornecidas
+                const translationKey = `translation_${lang}`;
+                if (articleData[translationKey]) {
+                    masterData.translations[lang] = articleData[translationKey];
+                } else {
+                    masterData.translations[lang] = {
+                        titulo: `[${lang.toUpperCase()}] ${articleData.titulo}`,
+                        resumo: `[${lang.toUpperCase()}] ${articleData.resumo}`,
+                        conteudo: `[${lang.toUpperCase()}] ${articleData.conteudo}`
+                    };
+                }
+            }
+        }
+        
+        const docRef = await db.collection('articlesdoc').add(masterData);
+        return docRef;
+    }
+    
+    // Salva artigo em um único idioma (compatibilidade)
+    async saveSingleLanguageArticle(articleData) {
+        const data = {
+            ...articleData,
+            isMultiLanguage: false,
+            language: 'pt',
+            dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
+            ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
+            visualizacoes: 0
+        };
+        
+        const docRef = await db.collection('articlesdoc').add(data);
+        return docRef;
+    }
+    
+    // Busca artigo no idioma atual
+    async getArticleInLanguage(articleId) {
+        const doc = await db.collection('articlesdoc').doc(articleId).get();
+        if (!doc.exists) return null;
+        
+        const data = doc.data();
+        
+        // Se não for multi-idioma, retorna o artigo normal
+        if (!data.isMultiLanguage) {
+            return { id: doc.id, ...data };
+        }
+        
+        // Se for multi-idioma, busca a tradução
+        const currentLang = this.currentLanguage;
+        const translation = data.translations?.[currentLang];
+        
+        if (translation) {
+            return {
+                id: doc.id,
+                ...data,
+                titulo: translation.titulo || data.titulo,
+                resumo: translation.resumo || data.resumo,
+                conteudo: translation.conteudo || data.conteudo,
+                _originalLanguage: 'pt',
+                _currentLanguage: currentLang
+            };
+        }
+        
+        // Fallback: português
+        return {
+            id: doc.id,
+            ...data,
+            _originalLanguage: 'pt',
+            _currentLanguage: 'pt'
+        };
+    }
+    
+    // Atualiza ou adiciona tradução
+    async updateTranslation(articleId, language, translationData) {
+        const docRef = db.collection('articlesdoc').doc(articleId);
+        const doc = await docRef.get();
+        if (!doc.exists) throw new Error('Artigo não encontrado');
+        
+        const data = doc.data();
+        
+        if (!data.isMultiLanguage) {
+            // Converte para multi-idioma
+            const newData = {
+                ...data,
+                isMultiLanguage: true,
+                languages: ['pt', language],
+                defaultLanguage: 'pt',
+                translations: {
+                    pt: {
+                        titulo: data.titulo,
+                        resumo: data.resumo,
+                        conteudo: data.conteudo
+                    }
+                }
+            };
+            newData.translations[language] = translationData;
+            await docRef.update(newData);
+        } else {
+            // Atualiza tradução existente
+            const translations = data.translations || {};
+            translations[language] = translationData;
+            await docRef.update({
+                translations: translations,
+                languages: [...new Set([...(data.languages || []), language])]
+            });
+        }
+    }
+    
+    // Refresca artigos ao mudar idioma
+    refreshArticles() {
+        if (typeof loadArticles === 'function') {
+            loadArticles();
+        }
+    }
+}
+
+// Inicializa o sistema multi-idioma
+let multiLangArticles = null;
+
+// ============================================
+// LOAD ARTICLES
 // ============================================
 async function loadArticles() {
     const grid = document.getElementById('newspaperGrid');
-    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando notícias...</p></div>';
+    grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${LanguageManager.translate('carregando_noticias')}</p></div>`;
     
     try {
         let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
@@ -827,20 +991,36 @@ async function loadArticles() {
         });
         
         if (articles.length === 0) {
-            grid.innerHTML = '<div class="loading"><p>📭 Nenhuma matéria encontrada nesta categoria.</p></div>';
+            grid.innerHTML = `<div class="loading"><p>${LanguageManager.translate('sem_materias')}</p></div>`;
             return;
         }
         
         renderArticles(articles);
     } catch (error) {
-        grid.innerHTML = `<div class="loading"><p>❌ Erro ao carregar: ${error.message}</p></div>`;
+        grid.innerHTML = `<div class="loading"><p>${LanguageManager.translate('erro_carregar')} ${error.message}</p></div>`;
     }
 }
 
 function renderArticles(articles) {
-    const mainArticle = articles[0];
-    const leftArticles = articles.slice(1, 4);
-    const rightArticles = articles.slice(4, 8);
+    // Verifica se há artigos multi-idioma e carrega traduções
+    const translatedArticles = articles.map(article => {
+        if (article.isMultiLanguage && LanguageManager.currentLang !== 'pt') {
+            const translation = article.translations?.[LanguageManager.currentLang];
+            if (translation) {
+                return {
+                    ...article,
+                    titulo: translation.titulo || article.titulo,
+                    resumo: translation.resumo || article.resumo,
+                    conteudo: translation.conteudo || article.conteudo
+                };
+            }
+        }
+        return article;
+    });
+    
+    const mainArticle = translatedArticles[0];
+    const leftArticles = translatedArticles.slice(1, 4);
+    const rightArticles = translatedArticles.slice(4, 8);
 
     const renderAdminActions = (articleId) => {
         if (!currentUserIsAdmin) return '';
@@ -855,21 +1035,23 @@ function renderArticles(articles) {
     const renderArticleCard = (article, isMain = false) => {
         const tag = getCategoryIcon(article.categoria) + ' ' + (article.categoria || 'geral').toUpperCase();
         const date = formatDate(article.dataPublicacao);
+        const autor = article.autorNome || LanguageManager.translate('redacao');
+        const views = article.visualizacoes || 0;
         
         if (isMain) {
             return `
                 <div class="main-article" style="position: relative;">
                     ${renderAdminActions(article.id)}
-                    <div class="article-tag">${tag} · DESTAQUE</div>
+                    <div class="article-tag">${tag} · ${LanguageManager.translate('destaque')}</div>
                     <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
                     <div class="article-meta">
-                        <span><i class="far fa-user"></i> Por ${escapeHtml(article.autorNome || 'Redação')}</span>
+                        <span><i class="far fa-user"></i> ${LanguageManager.translate('por')} ${escapeHtml(autor)}</span>
                         <span><i class="far fa-calendar"></i> ${date}</span>
-                        <span><i class="fas fa-eye"></i> ${article.visualizacoes || 0} visualizações</span>
+                        <span><i class="fas fa-eye"></i> ${views} ${LanguageManager.translate('visualizacoes')}</span>
                     </div>
-                    ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">Foto: Divulgação</div></div>` : ''}
+                    ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">${LanguageManager.translate('foto_divulgacao')}</div></div>` : ''}
                     <div class="article-excerpt">${escapeHtml((article.resumo || article.conteudo || '').substring(0, 300))}${(article.resumo || article.conteudo || '').length > 300 ? '...' : ''}</div>
-                    <a class="read-more" onclick="openArticleById('${article.id}')">Continue lendo →</a>
+                    <a class="read-more" onclick="openArticleById('${article.id}')">${LanguageManager.translate('continue_lendo')}</a>
                 </div>
             `;
         }
@@ -880,11 +1062,11 @@ function renderArticles(articles) {
                 <div class="article-tag">${tag}</div>
                 <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
                 <div class="article-meta">
-                    <span><i class="far fa-user"></i> ${escapeHtml(article.autorNome || 'Redação')}</span>
+                    <span><i class="far fa-user"></i> ${escapeHtml(autor)}</span>
                     <span><i class="far fa-calendar"></i> ${date}</span>
                 </div>
                 <div class="article-excerpt">${escapeHtml((article.resumo || article.conteudo || '').substring(0, 150))}${(article.resumo || article.conteudo || '').length > 150 ? '...' : ''}</div>
-                <a class="read-more" onclick="openArticleById('${article.id}')">Continue lendo →</a>
+                <a class="read-more" onclick="openArticleById('${article.id}')">${LanguageManager.translate('continue_lendo')}</a>
             </div>
         `;
     };
@@ -893,17 +1075,17 @@ function renderArticles(articles) {
     const rightHtml = rightArticles.map(a => renderArticleCard(a, false)).join('');
 
     document.getElementById('newspaperGrid').innerHTML = `
-        <div class="sidebar-left">${leftHtml || '<div class="article-card"><p>📭 Mais matérias em breve...</p></div>'}</div>
+        <div class="sidebar-left">${leftHtml || `<div class="article-card"><p>${LanguageManager.translate('materias_breve')}</p></div>`}</div>
         <div>${renderArticleCard(mainArticle, true)}</div>
-        <div class="sidebar-right">${rightHtml || '<div class="article-card"><p>📭 Aguardem novas publicações...</p></div>'}</div>
+        <div class="sidebar-right">${rightHtml || `<div class="article-card"><p>${LanguageManager.translate('aguardem_publicacoes')}</p></div>`}</div>
     `;
     
     setTimeout(() => renderWeather(), 300);
 }
 
-window.openArticleById = function(articleId) {
+window.openArticleById = async function(articleId) {
     updateUrl(currentCategory, articleId);
-    loadArticleById(articleId);
+    await loadArticleById(articleId);
 };
 
 // ============================================
@@ -911,16 +1093,25 @@ window.openArticleById = function(articleId) {
 // ============================================
 async function loadArticleById(articleId) {
     const grid = document.getElementById('newspaperGrid');
-    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando matéria...</p></div>';
+    grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${LanguageManager.translate('carregando_materia')}</p></div>`;
     
     try {
-        const doc = await db.collection('articlesdoc').doc(articleId).get();
-        if (!doc.exists) {
-            grid.innerHTML = '<div class="loading"><p>📭 Matéria não encontrada. <a onclick="navigateToHome()" style="color:#c0392b; cursor:pointer;">Voltar para página inicial</a></p></div>';
+        // Usa o sistema multi-idioma para buscar o artigo
+        let article = null;
+        if (multiLangArticles) {
+            article = await multiLangArticles.getArticleInLanguage(articleId);
+        } else {
+            const doc = await db.collection('articlesdoc').doc(articleId).get();
+            if (doc.exists) {
+                article = { id: doc.id, ...doc.data() };
+            }
+        }
+        
+        if (!article) {
+            grid.innerHTML = `<div class="loading"><p>${LanguageManager.translate('materia_nao_encontrada')} <a onclick="navigateToHome()" style="color:#c0392b; cursor:pointer;">${LanguageManager.translate('voltar_inicio')}</a></p></div>`;
             return;
         }
         
-        const article = { id: doc.id, ...doc.data() };
         currentViewArticleId = articleId;
         currentViewArticleData = article;
         
@@ -935,18 +1126,28 @@ async function loadArticleById(articleId) {
         
         renderSingleArticle(article);
     } catch (error) {
-        grid.innerHTML = `<div class="loading"><p>❌ Erro ao carregar: ${error.message}</p></div>`;
+        grid.innerHTML = `<div class="loading"><p>${LanguageManager.translate('erro_carregar')} ${error.message}</p></div>`;
     }
 }
 
 function renderSingleArticle(article) {
     const date = article.dataPublicacao?.toDate?.() ? article.dataPublicacao.toDate().toLocaleDateString('pt-BR') : 'Data desconhecida';
     const categoryIcon = getCategoryIcon(article.categoria);
+    const autor = article.autorNome || LanguageManager.translate('redacao');
+    const views = article.visualizacoes || 0;
+    
+    // Mostra indicador de idioma se for traduzido
+    let languageIndicator = '';
+    if (article._currentLanguage && article._currentLanguage !== 'pt') {
+        const langInfo = LanguageManager.availableLanguages?.[article._currentLanguage];
+        languageIndicator = `<span style="font-size:11px; color:#888; background:#f0f0f0; padding:2px 8px; border-radius:10px; margin-left:10px;">🌐 ${langInfo?.flag || ''} ${langInfo?.name || article._currentLanguage.toUpperCase()}</span>`;
+    }
     
     const adminButtonsHtml = currentUserIsAdmin ? `
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
-            <button class="btn-warning" onclick="editArticle('${article.id}')">✏️ Editar</button>
-            <button class="btn-danger" onclick="deleteArticle('${article.id}')">🗑️ Excluir</button>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="btn-warning" onclick="editArticle('${article.id}')">${LanguageManager.translate('editar')}</button>
+            <button class="btn-danger" onclick="deleteArticle('${article.id}')">${LanguageManager.translate('excluir')}</button>
+            ${article.isMultiLanguage ? `<button class="btn-primary" onclick="showTranslationManager('${article.id}')" style="font-size:12px;">🌐 Gerenciar Traduções</button>` : ''}
         </div>
     ` : '';
     
@@ -954,24 +1155,24 @@ function renderSingleArticle(article) {
         <div style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
             ${adminButtonsHtml}
             <div class="main-article">
-                <div class="article-tag">${categoryIcon} ${article.categoria?.toUpperCase() || 'GERAL'}</div>
+                <div class="article-tag">${categoryIcon} ${article.categoria?.toUpperCase() || 'GERAL'} ${languageIndicator}</div>
                 <div class="article-title">${escapeHtml(article.titulo)}</div>
                 <div class="article-meta">
-                    <span><i class="far fa-user"></i> Por ${escapeHtml(article.autorNome || 'Redação')}</span>
+                    <span><i class="far fa-user"></i> ${LanguageManager.translate('por')} ${escapeHtml(autor)}</span>
                     <span><i class="far fa-calendar"></i> ${date}</span>
-                    <span><i class="fas fa-eye"></i> ${article.visualizacoes || 0} visualizações</span>
+                    <span><i class="fas fa-eye"></i> ${views} ${LanguageManager.translate('visualizacoes')}</span>
                 </div>
-                ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">Foto: Divulgação</div></div>` : ''}
+                ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">${LanguageManager.translate('foto_divulgacao')}</div></div>` : ''}
                 <div class="article-content" style="font-size: 16px; line-height: 1.8;">
-                    ${article.conteudo || article.resumo || 'Conteúdo não disponível.'}
+                    ${article.conteudo || article.resumo || LanguageManager.translate('conteudo_indisponivel')}
                 </div>
                 <hr style="margin: 30px 0 20px 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <button class="btn-share" onclick="showShareModal()">
-                        <i class="fas fa-share-alt"></i> Compartilhar esta matéria
+                        <i class="fas fa-share-alt"></i> ${LanguageManager.translate('compartilhar_materia')}
                     </button>
                     <button class="btn-outline" onclick="navigateToHome()">
-                        <i class="fas fa-home"></i> Voltar para página inicial
+                        <i class="fas fa-home"></i> ${LanguageManager.translate('voltar_inicio')}
                     </button>
                 </div>
             </div>
@@ -979,6 +1180,174 @@ function renderSingleArticle(article) {
     `;
     
     setTimeout(() => renderWeather(), 300);
+}
+
+// ============================================
+// GERENCIADOR DE TRADUÇÕES
+// ============================================
+function showTranslationManager(articleId) {
+    if (!currentUserIsAdmin) {
+        showToast('Apenas administradores podem gerenciar traduções!', true);
+        return;
+    }
+    
+    // Abre o modal de edição com campos para traduções
+    db.collection('articlesdoc').doc(articleId).get().then(doc => {
+        if (!doc.exists) {
+            showToast('Artigo não encontrado!', true);
+            return;
+        }
+        
+        const data = doc.data();
+        currentEditArticleId = articleId;
+        
+        document.getElementById('modalTitle').textContent = 'Gerenciar Traduções';
+        document.getElementById('articleTitle').value = data.titulo || '';
+        document.getElementById('articleCategory').value = data.categoria || 'política';
+        document.getElementById('articleExcerpt').value = data.resumo || '';
+        document.getElementById('articleContent').value = data.conteudo || '';
+        document.getElementById('articleImage').value = data.imagemUrl || '';
+        
+        // Mostra campos de tradução
+        const translationsContainer = document.getElementById('translationsContainer');
+        translationsContainer.style.display = 'block';
+        
+        const translationFields = document.getElementById('translationFields');
+        const languages = data.languages || ['pt'];
+        const translations = data.translations || {};
+        
+        let fieldsHtml = '';
+        languages.forEach(lang => {
+            if (lang === 'pt') return;
+            const t = translations[lang] || {};
+            const langName = LanguageManager.availableLanguages?.[lang]?.name || lang.toUpperCase();
+            fieldsHtml += `
+                <div style="border:1px solid #eee; padding:12px; border-radius:8px; margin-bottom:10px;">
+                    <h5 style="color:#1a3c5e; margin-bottom:8px;">🌐 ${langName}</h5>
+                    <div class="form-group">
+                        <label>Título em ${langName}</label>
+                        <input type="text" id="trans_title_${lang}" value="${escapeHtml(t.titulo || '')}" placeholder="Título traduzido">
+                    </div>
+                    <div class="form-group">
+                        <label>Resumo em ${langName}</label>
+                        <textarea id="trans_excerpt_${lang}" rows="2" placeholder="Resumo traduzido">${escapeHtml(t.resumo || '')}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Conteúdo em ${langName}</label>
+                        <textarea id="trans_content_${lang}" rows="4" placeholder="Conteúdo traduzido">${escapeHtml(t.conteudo || '')}</textarea>
+                    </div>
+                </div>
+            `;
+        });
+        translationFields.innerHTML = fieldsHtml;
+        
+        // Adiciona opção para adicionar novo idioma
+        const availableLangs = Object.keys(LanguageManager.availableLanguages || {});
+        const usedLangs = languages;
+        const availableToAdd = availableLangs.filter(l => !usedLangs.includes(l) && l !== 'pt');
+        
+        if (availableToAdd.length > 0) {
+            fieldsHtml += `
+                <div style="margin-top:10px;">
+                    <label style="font-size:13px; color:#666;">Adicionar novo idioma:</label>
+                    <select id="addLanguageSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd; margin-top:5px;">
+                        ${availableToAdd.map(l => `<option value="${l}">${LanguageManager.availableLanguages[l].flag} ${LanguageManager.availableLanguages[l].name}</option>`).join('')}
+                    </select>
+                    <button onclick="addLanguageField()" class="btn-primary" style="margin-top:8px; font-size:12px; padding:8px 16px;">➕ Adicionar Idioma</button>
+                </div>
+            `;
+            translationFields.innerHTML = fieldsHtml;
+        }
+        
+        // Muda o texto do botão de salvar
+        const saveBtn = document.querySelector('#articleModal .btn-primary');
+        saveBtn.textContent = '💾 Salvar Traduções';
+        saveBtn.onclick = saveTranslations;
+        
+        document.getElementById('articleModal').classList.add('show');
+    });
+}
+
+function addLanguageField() {
+    const select = document.getElementById('addLanguageSelect');
+    const lang = select.value;
+    if (!lang) return;
+    
+    const langName = LanguageManager.availableLanguages[lang].name;
+    const container = document.getElementById('translationFields');
+    
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid #4a9eff; padding:12px; border-radius:8px; margin-bottom:10px; background:#f8f9fa;';
+    div.innerHTML = `
+        <h5 style="color:#1a3c5e; margin-bottom:8px;">🌐 ${langName} <span style="font-size:11px; color:#999;">(novo)</span></h5>
+        <div class="form-group">
+            <label>Título em ${langName}</label>
+            <input type="text" id="trans_title_${lang}" placeholder="Título traduzido">
+        </div>
+        <div class="form-group">
+            <label>Resumo em ${langName}</label>
+            <textarea id="trans_excerpt_${lang}" rows="2" placeholder="Resumo traduzido"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Conteúdo em ${langName}</label>
+            <textarea id="trans_content_${lang}" rows="4" placeholder="Conteúdo traduzido"></textarea>
+        </div>
+    `;
+    container.appendChild(div);
+    
+    select.remove(select.selectedIndex);
+    if (select.options.length === 0) {
+        select.parentElement.style.display = 'none';
+    }
+}
+
+async function saveTranslations() {
+    if (!currentEditArticleId) {
+        showToast('Erro: Nenhum artigo selecionado!', true);
+        return;
+    }
+    
+    try {
+        const docRef = db.collection('articlesdoc').doc(currentEditArticleId);
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            showToast('Artigo não encontrado!', true);
+            return;
+        }
+        
+        const data = doc.data();
+        const translations = data.translations || {};
+        const languages = data.languages || ['pt'];
+        
+        // Coleta todas as traduções dos campos
+        const translationFields = document.querySelectorAll('#translationFields [id^="trans_title_"]');
+        translationFields.forEach(field => {
+            const lang = field.id.replace('trans_title_', '');
+            const title = document.getElementById(`trans_title_${lang}`)?.value || '';
+            const excerpt = document.getElementById(`trans_excerpt_${lang}`)?.value || '';
+            const content = document.getElementById(`trans_content_${lang}`)?.value || '';
+            
+            if (title || excerpt || content) {
+                translations[lang] = { titulo: title, resumo: excerpt, conteudo: content };
+                if (!languages.includes(lang)) {
+                    languages.push(lang);
+                }
+            }
+        });
+        
+        await docRef.update({
+            translations: translations,
+            languages: languages,
+            isMultiLanguage: true,
+            ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        showToast('Traduções salvas com sucesso!');
+        closeModals();
+        loadArticles();
+    } catch (error) {
+        showToast('Erro ao salvar traduções: ' + error.message, true);
+    }
 }
 
 // ============================================
@@ -1000,12 +1369,20 @@ window.editArticle = async function(articleId) {
         const article = doc.data();
         currentEditArticleId = articleId;
         
-        document.getElementById('modalTitle').textContent = 'Editar Matéria';
+        document.getElementById('modalTitle').textContent = LanguageManager.translate('editar_materia_titulo');
         document.getElementById('articleTitle').value = article.titulo || '';
         document.getElementById('articleCategory').value = article.categoria || 'política';
         document.getElementById('articleExcerpt').value = article.resumo || '';
         document.getElementById('articleContent').value = article.conteudo || '';
         document.getElementById('articleImage').value = article.imagemUrl || '';
+        
+        // Esconde campos de tradução
+        document.getElementById('translationsContainer').style.display = 'none';
+        
+        // Restaura botão de salvar
+        const saveBtn = document.querySelector('#articleModal .btn-primary');
+        saveBtn.textContent = LanguageManager.translate('publicar_materia');
+        saveBtn.onclick = saveArticle;
         
         document.getElementById('articleModal').classList.add('show');
     } catch (error) {
@@ -1025,7 +1402,7 @@ window.deleteArticle = async function(articleId) {
     
     try {
         await db.collection('articlesdoc').doc(articleId).delete();
-        showToast('Matéria excluída com sucesso!');
+        showToast(LanguageManager.translate('materia_excluida'));
         closeModals();
         
         const params = getUrlParams();
@@ -1049,11 +1426,18 @@ window.deleteCurrentArticle = function() {
     setTimeout(() => deleteArticle(currentViewArticleId), 300);
 };
 
+// ============================================
+// SAVE ARTICLE
+// ============================================
 async function saveArticle() {
     if (!currentUserIsAdmin) {
         showToast('Apenas administradores podem publicar matérias!', true);
         return;
     }
+    
+    // Coleta os idiomas selecionados
+    const langSelect = document.getElementById('articleLanguages');
+    const selectedLanguages = Array.from(langSelect.selectedOptions).map(opt => opt.value);
     
     const articleData = {
         titulo: document.getElementById('articleTitle').value,
@@ -1064,9 +1448,6 @@ async function saveArticle() {
         autorId: currentUser.uid,
         autorNome: currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrador',
         autorEmail: currentUser.email,
-        dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
-        ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
-        visualizacoes: 0
     };
     
     if (!articleData.titulo || !articleData.resumo) {
@@ -1076,11 +1457,54 @@ async function saveArticle() {
     
     try {
         if (currentEditArticleId) {
-            await db.collection('articlesdoc').doc(currentEditArticleId).update(articleData);
-            showToast('Matéria atualizada com sucesso!');
+            // Atualiza artigo existente
+            await db.collection('articlesdoc').doc(currentEditArticleId).update({
+                ...articleData,
+                ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showToast(LanguageManager.translate('materia_atualizada'));
         } else {
-            const docRef = await db.collection('articlesdoc').add(articleData);
-            showToast('Matéria publicada com sucesso!');
+            // Verifica se é multi-idioma
+            if (selectedLanguages.length > 1 || (selectedLanguages.length === 1 && selectedLanguages[0] !== 'pt')) {
+                // Coleta traduções
+                for (const lang of selectedLanguages) {
+                    if (lang === 'pt') continue;
+                    const titleField = document.getElementById(`trans_title_${lang}`);
+                    const excerptField = document.getElementById(`trans_excerpt_${lang}`);
+                    const contentField = document.getElementById(`trans_content_${lang}`);
+                    if (titleField) {
+                        articleData[`translation_${lang}`] = {
+                            titulo: titleField.value || `[${lang.toUpperCase()}] ${articleData.titulo}`,
+                            resumo: excerptField?.value || `[${lang.toUpperCase()}] ${articleData.resumo}`,
+                            conteudo: contentField?.value || `[${lang.toUpperCase()}] ${articleData.conteudo}`
+                        };
+                    }
+                }
+                
+                if (multiLangArticles) {
+                    await multiLangArticles.saveArticleWithLanguages(articleData, selectedLanguages);
+                } else {
+                    // Fallback: salva como português
+                    await db.collection('articlesdoc').add({
+                        ...articleData,
+                        isMultiLanguage: false,
+                        dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
+                        ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
+                        visualizacoes: 0
+                    });
+                }
+            } else {
+                // Salva apenas em português
+                await db.collection('articlesdoc').add({
+                    ...articleData,
+                    isMultiLanguage: false,
+                    language: 'pt',
+                    dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
+                    ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
+                    visualizacoes: 0
+                });
+            }
+            showToast(LanguageManager.translate('materia_publicada'));
         }
         closeModals();
         resetArticleForm();
@@ -1092,12 +1516,19 @@ async function saveArticle() {
 
 function resetArticleForm() {
     currentEditArticleId = null;
-    document.getElementById('modalTitle').textContent = 'Nova Matéria';
+    document.getElementById('modalTitle').textContent = LanguageManager.translate('nova_materia_titulo');
     document.getElementById('articleTitle').value = '';
     document.getElementById('articleCategory').value = 'política';
     document.getElementById('articleExcerpt').value = '';
     document.getElementById('articleContent').value = '';
     document.getElementById('articleImage').value = '';
+    document.getElementById('translationsContainer').style.display = 'none';
+    document.getElementById('translationFields').innerHTML = '';
+    
+    // Restaura botão de salvar
+    const saveBtn = document.querySelector('#articleModal .btn-primary');
+    saveBtn.textContent = LanguageManager.translate('publicar_materia');
+    saveBtn.onclick = saveArticle;
 }
 
 // ============================================
@@ -1116,6 +1547,46 @@ window.showNewArticleModal = function() {
         return;
     }
     resetArticleForm();
+    
+    // Mostra campos de idioma para novo artigo
+    const translationsContainer = document.getElementById('translationsContainer');
+    translationsContainer.style.display = 'block';
+    
+    // Gera campos de tradução para idiomas selecionados
+    const langSelect = document.getElementById('articleLanguages');
+    const translationFields = document.getElementById('translationFields');
+    
+    langSelect.addEventListener('change', function() {
+        const selected = Array.from(this.selectedOptions).map(opt => opt.value);
+        let fieldsHtml = '';
+        selected.forEach(lang => {
+            if (lang === 'pt') return;
+            const langName = LanguageManager.availableLanguages?.[lang]?.name || lang.toUpperCase();
+            fieldsHtml += `
+                <div style="border:1px solid #eee; padding:12px; border-radius:8px; margin-bottom:10px;">
+                    <h5 style="color:#1a3c5e; margin-bottom:8px;">🌐 ${langName}</h5>
+                    <div class="form-group">
+                        <label>Título em ${langName}</label>
+                        <input type="text" id="trans_title_${lang}" placeholder="Título traduzido">
+                    </div>
+                    <div class="form-group">
+                        <label>Resumo em ${langName}</label>
+                        <textarea id="trans_excerpt_${lang}" rows="2" placeholder="Resumo traduzido"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Conteúdo em ${langName}</label>
+                        <textarea id="trans_content_${lang}" rows="4" placeholder="Conteúdo traduzido"></textarea>
+                    </div>
+                </div>
+            `;
+        });
+        translationFields.innerHTML = fieldsHtml;
+    });
+    
+    // Trigger inicial
+    const event = new Event('change');
+    langSelect.dispatchEvent(event);
+    
     document.getElementById('articleModal').classList.add('show');
 };
 
@@ -1135,10 +1606,10 @@ window.showShareModal = function() {
 window.copyShareUrl = function() {
     const url = document.getElementById('shareUrlContainer').textContent;
     navigator.clipboard.writeText(url).then(() => {
-        showToast('Link copiado para compartilhar!');
+        showToast(LanguageManager.translate('link_copiado'));
         closeModals();
     }).catch(() => {
-        showToast('Erro ao copiar link', true);
+        showToast(LanguageManager.translate('erro_copiar_link'), true);
     });
 };
 
@@ -1167,13 +1638,32 @@ window.onpopstate = (event) => {
 // ============================================
 // INICIALIZAÇÃO
 // ============================================
-document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar Cookie Manager
+document.addEventListener('DOMContentLoaded', async function() {
+    // Inicializa Cookie Manager
     CookieManager.init();
     
-    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
+    // Inicializa Language Manager
+    if (typeof LanguageManager !== 'undefined') {
+        await LanguageManager.init('pt');
+    }
+    
+    // Inicializa Multi-Language Articles
+    if (typeof MultiLanguageArticles !== 'undefined') {
+        multiLangArticles = new MultiLanguageArticles();
+        window.multiLangArticles = multiLangArticles;
+    }
+    
+    // Atualiza data
+    const dateElement = document.getElementById('currentDate');
+    if (dateElement) {
+        if (typeof LanguageManager !== 'undefined' && LanguageManager.updateDateLocale) {
+            LanguageManager.updateDateLocale();
+        } else {
+            dateElement.textContent = new Date().toLocaleDateString('pt-BR', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+        }
+    }
 });
 
 // ============================================
@@ -1256,64 +1746,46 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================
-// INTEGRAÇÃO COM LINK INTERCEPTOR
+// LINK INTERCEPTOR
 // ============================================
-
-/**
- * Carrega e inicializa o LinkInterceptor
- */
 function loadLinkInterceptor() {
-    // Verifica se já está carregado
     if (typeof LinkInterceptor !== 'undefined') {
         LinkInterceptor.init();
         return;
     }
     
-    // Carrega o script
     const script = document.createElement('script');
     script.src = 'https://wazzimagiygg.com/jornal/link-interceptor.js';
     script.onload = function() {
         console.log('✅ LinkInterceptor carregado com sucesso');
         if (typeof LinkInterceptor !== 'undefined') {
             LinkInterceptor.init();
-            
-            // Atualiza o REDIRECT_PAGE para usar a URL correta
             LinkInterceptor.REDIRECT_PAGE = 'https://wazzimagiygg.com/rv/';
         }
     };
     script.onerror = function() {
         console.warn('⚠️ Não foi possível carregar o LinkInterceptor');
-        // Fallback: intercepta links manualmente
         setupFallbackInterceptor();
     };
     document.head.appendChild(script);
 }
 
-/**
- * Fallback caso o LinkInterceptor não carregue
- */
 function setupFallbackInterceptor() {
     console.log('🔄 Usando fallback para interceptação de links');
-    
     document.addEventListener('click', function(e) {
         const link = e.target.closest('a[href]');
         if (!link) return;
-        
         const href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-        
-        // Verifica se é externo
         try {
             const url = new URL(href, window.location.origin);
             const isExternal = !['wazzimagiygg.com', 'localhost'].some(d => 
                 url.hostname === d || url.hostname.endsWith('.' + d)
             );
-            
             if (isExternal) {
                 e.preventDefault();
-                const uid = typeof currentUser !== 'undefined' && currentUser ? currentUser.uid : 'visitante';
+                const uid = currentUser ? currentUser.uid : 'visitante';
                 const redirectUrl = `https://wazzimagiygg.com/rv/?uid=${encodeURIComponent(href)}&url=${encodeURIComponent(href)}&ref=${encodeURIComponent(window.location.href)}`;
-                
                 if (link.target === '_blank') {
                     window.open(redirectUrl, '_blank');
                 } else {
@@ -1326,31 +1798,23 @@ function setupFallbackInterceptor() {
     });
 }
 
-/**
- * Função para criar links seguros manualmente
- */
 function createSecureLink(url, text, options = {}) {
     if (typeof LinkInterceptor !== 'undefined') {
         const uid = LinkInterceptor.getUserUID();
         const secureUrl = LinkInterceptor.buildRedirectUrl(url, uid);
-        
         const link = document.createElement('a');
         link.href = secureUrl;
         link.textContent = text || url;
         link.target = options.target || '_blank';
         link.rel = 'noopener noreferrer';
-        
         if (options.className) link.className = options.className;
         if (options.icon) {
             const icon = document.createElement('span');
             icon.textContent = options.icon + ' ';
             link.prepend(icon);
         }
-        
         return link;
     }
-    
-    // Fallback
     const link = document.createElement('a');
     link.href = url;
     link.textContent = text || url;
@@ -1358,7 +1822,6 @@ function createSecureLink(url, text, options = {}) {
     return link;
 }
 
-// Exporta funções
 window.createSecureLink = createSecureLink;
 window.secureExternalLinks = function(container) {
     if (typeof LinkInterceptor !== 'undefined') {
@@ -1366,11 +1829,7 @@ window.secureExternalLinks = function(container) {
     }
 };
 
-// ============================================
-// INICIALIZAÇÃO AUTOMÁTICA
-// ============================================
-
-// Carrega o LinkInterceptor junto com o resto do sistema
+// Carrega o LinkInterceptor
 if (document.readyState === 'complete') {
     setTimeout(loadLinkInterceptor, 1000);
 } else {
@@ -1379,7 +1838,6 @@ if (document.readyState === 'complete') {
     });
 }
 
-// Também tenta carregar quando o Firebase estiver pronto
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged(function(user) {
         if (user && user.uid) {
@@ -1409,3 +1867,6 @@ window.deleteArticle = deleteArticle;
 window.editCurrentArticle = editCurrentArticle;
 window.deleteCurrentArticle = deleteCurrentArticle;
 window.openArticleById = openArticleById;
+window.showTranslationManager = showTranslationManager;
+window.addLanguageField = addLanguageField;
+window.saveTranslations = saveTranslations;
