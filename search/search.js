@@ -23,6 +23,74 @@ try {
     db = firebase.firestore();
 }
 
+// ==================== FUNÇÃO DE TRADUÇÃO ====================
+function getTranslation(key, params = {}) {
+    if (typeof LanguageManager !== 'undefined' && LanguageManager.translate) {
+        return LanguageManager.translate(key, params);
+    }
+    return key;
+}
+
+// ==================== FUNÇÃO PARA APLICAR TRADUÇÕES ====================
+function applySearchTranslations() {
+    if (typeof LanguageManager === 'undefined') return;
+    
+    // Aplica traduções a elementos com data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const translation = LanguageManager.translate(key);
+        if (translation && translation !== key) {
+            if (el.tagName === 'INPUT' && el.getAttribute('data-i18n-attr') === 'placeholder') {
+                el.placeholder = translation;
+            } else if (el.tagName === 'TEXTAREA' && el.getAttribute('data-i18n-attr') === 'placeholder') {
+                el.placeholder = translation;
+            } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                // Não altera valor de inputs
+            } else {
+                el.textContent = translation;
+            }
+        }
+    });
+    
+    // Placeholders específicos
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.placeholder = getTranslation('placeholder_busca');
+    }
+}
+
+// ==================== FUNÇÃO PARA MUDAR IDIOMA ====================
+async function changeSearchLanguage(lang) {
+    if (typeof LanguageManager !== 'undefined') {
+        await LanguageManager.changeLanguage(lang);
+        applySearchTranslations();
+        updatePageInfo();
+        // Atualiza a interface do usuário
+        updateUI();
+    }
+}
+
+// ==================== ATUALIZAR INFORMAÇÕES DA PÁGINA ====================
+function updatePageInfo() {
+    const pageCount = document.getElementById('page-count');
+    if (pageCount) {
+        const total = allPages.length || 0;
+        pageCount.textContent = getTranslation('info_paginas', { total: total });
+    }
+    
+    // Atualiza título
+    const title = document.querySelector('title');
+    if (title) {
+        title.textContent = getTranslation('search_titulo');
+    }
+    
+    // Atualiza status do maze
+    const mazeStatus = document.getElementById('mazeStatus');
+    if (mazeStatus && !mazeStatus.innerHTML.includes('PARABÉNS') && !mazeStatus.innerHTML.includes('CONGRATULATIONS')) {
+        mazeStatus.textContent = getTranslation('maze_status');
+    }
+}
+
 // ==================== VARIÁVEIS ====================
 let currentUser = null;
 let isBanned = false;
@@ -198,7 +266,7 @@ function mazeMove(dx, dy) {
     
     if(mazePlayerPos.x === mazeGoalPos.x && mazePlayerPos.y === mazeGoalPos.y) {
         mazeGameActive = false;
-        document.getElementById('mazeStatus').innerHTML = "🎉 PARABÉNS! Acesso liberado! 🎉";
+        document.getElementById('mazeStatus').textContent = getTranslation('maze_sucesso');
         setTimeout(() => { hideCaptcha(); mazeGameActive = true; }, 1500);
     }
 }
@@ -220,6 +288,9 @@ function initMazeGame() {
     mazeStartPos = { x: mazeData.start.x, y: mazeData.start.y };
     mazeGameActive = true;
     drawMazeGame();
+    
+    // Atualiza o status do maze com tradução
+    document.getElementById('mazeStatus').textContent = getTranslation('maze_status');
 }
 
 // ==================== UTILIDADES ====================
@@ -285,12 +356,12 @@ function renderNotifications() {
     const list = document.getElementById('notificationList');
     if (!list) return;
     if (notifications.length === 0) {
-        list.innerHTML = `<div class="notification-empty"><span class="material-icons">notifications_off</span><p>Nenhuma notificação</p></div>`;
+        list.innerHTML = `<div class="notification-empty"><span class="material-icons">notifications_off</span><p>${getTranslation('nenhuma_notificacao')}</p></div>`;
         return;
     }
     list.innerHTML = notifications.slice(0, 10).map(notif => `
         <div class="notification-item ${notif.lida ? '' : 'unread'}" onclick="markAsRead('${notif.id}')">
-            <div class="notif-title">${escapeHtml(notif.titulo || 'Notificação')}</div>
+            <div class="notif-title">${escapeHtml(notif.titulo || getTranslation('notificacao'))}</div>
             <div class="notif-message">${escapeHtml(notif.mensagem || '')}</div>
             <div class="notif-time">${getTimeAgo(notif.timestamp)}</div>
         </div>
@@ -364,7 +435,7 @@ async function checkIfUserIsBanned(user) {
 
 function showBannedScreen(reason = 'Violação das políticas de uso') {
     document.getElementById('bannedOverlay').classList.add('show');
-    document.getElementById('banDetails').textContent = `Motivo: ${reason}`;
+    document.getElementById('banDetails').textContent = `${getTranslation('motivo')} ${reason}`;
     document.querySelector('.header').style.opacity = '0.3';
     document.querySelector('.header').style.pointerEvents = 'none';
     document.querySelector('.container').style.opacity = '0.3';
@@ -401,16 +472,23 @@ function updateUI() {
         badge.innerHTML = badges;
         btnLogin.style.display = 'none';
         btnLogout.style.display = 'inline-block';
-        if (guestBadge) guestBadge.innerHTML = `<i class="material-icons" style="font-size:14px;">person</i> Olá, ${escapeHtml(displayName)}`;
+        if (guestBadge) {
+            guestBadge.innerHTML = `<i class="material-icons" style="font-size:14px;">person</i> ${getTranslation('modo_usuario', { nome: escapeHtml(displayName) })}`;
+        }
     } else {
         avatar.innerHTML = '👤';
-        name.textContent = 'Visitante';
+        name.textContent = getTranslation('visitante');
         email.textContent = '';
         badge.innerHTML = '';
         btnLogin.style.display = 'inline-block';
         btnLogout.style.display = 'none';
-        if (guestBadge) guestBadge.innerHTML = `<i class="material-icons" style="font-size:14px;">public</i> Modo Convidado - Busca liberada`;
+        if (guestBadge) {
+            guestBadge.innerHTML = `<i class="material-icons" style="font-size:14px;">public</i> ${getTranslation('modo_convidado')}`;
+        }
     }
+    
+    // Aplica traduções nos elementos que já estão renderizados
+    applySearchTranslations();
 }
 
 function showLoginModal() { document.getElementById('login-modal').classList.add('show'); }
@@ -442,7 +520,7 @@ async function loginWithGoogle() {
         listenNotifications();
     } catch (error) {
         console.error('Erro no login:', error);
-        alert('Erro ao fazer login: ' + error.message);
+        alert(getTranslation('erro_login') + ' ' + error.message);
     }
 }
 
@@ -460,14 +538,14 @@ async function logout() {
         console.log('✅ Logout realizado com sucesso!');
     } catch (error) {
         console.error('❌ Erro no logout:', error);
-        alert('Erro ao sair: ' + error.message);
+        alert(getTranslation('erro_logout') + ' ' + error.message);
     }
 }
 
 function showRegister() {
-    const email = prompt('Digite seu e-mail:');
+    const email = prompt(getTranslation('email'));
     if (!email) return;
-    const password = prompt('Digite sua senha (mínimo 6 caracteres):');
+    const password = prompt(getTranslation('senha') + ' (mínimo 6 caracteres):');
     if (!password || password.length < 6) { alert('A senha deve ter pelo menos 6 caracteres'); return; }
     registerUserEmail(email, password);
 }
@@ -485,10 +563,10 @@ async function registerUserEmail(email, password) {
         });
         updateUI();
         closeLoginModal();
-        alert('Conta criada com sucesso!');
+        alert(getTranslation('conta_criada'));
     } catch (error) {
         console.error('Erro ao criar conta:', error);
-        alert('Erro ao criar conta: ' + error.message);
+        alert(getTranslation('erro_criar_conta') + ' ' + error.message);
     }
 }
 
@@ -520,7 +598,13 @@ async function loadAllPages() {
         });
         const urlMap = new Map();
         allPages = allPages.filter(p => { if (urlMap.has(p.url)) return false; urlMap.set(p.url, true); return true; });
-        document.getElementById('page-count').textContent = allPages.length;
+        
+        // Atualiza com tradução
+        const pageCount = document.getElementById('page-count');
+        if (pageCount) {
+            pageCount.textContent = getTranslation('info_paginas', { total: allPages.length });
+        }
+        
         return allPages;
     } catch (error) {
         console.error('Erro ao carregar páginas:', error);
@@ -566,7 +650,7 @@ function selectSuggestion(query) {
 }
 
 async function performSearch() {
-    if (isCaptchaActive) { alert("Complete o labirinto de verificação primeiro!"); return; }
+    if (isCaptchaActive) { alert(getTranslation('captcha_necessario')); return; }
     if (!checkAbuse()) return;
     const query = document.getElementById('search-input').value.trim();
     if (!query) { showAllPages(); return; }
@@ -574,20 +658,41 @@ async function performSearch() {
 }
 
 async function showAllPages() {
-    if (isCaptchaActive) { alert("Complete o labirinto de verificação primeiro!"); return; }
+    if (isCaptchaActive) { alert(getTranslation('captcha_necessario')); return; }
     if (!checkAbuse()) return;
     document.getElementById('search-input').value = '';
-    displayResults(allPages, 'Todos os resultados');
+    displayResults(allPages, getTranslation('resultados_todos', { total: allPages.length, s: allPages.length !== 1 ? 's' : '' }));
 }
 
 function displayResults(results, searchTerm) {
     const container = document.getElementById('results-container');
     const count = document.getElementById('results-count');
     const grid = document.getElementById('results-grid');
-    count.textContent = `📄 ${results.length} resultado${results.length !== 1 ? 's' : ''} para "${searchTerm || 'todos'}"`;
+    
+    // Usa tradução para o texto de contagem
+    const isAllResults = searchTerm.includes('todos') || searchTerm.includes('all') || searchTerm.includes('alle') || searchTerm.includes('tous');
+    
+    if (isAllResults || searchTerm === '') {
+        count.textContent = getTranslation('resultados_todos', { 
+            total: results.length, 
+            s: results.length !== 1 ? 's' : '' 
+        });
+    } else {
+        count.textContent = getTranslation('resultados_para', { 
+            total: results.length, 
+            s: results.length !== 1 ? 's' : '',
+            termo: searchTerm 
+        });
+    }
     
     if (results.length === 0) {
-        grid.innerHTML = `<div class="no-results"><i class="material-icons">search_off</i><h3>Nenhum resultado encontrado</h3><p>Tente buscar por outro termo ou verifique a ortografia.</p></div>`;
+        grid.innerHTML = `
+            <div class="no-results">
+                <i class="material-icons">search_off</i>
+                <h3>${getTranslation('nenhum_resultado')}</h3>
+                <p>${getTranslation('nenhum_resultado_texto')}</p>
+            </div>
+        `;
     } else {
         grid.innerHTML = results.map(p => `
             <div class="result-card" onclick="window.open('${p.url}', '_blank')">
@@ -655,7 +760,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateUI();
             closeLoginModal();
         } catch (error) {
-            alert('Erro ao fazer login: ' + error.message);
+            alert(getTranslation('erro_login') + ' ' + error.message);
         }
     });
     
@@ -679,6 +784,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==================== INICIALIZAÇÃO ====================
 async function init() {
     await loadAllPages();
+    
+    // Aplica traduções iniciais
+    applySearchTranslations();
+    updatePageInfo();
     
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -726,3 +835,8 @@ window.selectSuggestion = selectSuggestion;
 window.markAllAsRead = markAllAsRead;
 window.toggleNotifications = toggleNotifications;
 window.mazeMove = mazeMove;
+window.changeSearchLanguage = changeSearchLanguage;
+window.applySearchTranslations = applySearchTranslations;
+window.getTranslation = getTranslation;
+window.updatePageInfo = updatePageInfo;
+window.loadAllPages = loadAllPages;
