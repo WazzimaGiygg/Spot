@@ -60,28 +60,26 @@ class I18n {
     }
 
     async loadLocale(locale) {
-        try {
-            // Tentar carregar do arquivo JSON
-            const response = await fetch(`/forum/locales/${locale}.json`);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            this.translations = await response.json();
-            this.currentLocale = locale;
-            localStorage.setItem('maspia_locale', locale);
-            document.documentElement.lang = locale;
-            return true;
-        } catch (error) {
-            console.warn(`Erro ao carregar idioma ${locale}, usando fallback pt-BR:`, error);
-            // Fallback para pt-BR
-            if (locale !== 'pt-BR') {
-                return this.loadLocale('pt-BR');
-            }
-            // Fallback embutido
-            this.translations = this.getFallbackTranslations();
-            return false;
+    try {
+        // REMOVA o /forum/ do caminho
+        const response = await fetch(`/locales/${locale}.json`);
+        // OU use o caminho completo:
+        // const response = await fetch(`https://forum.wazzimagiygg.com/locales/${locale}.json`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
         }
+        this.translations = await response.json();
+        this.currentLocale = locale;
+        localStorage.setItem('maspia_locale', locale);
+        document.documentElement.lang = locale;
+        return true;
+    } catch (error) {
+        console.warn(`Erro ao carregar idioma ${locale}, usando fallback:`, error);
+        this.translations = this.fallbackTranslations;
+        return false;
     }
+}
 
     getFallbackTranslations() {
         return {
