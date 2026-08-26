@@ -1,448 +1,208 @@
 // ============================================
-// SISTEMA DE INTERCEPTAÇÃO DE LINKS EXTERNOS
+// LINK INTERCEPTOR - WAZZIMAGIYGG
+// ============================================
+// Este script intercepta links externos e os redireciona
+// através do sistema de verificação de segurança.
 // ============================================
 
-/**
- * LinkInterceptor - Sistema completo para interceptar links externos
- * e redirecionar para a página de verificação de segurança
- */
 const LinkInterceptor = {
-    // URL da sua página de redirecionamento
+    // URL de redirecionamento
     REDIRECT_PAGE: 'https://wazzimagiygg.com/rv/',
     
-    // Domínios internos (não são interceptados)
-    INTERNAL_DOMAINS: [
+    // Cookie para armazenar o UID do usuário
+    UID_COOKIE_NAME: 'wzzm_uid',
+    
+    // Chave para localStorage
+    UID_STORAGE_KEY: 'wzzm_user_uid',
+    
+    // Domínios permitidos (não são interceptados)
+    ALLOWED_DOMAINS: [
         'wazzimagiygg.com',
         'gspotfverwazzimagiygg.wazzimagiygg.com',
         'support.wazzimagiygg.com',
         'painel.wazzimagiygg.com',
-        'wzzm-ce3fc.firebaseapp.com',
         'localhost'
     ],
     
-    // Domínios confiáveis (redirecionamento direto, sem verificação)
-    TRUSTED_DOMAINS: [
-        'google.com',
-        'youtube.com',
-        'github.com',
-        'wikipedia.org',
-        'medium.com'
+    // URLs que não devem ser interceptadas (exceções)
+    EXCLUDED_PATHS: [
+        '/rv/',
+        '/LGPD',
+        '/MarcoCivil',
+        '/donate/',
+        '/produtos/',
+        '/desktop.html'
     ],
     
-    // Configurações
-    CONFIG: {
-        // Tempo de expiração do token (segundos)
-        TOKEN_EXPIRY: 300,
-        // Se deve mostrar aviso antes de redirecionar
-        SHOW_WARNING: true,
-        // Se deve redirecionar automaticamente
-        AUTO_REDIRECT: true,
-        // Tempo de espera antes do redirecionamento automático (ms)
-        REDIRECT_DELAY: 3000
-    },
-    
-    /**
-     * Inicializa o sistema
-     */
+    // Inicializa o interceptor
     init() {
-        console.log('🛡️ Inicializando LinkInterceptor...');
-        
-        // Verifica se a página atual é a de redirecionamento
-        if (this.isRedirectPage()) {
-            console.log('📋 Página de redirecionamento detectada. Aguardando processamento...');
-            return;
-        }
-        
-        // Intercepta cliques em links
-        this.interceptClicks();
-        
-        // Processa links existentes
+        console.log('🔗 LinkInterceptor inicializado');
         this.processExistingLinks();
-        
-        // Configura observer para conteúdo dinâmico
-        this.setupObserver();
-        
-        // Adiciona estilos para indicar links externos
-        this.addStyles();
-        
-        console.log('✅ LinkInterceptor ativo!');
+        this.setupClickListeners();
+        this.setupMutationObserver();
     },
     
-    /**
-     * Verifica se está na página de redirecionamento
-     */
-    isRedirectPage() {
-        const path = window.location.pathname;
-        return path.includes('/rv/') || path.includes('/redirect');
-    },
-    
-    /**
-     * Intercepta cliques em links
-     */
-    interceptClicks() {
-        document.addEventListener('click', (event) => {
-            const link = event.target.closest('a[href]');
-            if (!link) return;
-            
-            const href = link.getAttribute('href');
-            if (!href || this.shouldIgnoreLink(href)) return;
-            
-            // Verifica se é um link externo
-            if (this.isExternalLink(href)) {
-                event.preventDefault();
-                event.stopPropagation();
-                
-                // Obtém o UID do usuário
-                const uid = this.getUserUID();
-                
-                // Constrói a URL de redirecionamento
-                const redirectUrl = this.buildRedirectUrl(href, uid);
-                
-                // Verifica se deve abrir em nova aba
-                const shouldOpenNewTab = link.target === '_blank' || 
-                                        link.getAttribute('rel') === 'noopener noreferrer';
-                
-                // Verifica se o destino é confiável
-                if (this.isTrustedDomain(href)) {
-                    // Para domínios confiáveis, redireciona diretamente
-                    if (shouldOpenNewTab) {
-                        window.open(href, '_blank');
-                    } else {
-                        window.location.href = href;
-                    }
-                    return;
-                }
-                
-                // Mostra aviso (opcional)
-                if (this.CONFIG.SHOW_WARNING) {
-                    this.showRedirectWarning(href, () => {
-                        this.executeRedirect(redirectUrl, shouldOpenNewTab);
-                    });
-                } else {
-                    this.executeRedirect(redirectUrl, shouldOpenNewTab);
-                }
-            }
-        }, true);
-    },
-    
-    /**
-     * Executa o redirecionamento
-     */
-    executeRedirect(url, openNewTab) {
-        if (openNewTab) {
-            window.open(url, '_blank');
-        } else {
-            window.location.href = url;
-        }
-    },
-    
-    /**
-     * Verifica se o link deve ser ignorado
-     */
-    shouldIgnoreLink(href) {
-        // Ignora links javascript
-        if (href.startsWith('javascript:')) return true;
-        
-        // Ignora links de âncora
-        if (href.startsWith('#')) return true;
-        
-        // Ignora links vazios
-        if (!href || href.trim() === '') return true;
-        
-        // Ignora links que já são da página de redirecionamento
-        if (href.includes('/rv/') || href.includes('/redirect')) return true;
-        
-        // Ignora links com atributo data-no-intercept
-        const link = document.querySelector(`a[href="${href}"]`);
-        if (link && link.dataset.noIntercept === 'true') return true;
-        
-        return false;
-    },
-    
-    /**
-     * Verifica se é um link externo
-     */
-    isExternalLink(href) {
-        try {
-            const url = new URL(href, window.location.origin);
-            const hostname = url.hostname.toLowerCase();
-            
-            // Verifica se é domínio interno
-            const isInternal = this.INTERNAL_DOMAINS.some(domain => {
-                return hostname === domain || hostname.endsWith('.' + domain);
-            });
-            
-            return !isInternal;
-        } catch {
-            // URL inválida, considera interno
-            return false;
-        }
-    },
-    
-    /**
-     * Verifica se o domínio é confiável
-     */
-    isTrustedDomain(href) {
-        try {
-            const url = new URL(href, window.location.origin);
-            const hostname = url.hostname.toLowerCase();
-            
-            return this.TRUSTED_DOMAINS.some(domain => {
-                return hostname === domain || hostname.endsWith('.' + domain);
-            });
-        } catch {
-            return false;
-        }
-    },
-    
-    /**
-     * Obtém o UID do usuário atual
-     */
+    // Obtém o UID do usuário atual
     getUserUID() {
-        // Tenta obter do Firebase
+        // Tenta obter do cookie
+        const cookieValue = this.getCookie(this.UID_COOKIE_NAME);
+        if (cookieValue) return cookieValue;
+        
+        // Tenta obter do localStorage
+        const storageValue = localStorage.getItem(this.UID_STORAGE_KEY);
+        if (storageValue) return storageValue;
+        
+        // Tenta obter do Firebase Auth
         if (typeof firebase !== 'undefined' && firebase.auth) {
             const user = firebase.auth().currentUser;
             if (user && user.uid) {
+                this.setUserUID(user.uid);
                 return user.uid;
             }
         }
         
-        // Tenta obter do cookie
-        const cookieUid = this.getCookie('wzzm_uid');
-        if (cookieUid) return cookieUid;
-        
-        // Tenta obter do localStorage
-        const localUid = localStorage.getItem('wzzm_user_uid');
-        if (localUid) return localUid;
-        
-        // Gera um ID de visitante
-        return this.getVisitorId();
+        // Gera um ID temporário
+        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        this.setUserUID(tempId);
+        return tempId;
     },
     
-    /**
-     * Obtém ou gera um ID de visitante
-     */
-    getVisitorId() {
-        let visitorId = localStorage.getItem('wzzm_visitor_id');
-        if (!visitorId) {
-            visitorId = 'visitor_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('wzzm_visitor_id', visitorId);
-            this.setCookie('wzzm_visitor_id', visitorId, 365);
-        }
-        return visitorId;
+    // Define o UID do usuário
+    setUserUID(uid) {
+        // Salva no cookie
+        this.setCookie(this.UID_COOKIE_NAME, uid, 7);
+        // Salva no localStorage
+        localStorage.setItem(this.UID_STORAGE_KEY, uid);
     },
     
-    /**
-     * Constrói a URL de redirecionamento para sua página
-     */
-    buildRedirectUrl(destination, uid) {
-        // Codifica o destino
-        const encodedDest = encodeURIComponent(destination);
-        
-        // Cria um token de segurança
-        const timestamp = Date.now();
-        const signature = this.generateSignature(destination, uid, timestamp);
-        
-        // Constrói a URL usando o formato da sua página
-        // Sua página espera: ?uid=URL ou ?url=URL
-        let url = this.REDIRECT_PAGE;
-        url += `?uid=${encodedDest}`;
-        url += `&url=${encodedDest}`;
-        url += `&ts=${timestamp}`;
-        url += `&sig=${encodeURIComponent(signature)}`;
-        url += `&ref=${encodeURIComponent(window.location.href)}`;
-        
-        return url;
+    // Constrói URL de redirecionamento
+    buildRedirectUrl(originalUrl, uid) {
+        const redirectUrl = new URL(this.REDIRECT_PAGE);
+        redirectUrl.searchParams.set('url', originalUrl);
+        redirectUrl.searchParams.set('uid', uid || this.getUserUID());
+        redirectUrl.searchParams.set('ref', window.location.href);
+        return redirectUrl.toString();
     },
     
-    /**
-     * Gera assinatura de segurança
-     */
-    generateSignature(destination, uid, timestamp) {
-        const secret = 'wazzima_secret_key_2024_secure';
-        const data = `${destination}|${uid}|${timestamp}|${secret}`;
+    // Verifica se um link deve ser interceptado
+    shouldInterceptLink(href) {
+        if (!href) return false;
+        if (href.startsWith('#') || href.startsWith('javascript:')) return false;
+        if (href.startsWith('mailto:') || href.startsWith('tel:')) return false;
         
-        // Hash simples para compatibilidade
-        let hash = 0;
-        for (let i = 0; i < data.length; i++) {
-            const char = data.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return Math.abs(hash).toString(16);
-    },
-    
-    /**
-     * Mostra aviso de redirecionamento
-     */
-    showRedirectWarning(destination, callback) {
-        // Verifica se o usuário já confirmou redirecionamentos recentemente
-        const lastRedirect = localStorage.getItem('wzzm_last_redirect_warning');
-        if (lastRedirect && (Date.now() - parseInt(lastRedirect)) < 3600000) {
-            callback();
-            return;
-        }
-        
-        // Cria o aviso
-        const overlay = document.createElement('div');
-        overlay.id = 'redirectWarningOverlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 99999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            animation: fadeIn 0.3s ease;
-        `;
-        
-        const box = document.createElement('div');
-        box.style.cssText = `
-            background: white;
-            border-radius: 16px;
-            padding: 30px 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            animation: slideUp 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        `;
-        
-        // Obtém o nome do domínio para exibição
-        let domain = destination;
         try {
-            const url = new URL(destination);
-            domain = url.hostname;
-        } catch {}
-        
-        box.innerHTML = `
-            <div style="font-size: 48px; margin-bottom: 15px;">🔗</div>
-            <h2 style="color: #1f2937; margin-bottom: 10px;">Você está saindo do WazzimaGiygg</h2>
-            <p style="color: #6b7280; font-size: 14px; margin-bottom: 15px;">
-                Você está sendo redirecionado para um site externo:
-            </p>
-            <div style="background: #f3f4f6; padding: 12px; border-radius: 8px; margin-bottom: 20px; word-break: break-all; font-size: 13px; color: #1f2937; font-family: monospace;">
-                ${domain}
-            </div>
-            <p style="color: #9ca3af; font-size: 12px; margin-bottom: 20px;">
-                ⚠️ O WazzimaGiygg não se responsabiliza pelo conteúdo de sites externos.
-            </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="confirmRedirectBtn" style="
-                    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-                    color: white;
-                    border: none;
-                    padding: 12px 30px;
-                    border-radius: 10px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    font-size: 14px;
-                    transition: all 0.3s;
-                ">Continuar</button>
-                <button id="cancelRedirectBtn" style="
-                    background: #e5e7eb;
-                    color: #374151;
-                    border: none;
-                    padding: 12px 30px;
-                    border-radius: 10px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    font-size: 14px;
-                    transition: all 0.3s;
-                ">Cancelar</button>
-            </div>
-        `;
-        
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-        
-        // Adiciona estilos de animação se não existirem
-        if (!document.getElementById('redirectWarningStyles')) {
-            const styles = document.createElement('style');
-            styles.id = 'redirectWarningStyles';
-            styles.textContent = `
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(30px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(styles);
+            const url = new URL(href, window.location.origin);
+            
+            // Verifica se é um domínio permitido
+            const isAllowed = this.ALLOWED_DOMAINS.some(domain => 
+                url.hostname === domain || url.hostname.endsWith('.' + domain)
+            );
+            
+            if (isAllowed) return false;
+            
+            // Verifica se é uma exceção
+            const isExcluded = this.EXCLUDED_PATHS.some(path => 
+                url.pathname.startsWith(path)
+            );
+            
+            if (isExcluded) return false;
+            
+            // Verifica se é HTTP/HTTPS
+            if (!['http:', 'https:'].includes(url.protocol)) return false;
+            
+            return true;
+        } catch {
+            // URL inválida, não intercepta
+            return false;
         }
-        
-        // Event listeners
-        const confirmBtn = document.getElementById('confirmRedirectBtn');
-        const cancelBtn = document.getElementById('cancelRedirectBtn');
-        
-        const cleanup = () => {
-            if (overlay.parentNode) overlay.remove();
-        };
-        
-        confirmBtn.addEventListener('click', () => {
-            localStorage.setItem('wzzm_last_redirect_warning', Date.now().toString());
-            cleanup();
-            callback();
-        });
-        
-        cancelBtn.addEventListener('click', cleanup);
-        
-        // Fecha ao clicar fora
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) cleanup();
-        });
     },
     
-    /**
-     * Processa links existentes na página
-     */
-    processExistingLinks() {
-        const links = document.querySelectorAll('a[href]');
+    // Processa links existentes na página
+    processExistingLinks(container = document) {
+        const links = container.querySelectorAll('a[href]');
+        let processed = 0;
+        
         links.forEach(link => {
             const href = link.getAttribute('href');
-            if (href && this.isExternalLink(href)) {
-                // Marca links externos
-                link.setAttribute('data-external', 'true');
-                link.setAttribute('rel', 'noopener noreferrer');
-                
-                // Adiciona indicador visual
-                if (!link.querySelector('.external-icon')) {
-                    const icon = document.createElement('span');
-                    icon.className = 'external-icon';
-                    icon.textContent = ' ↗';
-                    icon.style.cssText = 'font-size: 0.8em; color: #888;';
-                    link.appendChild(icon);
-                }
+            if (!href) return;
+            
+            // Ignora links que já foram processados
+            if (link.dataset.intercepted === 'true') return;
+            
+            // Verifica se deve interceptar
+            if (this.shouldInterceptLink(href)) {
+                // Substitui o href pelo link seguro
+                const uid = this.getUserUID();
+                const secureUrl = this.buildRedirectUrl(href, uid);
+                link.setAttribute('href', secureUrl);
+                link.dataset.intercepted = 'true';
+                link.dataset.originalUrl = href;
+                processed++;
+            } else {
+                link.dataset.intercepted = 'false';
             }
         });
+        
+        if (processed > 0) {
+            console.log(`🔗 ${processed} links foram interceptados com segurança`);
+        }
+        
+        return processed;
     },
     
-    /**
-     * Configura observer para conteúdo dinâmico
-     */
-    setupObserver() {
-        const observer = new MutationObserver((mutations) => {
-            let needsProcessing = false;
+    // Configura listeners de clique para interceptar links dinâmicos
+    setupClickListeners() {
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
             
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === 1) {
-                        if (node.tagName === 'A' || node.querySelectorAll) {
-                            needsProcessing = true;
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            // Se já foi processado, não faz nada
+            if (link.dataset.intercepted === 'true') return;
+            
+            // Verifica se deve interceptar
+            if (this.shouldInterceptLink(href)) {
+                e.preventDefault();
+                const uid = this.getUserUID();
+                const secureUrl = this.buildRedirectUrl(href, uid);
+                
+                // Verifica se deve abrir em nova aba
+                if (link.target === '_blank' || e.ctrlKey || e.metaKey) {
+                    window.open(secureUrl, '_blank');
+                } else {
+                    window.location.href = secureUrl;
+                }
+            }
+        }, true); // Usa captura para interceptar antes de outros listeners
+    },
+    
+    // Observa mudanças no DOM para processar novos links
+    setupMutationObserver() {
+        if (typeof MutationObserver === 'undefined') return;
+        
+        const observer = new MutationObserver((mutations) => {
+            let hasNewLinks = false;
+            
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        // Verifica se o nó ou seus descendentes contêm links
+                        if (node.tagName === 'A' && node.hasAttribute('href')) {
+                            hasNewLinks = true;
+                        } else if (node.querySelectorAll) {
+                            const links = node.querySelectorAll('a[href]');
+                            if (links.length > 0) hasNewLinks = true;
                         }
                     }
                 });
             });
             
-            if (needsProcessing) {
-                setTimeout(() => this.processExistingLinks(), 100);
+            if (hasNewLinks) {
+                setTimeout(() => {
+                    this.processExistingLinks(document);
+                }, 100);
             }
         });
         
@@ -452,160 +212,127 @@ const LinkInterceptor = {
         });
     },
     
-    /**
-     * Adiciona estilos CSS
-     */
-    addStyles() {
-        if (document.getElementById('linkInterceptorStyles')) return;
-        
-        const styles = document.createElement('style');
-        styles.id = 'linkInterceptorStyles';
-        styles.textContent = `
-            /* Indicador visual para links externos */
-            a[data-external="true"] .external-icon {
-                opacity: 0.5;
-                transition: opacity 0.2s;
-            }
-            a[data-external="true"]:hover .external-icon {
-                opacity: 1;
-            }
-            
-            /* Tooltip para links externos */
-            a[data-external="true"] {
-                position: relative;
-            }
-            a[data-external="true"]:hover::after {
-                content: "🔗 Site externo";
-                position: absolute;
-                bottom: calc(100% + 8px);
-                left: 50%;
-                transform: translateX(-50%);
-                background: #1f2937;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 6px;
-                font-size: 11px;
-                white-space: nowrap;
-                font-weight: 400;
-                opacity: 0.9;
-                pointer-events: none;
-                z-index: 100;
-            }
-            
-            /* Responsivo */
-            @media (max-width: 600px) {
-                #redirectWarningOverlay div {
-                    padding: 20px !important;
-                }
-                #redirectWarningOverlay h2 {
-                    font-size: 18px !important;
-                }
-                #redirectWarningOverlay button {
-                    padding: 10px 20px !important;
-                    font-size: 13px !important;
-                    flex: 1;
-                }
-            }
-        `;
-        document.head.appendChild(styles);
-    },
-    
-    /**
-     * Utilitários de cookie
-     */
+    // Funções auxiliares para cookies
     getCookie(name) {
         const value = `; ${document.cookie}`;
         const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
+        if (parts.length === 2) {
+            return parts.pop().split(';').shift();
+        }
         return null;
     },
     
-    setCookie(name, value, days) {
-        let expires = '';
-        if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = `; expires=${date.toUTCString()}`;
+    setCookie(name, value, days = 7) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = `${name}=${value}; expires=${date.toUTCString()}; path=/; samesite=lax`;
+    },
+    
+    // Remove um cookie
+    deleteCookie(name) {
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    },
+    
+    // Força a atualização de todos os links na página
+    refreshLinks() {
+        // Limpa os dados de interceptação
+        document.querySelectorAll('a[data-intercepted="true"]').forEach(link => {
+            const originalUrl = link.dataset.originalUrl;
+            if (originalUrl) {
+                link.setAttribute('href', originalUrl);
+            }
+            delete link.dataset.intercepted;
+            delete link.dataset.originalUrl;
+        });
+        
+        // Reprocessa
+        return this.processExistingLinks();
+    },
+    
+    // Adiciona um domínio à lista de permitidos
+    addAllowedDomain(domain) {
+        if (domain && !this.ALLOWED_DOMAINS.includes(domain)) {
+            this.ALLOWED_DOMAINS.push(domain);
+            console.log(`✅ Domínio "${domain}" adicionado à lista de permitidos`);
         }
-        document.cookie = `${name}=${value}${expires}; path=/; samesite=lax`;
+    },
+    
+    // Adiciona um caminho à lista de exclusões
+    addExcludedPath(path) {
+        if (path && !this.EXCLUDED_PATHS.includes(path)) {
+            this.EXCLUDED_PATHS.push(path);
+            console.log(`✅ Caminho "${path}" adicionado à lista de exclusões`);
+        }
+    },
+    
+    // Verifica se um link é externo (apenas para debug)
+    isExternalLink(href) {
+        try {
+            const url = new URL(href, window.location.origin);
+            return !this.ALLOWED_DOMAINS.some(domain => 
+                url.hostname === domain || url.hostname.endsWith('.' + domain)
+            );
+        } catch {
+            return false;
+        }
+    },
+    
+    // Gera relatório de links na página (debug)
+    generateLinkReport() {
+        const links = document.querySelectorAll('a[href]');
+        const report = {
+            total: links.length,
+            intercepted: 0,
+            external: 0,
+            internal: 0,
+            details: []
+        };
+        
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            const isIntercepted = link.dataset.intercepted === 'true';
+            const isExternal = this.isExternalLink(href);
+            
+            if (isIntercepted) report.intercepted++;
+            if (isExternal) report.external++;
+            else report.internal++;
+            
+            report.details.push({
+                href: href,
+                isIntercepted: isIntercepted,
+                isExternal: isExternal,
+                text: link.textContent.trim() || '[link]'
+            });
+        });
+        
+        console.log('📊 Relatório de Links:', report);
+        return report;
     }
 };
 
-// ============================================
-// FUNÇÃO PARA CRIAR LINKS SEGUROS MANUALMENTE
-// ============================================
-
-/**
- * Cria um link de redirecionamento seguro
- * @param {string} url - URL de destino
- * @param {string} text - Texto do link
- * @param {object} options - Opções adicionais
- * @returns {HTMLAnchorElement} Elemento link
- */
-function createSecureLink(url, text, options = {}) {
-    const link = document.createElement('a');
-    link.href = LinkInterceptor.buildRedirectUrl(url, LinkInterceptor.getUserUID());
-    link.textContent = text || url;
-    link.target = options.target || '_blank';
-    link.rel = 'noopener noreferrer';
-    
-    if (options.className) {
-        link.className = options.className;
-    }
-    
-    if (options.icon) {
-        const icon = document.createElement('span');
-        icon.textContent = options.icon + ' ';
-        link.prepend(icon);
-    }
-    
-    return link;
-}
-
-/**
- * Converte um link normal para link seguro
- * @param {HTMLAnchorElement} link - Elemento link
- */
-function secureLink(link) {
-    const href = link.getAttribute('href');
-    if (href && LinkInterceptor.isExternalLink(href)) {
-        const uid = LinkInterceptor.getUserUID();
-        const secureUrl = LinkInterceptor.buildRedirectUrl(href, uid);
-        link.setAttribute('data-original-href', href);
-        link.href = secureUrl;
-        link.setAttribute('data-secure', 'true');
-    }
-}
-
-// ============================================
-// INICIALIZAÇÃO AUTOMÁTICA
-// ============================================
-
-// Inicializa quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', function() {
-    // Aguarda o Firebase carregar
+// Inicializa automaticamente quando o DOM estiver pronto
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(() => {
         LinkInterceptor.init();
     }, 500);
-});
-
-// Também inicializa quando o Firebase estiver pronto
-if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user && user.uid) {
-            document.cookie = `wzzm_uid=${user.uid}; path=/; max-age=86400; samesite=lax`;
-            localStorage.setItem('wzzm_user_uid', user.uid);
-        }
+} else {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(() => {
+            LinkInterceptor.init();
+        }, 500);
     });
 }
 
-// ============================================
-// EXPORTA FUNÇÕES GLOBAIS
-// ============================================
+// Escuta mudanças de idioma para reprocessar links
+document.addEventListener('languageChanged', function() {
+    setTimeout(() => {
+        LinkInterceptor.refreshLinks();
+    }, 300);
+});
 
+// Exporta para uso global
 window.LinkInterceptor = LinkInterceptor;
-window.createSecureLink = createSecureLink;
-window.secureLink = secureLink;
 
-console.log('🔗 LinkInterceptor carregado!');
-console.log('📋 Página de redirecionamento:', LinkInterceptor.REDIRECT_PAGE);
+console.log('🔗 LinkInterceptor carregado e pronto para uso');
