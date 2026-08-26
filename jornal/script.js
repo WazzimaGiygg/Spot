@@ -1006,7 +1006,7 @@ window.openArticleById = async function(articleId) {
 };
 
 // ============================================
-// CARREGAR MATÉRIA POR ID
+// CARREGAR MATÉRIA POR ID - CORRIGIDA
 // ============================================
 async function loadArticleById(articleId) {
     const grid = document.getElementById('newspaperGrid');
@@ -1014,17 +1014,25 @@ async function loadArticleById(articleId) {
     
     try {
         let article = null;
+        const userLang = typeof LanguageManager !== 'undefined' 
+            ? LanguageManager.currentLang 
+            : 'pt';
         
         // Tenta usar o sistema multi-idioma
         if (typeof multiLangArticles !== 'undefined' && multiLangArticles) {
-            article = await multiLangArticles.getArticleInLanguage(articleId);
+            console.log(`🔍 Buscando artigo ${articleId} no idioma: ${userLang}`);
+            article = await multiLangArticles.getArticleById(articleId, userLang);
         }
         
-        // Fallback: busca direto
+        // Fallback: busca direto se o multi-idioma falhou
         if (!article) {
+            console.log(`📄 Fallback: buscando artigo ${articleId} diretamente`);
             const doc = await db.collection('articlesdoc').doc(articleId).get();
             if (doc.exists) {
                 article = { id: doc.id, ...doc.data() };
+                // Marca como fallback
+                article._isFallback = true;
+                article._currentLanguage = article.language || 'pt';
             }
         }
         
@@ -1033,28 +1041,45 @@ async function loadArticleById(articleId) {
             return;
         }
         
+        // GARANTE que o conteúdo existe
+        if (!article.conteudo && !article.resumo) {
+            console.warn(`⚠️ Artigo ${articleId} não tem conteúdo nem resumo`);
+            article.conteudo = '<p>Conteúdo não disponível para este artigo.</p>';
+            article.resumo = 'Conteúdo não disponível.';
+        }
+        
+        // GARANTE que o título existe
+        if (!article.titulo) {
+            article.titulo = 'Artigo sem título';
+        }
+        
         currentViewArticleId = articleId;
         currentViewArticleData = article;
         
+        // Incrementa visualizações (apenas se não for admin)
         if (!currentUserIsAdmin) {
             try {
                 const novasViews = (article.visualizacoes || 0) + 1;
                 await db.collection('articlesdoc').doc(articleId).update({ visualizacoes: novasViews });
             } catch (e) {
-                console.log("Não foi possível incrementar visualizações:", e);
+                console.log("⚠️ Não foi possível incrementar visualizações:", e);
             }
         }
         
         renderSingleArticle(article);
     } catch (error) {
+        console.error('❌ Erro ao carregar artigo:', error);
         grid.innerHTML = `<div class="loading"><p>${getTranslation('erro_carregar')} ${error.message}</p></div>`;
     }
 }
 
 // ============================================
-// RENDER SINGLE ARTICLE - COM INFO DE IDIOMA
+// RENDER SINGLE ARTICLE - CORRIGIDA
 // ============================================
 function renderSingleArticle(article) {
+    // GARANTE que temos conteúdo
+    const content = article.conteudo || article.resumo || '<p>Conteúdo não disponível.</p>';
+    const title = article.titulo || 'Artigo sem título';
     const date = article.dataPublicacao?.toDate?.() ? article.dataPublicacao.toDate().toLocaleDateString('pt-BR') : 'Data desconhecida';
     const categoryIcon = getCategoryIcon(article.categoria);
     const autor = article.autorNome || getTranslation('redacao');
