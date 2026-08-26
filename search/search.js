@@ -844,6 +844,113 @@
         }
     });
 
+    // ============================================
+// EXPORTA TRADUÇÕES PARA USO EXTERNO
+// ============================================
+window.searchTranslations = {
+    pt: {
+        'placeholder_busca': 'Pesquise produtos, serviços, páginas...',
+        'botao_buscar': 'Buscar',
+        'botao_ver_todas': 'Ver todas as páginas',
+        'modo_convidado': 'Modo Convidado - Busca liberada',
+        'modo_usuario': 'Olá, {nome}',
+        'visitante': 'Visitante',
+        'entrar': 'Entrar',
+        'sair': 'Sair',
+        'search_titulo': 'WazzimaGiygg Search - Busca Inteligente',
+        'search_copyright': '© 2026 WazzimaGiygg Search - Busca inteligente e livre',
+        'maze_status': '⭐ Leve o personagem até a bandeira 🏁',
+        'warning_muitas_tentativas': 'Muitas tentativas de acesso! Complete o labirinto para continuar.',
+        'notificacoes': '🔔 Notificações',
+        'marcar_todas_lidas': 'Marcar todas como lidas',
+        'nenhuma_notificacao': 'Nenhuma notificação',
+        'conta_banida': '⚠️ Conta Banida',
+        'conta_banida_texto': 'Sua conta foi banida permanentemente do sistema.',
+        'motivo': 'Motivo:',
+        'erro_banimento': 'Se você acredita que isso é um erro, entre em contato com o suporte.',
+        'sair_conta': '🚪 Sair da conta',
+        'entrar_conta': 'Entrar na sua conta',
+        'continuar_google': 'Continuar com Google',
+        'ou': 'ou',
+        'email': 'E-mail',
+        'senha': 'Senha',
+        'entrar_email': 'Entrar com e-mail',
+        'criar_conta': 'Criar nova conta',
+        'verificacao_seguranca': '🔐 Verificação de Segurança',
+        'verificacao_texto': 'Para continuar usando a busca, complete o labirinto abaixo.',
+        'doacao': '💝 Doação',
+        'desktop': '🖥️ Desktop',
+        'lgpd': '🔒 LGPD',
+        'marco_civil': '📜 Marco Civil',
+        'ticket': '🎫 Ticket',
+        'produtos': '🛍️ Produtos',
+        'sua_conta': '👤 Sua conta',
+        'search_copyright': '© 2026 WazzimaGiygg Search - Busca inteligente e livre',
+        'info_paginas': 'Mais de {total} páginas disponíveis para busca',
+        'resultados_para': '📄 {total} resultado{s} para "{termo}"',
+        'resultados_todos': '📄 {total} resultado{s} para "todos"',
+        'nenhum_resultado': 'Nenhum resultado encontrado',
+        'nenhum_resultado_texto': 'Tente buscar por outro termo ou verifique a ortografia.',
+        'fechar_resultados': 'Fechar resultados',
+        'aguarde_carregando': 'Carregando WazzimaGiygg Search...'
+    },
+    en: {
+        'placeholder_busca': 'Search for products, services, pages...',
+        'botao_buscar': 'Search',
+        'botao_ver_todas': 'View all pages',
+        'modo_convidado': 'Guest Mode - Search enabled',
+        'modo_usuario': 'Hello, {nome}',
+        'visitante': 'Guest',
+        'entrar': 'Sign In',
+        'sair': 'Sign Out',
+        'search_titulo': 'WazzimaGiygg Search - Smart Search',
+        'search_copyright': '© 2026 WazzimaGiygg Search - Smart and free search',
+        'maze_status': '⭐ Take the character to the flag 🏁',
+        'warning_muitas_tentativas': 'Too many attempts! Complete the maze to continue.',
+        'notificacoes': '🔔 Notifications',
+        'marcar_todas_lidas': 'Mark all as read',
+        'nenhuma_notificacao': 'No notifications',
+        'conta_banida': '⚠️ Banned Account',
+        'conta_banida_texto': 'Your account has been permanently banned from the system.',
+        'motivo': 'Reason:',
+        'erro_banimento': 'If you believe this is an error, please contact support.',
+        'sair_conta': '🚪 Sign out',
+        'entrar_conta': 'Sign in to your account',
+        'continuar_google': 'Continue with Google',
+        'ou': 'or',
+        'email': 'Email',
+        'senha': 'Password',
+        'entrar_email': 'Sign in with email',
+        'criar_conta': 'Create new account',
+        'verificacao_seguranca': '🔐 Security Verification',
+        'verificacao_texto': 'To continue using the search, complete the maze below.',
+        'doacao': '💝 Donation',
+        'desktop': '🖥️ Desktop',
+        'lgpd': '🔒 Privacy',
+        'marco_civil': '📜 Civil Rights',
+        'ticket': '🎫 Support',
+        'produtos': '🛍️ Products',
+        'sua_conta': '👤 Your Account',
+        'info_paginas': '{total} pages available for search',
+        'resultados_para': '📄 {total} result{s} for "{termo}"',
+        'resultados_todos': '📄 {total} result{s} for "all"',
+        'nenhum_resultado': 'No results found',
+        'nenhum_resultado_texto': 'Try searching for another term or check the spelling.',
+        'fechar_resultados': 'Close results',
+        'aguarde_carregando': 'Loading WazzimaGiygg Search...'
+    }
+};
+
+// Copia para _searchTranslations também
+if (!window._searchTranslations) {
+    window._searchTranslations = {};
+}
+Object.keys(window.searchTranslations).forEach(lang => {
+    window._searchTranslations[lang] = window.searchTranslations[lang];
+});
+
+console.log('✅ Traduções exportadas globalmente');
+
     // ==================== EXPOSIÇÃO GLOBAL ====================
     window.logout = logout;
     window.logoutBanned = logoutBanned;
