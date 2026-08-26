@@ -1636,7 +1636,7 @@ function loadLinkInterceptor() {
     }
     
     const script = document.createElement('script');
-    script.src = 'https://wazzimagiygg.com/jornal/link-interceptor.js';
+    script.src = 'https://gspotfverwazzimagiygg.wazzimagiygg.com/jornal/link-interceptor.js';
     script.onload = function() {
         console.log('✅ LinkInterceptor carregado com sucesso');
         if (typeof LinkInterceptor !== 'undefined') {
