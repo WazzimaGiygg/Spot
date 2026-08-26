@@ -1,19 +1,42 @@
 // ============================================
-// CONFIGURAÇÃO DO FIREBASE
+// CONFIGURAÇÃO DO FIREBASE - CORRIGIDA
 // ============================================
-const firebaseConfig = {
-    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
-    authDomain: "wzzm-ce3fc.firebaseapp.com",
-    projectId: "wzzm-ce3fc",
-    storageBucket: "wzzm-ce3fc.appspot.com",
-    messagingSenderId: "249427877153",
-    appId: "1:249427877153:web:0e4297294794a5aadeb260"
-};
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-const googleProvider = new firebase.auth.GoogleAuthProvider();
+if (typeof firebaseConfig === 'undefined') {
+    var firebaseConfig = {
+        apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+        authDomain: "wzzm-ce3fc.firebaseapp.com",
+        projectId: "wzzm-ce3fc",
+        storageBucket: "wzzm-ce3fc.appspot.com",
+        messagingSenderId: "249427877153",
+        appId: "1:249427877153:web:0e4297294794a5aadeb260"
+    };
+}
+
+if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) {
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase inicializado pelo script.js');
+        } catch (error) {
+            console.error('❌ Erro ao inicializar Firebase:', error);
+        }
+    } else {
+        console.log('✅ Firebase já estava inicializado');
+    }
+} else {
+    console.error('❌ Firebase não está disponível! Verifique os SDKs.');
+}
+
+let db, auth, googleProvider;
+try {
+    db = firebase.firestore();
+    auth = firebase.auth();
+    googleProvider = new firebase.auth.GoogleAuthProvider();
+    console.log('✅ Firestore e Auth disponíveis');
+} catch (error) {
+    console.error('❌ Erro ao obter instâncias do Firebase:', error);
+}
 
 // ============================================
 // VARIÁVEIS GLOBAIS
@@ -32,6 +55,8 @@ let notificationListener = null;
 let languageManagerInitialized = false;
 
 const SPECIFIC_ADMIN_UID = "sZxfMuOBPbXdR8nttVPXIN8QOOl1";
+
+
 
 // ============================================
 // INICIALIZAÇÃO DO LANGUAGE MANAGER
@@ -823,14 +848,13 @@ async function updateWeatherContent(widget) {
 }
 
 // ============================================
-// LOAD ARTICLES - COM BUSCA POR IDIOMA
+// LOAD ARTICLES - CORRIGIDA (sem duplicação)
 // ============================================
 async function loadArticles() {
     const grid = document.getElementById('newspaperGrid');
     grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${getTranslation('carregando_noticias')}</p></div>`;
     
     try {
-        // Obtém o idioma atual do usuário
         const userLang = typeof LanguageManager !== 'undefined' 
             ? LanguageManager.currentLang 
             : 'pt';
@@ -840,23 +864,12 @@ async function loadArticles() {
         
         let articles = [];
         
-        // Usa o sistema multi-idioma para buscar artigos no idioma do usuário
         if (typeof multiLangArticles !== 'undefined' && multiLangArticles) {
             console.log('✅ Usando MultiLanguageArticles para buscar');
-            
-            // Busca artigos no idioma do usuário
             articles = await multiLangArticles.searchArticles(userLang, currentCategory);
-            console.log(`📊 Encontrados ${articles.length} artigos em "${userLang}"`);
-            
-            // Se não encontrou artigos no idioma do usuário, busca em português como fallback
-            if (articles.length === 0 && userLang !== 'pt') {
-                console.log(`📭 Nenhum artigo encontrado em "${userLang}", buscando em português...`);
-                articles = await multiLangArticles.searchArticles('pt', currentCategory);
-                console.log(`📊 Encontrados ${articles.length} artigos em português (fallback)`);
-            }
+            console.log(`📊 Encontrados ${articles.length} artigos`);
         } else {
             console.warn('⚠️ MultiLanguageArticles não disponível, usando fallback');
-            // Fallback: busca normal
             let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
             if (currentCategory !== 'todos') {
                 query = query.where('categoria', '==', currentCategory);
@@ -874,7 +887,6 @@ async function loadArticles() {
             return;
         }
         
-        // Organiza e renderiza os artigos
         renderArticlesByLanguage(articles);
         
     } catch (error) {
