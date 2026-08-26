@@ -830,23 +830,32 @@ async function loadArticles() {
     grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${getTranslation('carregando_noticias')}</p></div>`;
     
     try {
+        // Obtém o idioma atual do usuário
         const userLang = typeof LanguageManager !== 'undefined' 
             ? LanguageManager.currentLang 
             : 'pt';
+        
+        console.log(`🔍 Buscando artigos no idioma: "${userLang}"`);
+        console.log(`📂 Categoria: "${currentCategory}"`);
         
         let articles = [];
         
         // Usa o sistema multi-idioma para buscar artigos no idioma do usuário
         if (typeof multiLangArticles !== 'undefined' && multiLangArticles) {
+            console.log('✅ Usando MultiLanguageArticles para buscar');
+            
             // Busca artigos no idioma do usuário
             articles = await multiLangArticles.searchArticles(userLang, currentCategory);
+            console.log(`📊 Encontrados ${articles.length} artigos em "${userLang}"`);
             
             // Se não encontrou artigos no idioma do usuário, busca em português como fallback
             if (articles.length === 0 && userLang !== 'pt') {
                 console.log(`📭 Nenhum artigo encontrado em "${userLang}", buscando em português...`);
                 articles = await multiLangArticles.searchArticles('pt', currentCategory);
+                console.log(`📊 Encontrados ${articles.length} artigos em português (fallback)`);
             }
         } else {
+            console.warn('⚠️ MultiLanguageArticles não disponível, usando fallback');
             // Fallback: busca normal
             let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
             if (currentCategory !== 'todos') {
@@ -857,6 +866,7 @@ async function loadArticles() {
                 const data = doc.data();
                 articles.push({ id: doc.id, ...data });
             });
+            console.log(`📊 Encontrados ${articles.length} artigos (fallback)`);
         }
         
         if (articles.length === 0) {
@@ -868,7 +878,7 @@ async function loadArticles() {
         renderArticlesByLanguage(articles);
         
     } catch (error) {
-        console.error('Erro ao carregar artigos:', error);
+        console.error('❌ Erro ao carregar artigos:', error);
         grid.innerHTML = `<div class="loading"><p>${getTranslation('erro_carregar')} ${error.message}</p></div>`;
     }
 }
@@ -981,7 +991,6 @@ function renderArticles(articles) {
         const langName = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
             ? LanguageManager.availableLanguages[LanguageManager.currentLang]?.nativeName 
             : 'Português';
-        // Adiciona um aviso sutil
         const notice = document.createElement('div');
         notice.style.cssText = 'text-align:center; padding:10px; font-size:12px; color:#999; border-top:1px solid #eee; margin-top:20px;';
         notice.innerHTML = `ℹ️ Algumas matérias estão sendo exibidas em Português (tradução automática) pois não estão disponíveis em ${langName}.`;
