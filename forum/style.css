@@ -167,6 +167,70 @@ body {
 }
 
 /* ============================================
+   LANGUAGE SELECTOR
+   ============================================ */
+.language-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 8px;
+    position: relative;
+}
+
+.lang-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.7em;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lang-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.lang-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #1a1a2e;
+    border-radius: 8px;
+    padding: 4px 0;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    z-index: 200;
+    min-width: 150px;
+    margin-top: 4px;
+}
+
+.lang-dropdown.show {
+    display: block;
+}
+
+.lang-option {
+    padding: 8px 16px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background 0.2s;
+}
+
+.lang-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.lang-option.active {
+    background: rgba(233, 69, 96, 0.2);
+    font-weight: 600;
+}
+
+/* ============================================
    HEADER PADRONIZADO WAZZIMAGIYGG
    ============================================ */
 .header {
@@ -1060,6 +1124,13 @@ body {
     }
     .cookie-text p {
         font-size: 13px;
+    }
+    .language-selector {
+        margin-right: 0;
+    }
+    .lang-btn {
+        padding: 2px 8px;
+        font-size: 0.6em;
     }
 }
 
