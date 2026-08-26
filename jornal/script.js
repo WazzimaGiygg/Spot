@@ -823,56 +823,88 @@ async function updateWeatherContent(widget) {
 }
 
 // ============================================
-// LOAD ARTICLES
+// LOAD ARTICLES - COM BUSCA POR IDIOMA
 // ============================================
 async function loadArticles() {
     const grid = document.getElementById('newspaperGrid');
     grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${getTranslation('carregando_noticias')}</p></div>`;
     
     try {
-        let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
-        if (currentCategory !== 'todos') {
-            query = db.collection('articlesdoc').where('categoria', '==', currentCategory).orderBy('dataPublicacao', 'desc');
-        }
+        const userLang = typeof LanguageManager !== 'undefined' 
+            ? LanguageManager.currentLang 
+            : 'pt';
         
-        const snapshot = await query.get();
-        const articles = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            articles.push({ id: doc.id, ...data });
-        });
+        let articles = [];
+        
+        // Usa o sistema multi-idioma para buscar artigos no idioma do usuário
+        if (typeof multiLangArticles !== 'undefined' && multiLangArticles) {
+            // Busca artigos no idioma do usuário
+            articles = await multiLangArticles.searchArticles(userLang, currentCategory);
+            
+            // Se não encontrou artigos no idioma do usuário, busca em português como fallback
+            if (articles.length === 0 && userLang !== 'pt') {
+                console.log(`📭 Nenhum artigo encontrado em "${userLang}", buscando em português...`);
+                articles = await multiLangArticles.searchArticles('pt', currentCategory);
+            }
+        } else {
+            // Fallback: busca normal
+            let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
+            if (currentCategory !== 'todos') {
+                query = query.where('categoria', '==', currentCategory);
+            }
+            const snapshot = await query.get();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                articles.push({ id: doc.id, ...data });
+            });
+        }
         
         if (articles.length === 0) {
             grid.innerHTML = `<div class="loading"><p>${getTranslation('sem_materias')}</p></div>`;
             return;
         }
         
-        renderArticles(articles);
+        // Organiza e renderiza os artigos
+        renderArticlesByLanguage(articles);
+        
     } catch (error) {
+        console.error('Erro ao carregar artigos:', error);
         grid.innerHTML = `<div class="loading"><p>${getTranslation('erro_carregar')} ${error.message}</p></div>`;
     }
 }
 
-function renderArticles(articles) {
-    // Verifica se há artigos multi-idioma e carrega traduções
-    const translatedArticles = articles.map(article => {
-        if (article.isMultiLanguage && typeof LanguageManager !== 'undefined' && LanguageManager.currentLang !== 'pt') {
-            const translation = article.translations?.[LanguageManager.currentLang];
-            if (translation) {
-                return {
-                    ...article,
-                    titulo: translation.titulo || article.titulo,
-                    resumo: translation.resumo || article.resumo,
-                    conteudo: translation.conteudo || article.conteudo
-                };
-            }
-        }
-        return article;
-    });
+// ============================================
+// RENDER ARTICLES BY LANGUAGE
+// ============================================
+function renderArticlesByLanguage(articles) {
+    // Separa artigos por idioma
+    const userLang = typeof LanguageManager !== 'undefined' 
+        ? LanguageManager.currentLang 
+        : 'pt';
     
-    const mainArticle = translatedArticles[0];
-    const leftArticles = translatedArticles.slice(1, 4);
-    const rightArticles = translatedArticles.slice(4, 8);
+    // Organiza: artigos no idioma do usuário primeiro, depois fallback
+    const primaryLangArticles = articles.filter(a => a._currentLanguage === userLang);
+    const fallbackArticles = articles.filter(a => a._isFallback === true);
+    const otherArticles = articles.filter(a => a._currentLanguage !== userLang && !a._isFallback);
+    
+    // Ordena: primeiro os do idioma do usuário, depois os fallback, depois outros
+    const sortedArticles = [...primaryLangArticles, ...fallbackArticles, ...otherArticles];
+    
+    renderArticles(sortedArticles);
+}
+
+// ============================================
+// RENDER ARTICLES (função existente atualizada)
+// ============================================
+function renderArticles(articles) {
+    // Mostra indicador de idioma nos artigos
+    const userLang = typeof LanguageManager !== 'undefined' 
+        ? LanguageManager.currentLang 
+        : 'pt';
+    
+    const mainArticle = articles[0];
+    const leftArticles = articles.slice(1, 4);
+    const rightArticles = articles.slice(4, 8);
 
     const renderAdminActions = (articleId) => {
         if (!currentUserIsAdmin) return '';
@@ -890,11 +922,22 @@ function renderArticles(articles) {
         const autor = article.autorNome || getTranslation('redacao');
         const views = article.visualizacoes || 0;
         
+        // Mostra indicador de idioma se for fallback ou tradução
+        let langIndicator = '';
+        if (article._isFallback) {
+            langIndicator = `<span style="font-size:10px; color:#999; background:#f0f0f0; padding:2px 8px; border-radius:10px; margin-left:5px;">🌐 Traduzido</span>`;
+        } else if (article._currentLanguage && article._currentLanguage !== 'pt') {
+            const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
+                ? LanguageManager.availableLanguages[article._currentLanguage] 
+                : null;
+            langIndicator = `<span style="font-size:10px; color:#999; background:#f0f0f0; padding:2px 8px; border-radius:10px; margin-left:5px;">${langInfo?.flag || '🌐'} ${langInfo?.name || article._currentLanguage.toUpperCase()}</span>`;
+        }
+        
         if (isMain) {
             return `
                 <div class="main-article" style="position: relative;">
                     ${renderAdminActions(article.id)}
-                    <div class="article-tag">${tag} · ${getTranslation('destaque')}</div>
+                    <div class="article-tag">${tag} · ${getTranslation('destaque')} ${langIndicator}</div>
                     <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
                     <div class="article-meta">
                         <span><i class="far fa-user"></i> ${getTranslation('por')} ${escapeHtml(autor)}</span>
@@ -911,7 +954,7 @@ function renderArticles(articles) {
         return `
             <div class="article-card" style="position: relative;">
                 ${renderAdminActions(article.id)}
-                <div class="article-tag">${tag}</div>
+                <div class="article-tag">${tag} ${langIndicator}</div>
                 <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
                 <div class="article-meta">
                     <span><i class="far fa-user"></i> ${escapeHtml(autor)}</span>
@@ -931,6 +974,19 @@ function renderArticles(articles) {
         <div>${renderArticleCard(mainArticle, true)}</div>
         <div class="sidebar-right">${rightHtml || `<div class="article-card"><p>${getTranslation('aguardem_publicacoes')}</p></div>`}</div>
     `;
+    
+    // Adiciona aviso se estiver vendo traduções
+    const hasFallback = articles.some(a => a._isFallback === true);
+    if (hasFallback) {
+        const langName = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
+            ? LanguageManager.availableLanguages[LanguageManager.currentLang]?.nativeName 
+            : 'Português';
+        // Adiciona um aviso sutil
+        const notice = document.createElement('div');
+        notice.style.cssText = 'text-align:center; padding:10px; font-size:12px; color:#999; border-top:1px solid #eee; margin-top:20px;';
+        notice.innerHTML = `ℹ️ Algumas matérias estão sendo exibidas em Português (tradução automática) pois não estão disponíveis em ${langName}.`;
+        document.querySelector('.newspaper-grid').appendChild(notice);
+    }
     
     setTimeout(() => renderWeather(), 300);
 }
@@ -986,19 +1042,38 @@ async function loadArticleById(articleId) {
     }
 }
 
+// ============================================
+// RENDER SINGLE ARTICLE - COM INFO DE IDIOMA
+// ============================================
 function renderSingleArticle(article) {
     const date = article.dataPublicacao?.toDate?.() ? article.dataPublicacao.toDate().toLocaleDateString('pt-BR') : 'Data desconhecida';
     const categoryIcon = getCategoryIcon(article.categoria);
     const autor = article.autorNome || getTranslation('redacao');
     const views = article.visualizacoes || 0;
     
-    // Mostra indicador de idioma se for traduzido
-    let languageIndicator = '';
-    if (article._currentLanguage && article._currentLanguage !== 'pt') {
+    // Mostra informações de idioma
+    let languageInfo = '';
+    if (article._isFallback) {
+        languageInfo = `
+            <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px; margin-bottom:15px; font-size:13px; color:#856404;">
+                <i class="fas fa-language"></i> 
+                ⚠️ Esta matéria não está disponível no idioma selecionado. Exibindo em Português (tradução automática).
+            </div>
+        `;
+    } else if (article._currentLanguage && article._currentLanguage !== 'pt') {
         const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
             ? LanguageManager.availableLanguages[article._currentLanguage] 
             : null;
-        languageIndicator = `<span style="font-size:11px; color:#888; background:#f0f0f0; padding:2px 8px; border-radius:10px; margin-left:10px;">🌐 ${langInfo?.flag || ''} ${langInfo?.name || article._currentLanguage.toUpperCase()}</span>`;
+        languageInfo = `
+            <div style="background:#d4edda; border:1px solid #28a745; border-radius:8px; padding:10px; margin-bottom:15px; font-size:13px; color:#155724;">
+                <i class="fas fa-language"></i> 
+                📖 Lendo em ${langInfo?.nativeName || article._currentLanguage.toUpperCase()}
+                ${article._availableLanguages ? `| Disponível em: ${article._availableLanguages.map(l => {
+                    const info = LanguageManager?.availableLanguages?.[l];
+                    return info ? `${info.flag} ${info.name}` : l.toUpperCase();
+                }).join(', ')}` : ''}
+            </div>
+        `;
     }
     
     const adminButtonsHtml = currentUserIsAdmin ? `
@@ -1012,8 +1087,9 @@ function renderSingleArticle(article) {
     document.getElementById('newspaperGrid').innerHTML = `
         <div style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
             ${adminButtonsHtml}
+            ${languageInfo}
             <div class="main-article">
-                <div class="article-tag">${categoryIcon} ${article.categoria?.toUpperCase() || 'GERAL'} ${languageIndicator}</div>
+                <div class="article-tag">${categoryIcon} ${article.categoria?.toUpperCase() || 'GERAL'}</div>
                 <div class="article-title">${escapeHtml(article.titulo)}</div>
                 <div class="article-meta">
                     <span><i class="far fa-user"></i> ${getTranslation('por')} ${escapeHtml(autor)}</span>
