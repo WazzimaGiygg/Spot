@@ -1755,3 +1755,8 @@ window.addLanguageField = addLanguageField;
 window.saveTranslations = saveTranslations;
 window.initLanguageManager = initLanguageManager;
 window.getTranslation = getTranslation;
+
+
+
+
+//end of script
