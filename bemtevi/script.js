@@ -1,4 +1,45 @@
 // ============================================
+// FUNÇÕES DE TRADUÇÃO - INTEGRAÇÃO COM I18N
+// ============================================
+
+function __(key, params) {
+    if (typeof I18n !== 'undefined' && I18n.t) {
+        return I18n.t(key, params);
+    }
+    return key;
+}
+
+function getCategoryLabel(category) {
+    if (typeof I18n !== 'undefined' && I18n.getCategoryLabel) {
+        return I18n.getCategoryLabel(category);
+    }
+    return category;
+}
+
+function getKarmaLevelLabel(level) {
+    if (typeof I18n !== 'undefined' && I18n.getKarmaLevelLabel) {
+        return I18n.getKarmaLevelLabel(level);
+    }
+    return level;
+}
+
+function getFeedLabel(feed) {
+    if (typeof I18n !== 'undefined' && I18n.getFeedLabel) {
+        return I18n.getFeedLabel(feed);
+    }
+    return feed;
+}
+
+// Sobrescrever getTimeAgo para usar I18n
+const originalGetTimeAgo = window.getTimeAgo || function() {};
+window.getTimeAgo = function(date) {
+    if (typeof I18n !== 'undefined' && I18n.getTimeAgo) {
+        return I18n.getTimeAgo(date);
+    }
+    return originalGetTimeAgo(date);
+};
+
+// ============================================
 // COOKIE CONSENT MANAGER
 // ============================================
 const CookieManager = {
@@ -91,7 +132,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast('✅ Todos os cookies foram aceitos!');
+        this.showToast(__('cookie.accepted') || '✅ Todos os cookies foram aceitos!');
     },
     
     rejectAll() {
@@ -99,7 +140,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast('ℹ️ Cookies não essenciais foram recusados.');
+        this.showToast(__('cookie.rejected') || 'ℹ️ Cookies não essenciais foram recusados.');
     },
     
     customize() {
@@ -109,7 +150,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast('✅ Suas preferências foram salvas!');
+        this.showToast(__('cookie.saved') || '✅ Suas preferências foram salvas!');
     },
     
     showToast(message, type = 'info') {
@@ -206,6 +247,11 @@ function escapeHtml(text) {
 }
 
 function getTimeAgo(date) {
+    // Usar versão com i18n se disponível
+    if (typeof I18n !== 'undefined' && I18n.getTimeAgo) {
+        return I18n.getTimeAgo(date);
+    }
+    // Fallback
     if (!date) return 'agora';
     if (date.toDate) date = date.toDate();
     const seconds = Math.floor((new Date() - date) / 1000);
@@ -279,8 +325,8 @@ async function updateUserKarma(userId, amount) {
             if (karma >= 100 && karma - amount < 100) {
                 await createNotification(
                     userId,
-                    '🌟 Novo Nível!',
-                    `Parabéns! Você alcançou o nível "${level.name}"! Continue assim!`
+                    __('notifications.newLevel') || '🌟 Novo Nível!',
+                    `${__('notifications.levelUp') || 'Parabéns! Você alcançou o nível'} "${getKarmaLevelLabel(level.name) || level.name}"! ${__('notifications.continue') || 'Continue assim!'}`
                 );
             }
         }
@@ -322,7 +368,7 @@ async function loadSavedPosts() {
 
 async function toggleSavePost(postId) {
     if (!currentUser || isBanned) {
-        showToast('Faça login para salvar posts!');
+        showToast(__('post.loginRequired') || 'Faça login para salvar posts!');
         return;
     }
     
@@ -334,20 +380,20 @@ async function toggleSavePost(postId) {
         if (saveDoc.exists) {
             await saveRef.delete();
             savedPosts = savedPosts.filter(id => id !== postId);
-            showToast('Post removido dos salvos');
+            showToast(__('post.unsaved') || 'Post removido dos salvos');
         } else {
             await saveRef.set({
                 postId: postId,
                 savedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             savedPosts.push(postId);
-            showToast('Post salvo com sucesso!');
+            showToast(__('post.saved') || 'Post salvo com sucesso!');
         }
         
         refreshFeed();
     } catch (error) {
         console.error('Erro ao salvar post:', error);
-        showToast('Erro ao salvar post', 'error');
+        showToast(__('post.error') || 'Erro ao salvar post', 'error');
     }
 }
 
@@ -356,12 +402,12 @@ async function toggleSavePost(postId) {
 // ============================================
 async function createCommunity(name, description, category) {
     if (!currentUser || isBanned) {
-        showToast('Faça login para criar uma comunidade!');
+        showToast(__('communities.loginRequired') || 'Faça login para criar uma comunidade!');
         return null;
     }
     
     if (!name || name.length < 3) {
-        showToast('O nome da comunidade deve ter pelo menos 3 caracteres.', 'error');
+        showToast(__('communities.nameRequired') || 'O nome da comunidade deve ter pelo menos 3 caracteres.', 'error');
         return null;
     }
     
@@ -381,11 +427,11 @@ async function createCommunity(name, description, category) {
         };
         
         const docRef = await db.collection('comunidades').add(communityData);
-        showToast(`Comunidade "${name}" criada com sucesso!`);
+        showToast(`${__('communities.success') || 'Comunidade criada com sucesso!'} "${name}"`);
         return docRef.id;
     } catch (error) {
         console.error('Erro ao criar comunidade:', error);
-        showToast('Erro ao criar comunidade', 'error');
+        showToast(__('communities.error') || 'Erro ao criar comunidade', 'error');
         return null;
     }
 }
@@ -398,7 +444,7 @@ async function joinCommunity(communityId) {
         const communityDoc = await communityRef.get();
         
         if (!communityDoc.exists) {
-            showToast('Comunidade não encontrada.', 'error');
+            showToast(__('communities.notFound') || 'Comunidade não encontrada.', 'error');
             return;
         }
         
@@ -410,17 +456,17 @@ async function joinCommunity(communityId) {
                 members: firebase.firestore.FieldValue.arrayRemove(currentUser.uid),
                 memberCount: firebase.firestore.FieldValue.increment(-1)
             });
-            showToast('Você saiu da comunidade.');
+            showToast(__('communities.left') || 'Você saiu da comunidade.');
         } else {
             await communityRef.update({
                 members: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
                 memberCount: firebase.firestore.FieldValue.increment(1)
             });
-            showToast(`Bem-vindo à comunidade "${data.name}"!`);
+            showToast(`${__('communities.joined') || 'Bem-vindo à comunidade'} "${data.name}"!`);
         }
     } catch (error) {
         console.error('Erro ao entrar/sair da comunidade:', error);
-        showToast('Erro ao processar ação.', 'error');
+        showToast(__('errors.generic') || 'Erro ao processar ação.', 'error');
     }
 }
 
@@ -487,6 +533,7 @@ async function getTrendingTopics(limit = 10) {
         return [];
     }
 }
+
 // ============================================
 // NOTIFICAÇÕES
 // ============================================
@@ -545,12 +592,12 @@ function renderNotifications() {
     const list = document.getElementById('notificationList');
     if (!list) return;
     if (notifications.length === 0) {
-        list.innerHTML = `<div class="notification-empty"><span class="material-icons">notifications_off</span><p>Nenhuma notificação</p></div>`;
+        list.innerHTML = `<div class="notification-empty"><span class="material-icons">notifications_off</span><p>${__('notifications.empty') || 'Nenhuma notificação'}</p></div>`;
         return;
     }
     list.innerHTML = notifications.slice(0, 10).map(notif => `
         <div class="notification-item ${notif.lida ? '' : 'unread'}" onclick="markAsRead('${notif.id}')">
-            <div class="notif-title">${escapeHtml(notif.titulo || 'Notificação')}</div>
+            <div class="notif-title">${escapeHtml(notif.titulo || __('notifications.new') || 'Notificação')}</div>
             <div class="notif-message">${escapeHtml(notif.mensagem || '')}</div>
             <div class="notif-time">${getTimeAgo(notif.timestamp)}</div>
         </div>
@@ -724,7 +771,7 @@ function showBannedScreen(reason = 'Violação das políticas de uso') {
     
     const details = document.getElementById('banDetails');
     if (details) {
-        details.textContent = `Motivo: ${reason}`;
+        details.textContent = `${__('banned.reason') || 'Motivo:'} ${reason}`;
     }
     overlay.classList.add('show');
     
@@ -814,7 +861,7 @@ function updateUI() {
         if (btnLogout) btnLogout.style.display = 'inline-block';
     } else {
         if (avatar) avatar.innerHTML = '👤';
-        if (name) name.textContent = 'Visitante';
+        if (name) name.textContent = __('header.visitor') || 'Visitante';
         if (email) email.textContent = '';
         if (badge) badge.innerHTML = '';
         if (btnLogin) btnLogin.style.display = 'inline-block';
@@ -848,7 +895,7 @@ async function loginWithGoogle() {
         
         isBanned = await checkIfUserIsBanned(currentUser);
         if (isBanned) { 
-            showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
+            showBannedScreen(__('banned.reason') || 'Sua conta foi banida por violação das políticas de uso.');
             await auth.signOut(); 
             updateUI(); 
             return; 
@@ -863,7 +910,7 @@ async function loginWithGoogle() {
         renderMainApp();
     } catch (error) {
         console.error('Erro no login:', error);
-        showToast('Erro ao fazer login: ' + error.message, 'error');
+        showToast((__('login.error') || 'Erro ao fazer login: ') + error.message, 'error');
     }
 }
 
@@ -883,7 +930,7 @@ async function logout() {
         renderWelcomeScreen();
     } catch (error) {
         console.error('Erro no logout:', error);
-        showToast('Erro ao sair: ' + error.message, 'error');
+        showToast((__('errors.generic') || 'Erro ao sair: ') + error.message, 'error');
     }
 }
 
@@ -893,9 +940,9 @@ async function logout() {
 async function createPost(conteudo, link = null, categoria = 'Geral', communityId = null) {
     if (!currentUser || isBanned) {
         if (isBanned) {
-            showToast('Sua conta está banida. Não é possível postar.', 'error');
+            showToast(__('post.banned') || 'Sua conta está banida. Não é possível postar.', 'error');
         } else {
-            showToast('Faça login para postar!');
+            showToast(__('post.loginRequired') || 'Faça login para postar!');
         }
         return false;
     }
@@ -905,12 +952,12 @@ async function createPost(conteudo, link = null, categoria = 'Geral', communityI
     if (!extractedLink) postText = removeLinks(postText);
 
     if (postText.length > 127) {
-        showToast('O texto deve ter no máximo 127 caracteres!', 'error');
+        showToast(__('post.maxLength') || 'O texto deve ter no máximo 127 caracteres!', 'error');
         return false;
     }
 
     if (postText.length === 0 && !extractedLink) {
-        showToast('Digite algo para postar!', 'error');
+        showToast(__('post.empty') || 'Digite algo para postar!', 'error');
         return false;
     }
 
@@ -942,7 +989,7 @@ async function createPost(conteudo, link = null, categoria = 'Geral', communityI
         return true;
     } catch (error) {
         console.error('Erro ao postar:', error);
-        showToast('Erro ao postar. Tente novamente.', 'error');
+        showToast(__('post.error') || 'Erro ao postar. Tente novamente.', 'error');
         return false;
     }
 }
@@ -953,9 +1000,9 @@ async function createPost(conteudo, link = null, categoria = 'Geral', communityI
 async function likePost(postId) {
     if (!currentUser || isBanned) {
         if (isBanned) {
-            showToast('Sua conta está banida.', 'error');
+            showToast(__('post.banned') || 'Sua conta está banida.', 'error');
         } else {
-            showToast('Faça login para curtir!');
+            showToast(__('post.loginRequired') || 'Faça login para curtir!');
         }
         return;
     }
@@ -981,19 +1028,20 @@ async function likePost(postId) {
         if (postData.userId !== currentUser.uid) {
             await createNotification(
                 postData.userId,
-                '❤️ Nova curtida',
-                `${currentUser.displayName || 'Alguém'} curtiu seu post: "${postData.conteudo?.substring(0, 30)}..."`
+                __('notifications.newLike') || '❤️ Nova curtida',
+                `${currentUser.displayName || 'Alguém'} ${__('notifications.likedYourPost') || 'curtiu seu post'}: "${postData.conteudo?.substring(0, 30)}..."`
             );
         }
     }
     refreshFeed();
 }
+
 // ============================================
 // COMENTÁRIOS
 // ============================================
 async function openComments(postId, postUserId, postUserNome) {
     if (isBanned) {
-        showToast('Sua conta está banida.', 'error');
+        showToast(__('post.banned') || 'Sua conta está banida.', 'error');
         return;
     }
     currentViewingPost = { id: postId, userId: postUserId, userNome: postUserNome };
@@ -1002,7 +1050,7 @@ async function openComments(postId, postUserId, postUserNome) {
     const container = document.getElementById('comments-container');
     if (!modal || !container) return;
     
-    container.innerHTML = '<div class="loading">Carregando comentários...</div>';
+    container.innerHTML = `<div class="loading">${__('comments.loading') || 'Carregando comentários...'}</div>`;
     modal.style.display = 'flex';
 
     try {
@@ -1012,7 +1060,7 @@ async function openComments(postId, postUserId, postUserNome) {
             .get();
 
         if (snapshot.empty) {
-            container.innerHTML = '<div class="loading">Nenhum comentário ainda. Seja o primeiro!</div>';
+            container.innerHTML = `<div class="loading">${__('comments.empty') || 'Nenhum comentário ainda. Seja o primeiro!'}</div>`;
         } else {
             container.innerHTML = '';
             snapshot.forEach(doc => {
@@ -1032,13 +1080,13 @@ async function openComments(postId, postUserId, postUserNome) {
         }
     } catch (error) {
         console.error('Erro:', error);
-        container.innerHTML = '<div class="loading">Erro ao carregar comentários</div>';
+        container.innerHTML = `<div class="loading">${__('comments.error') || 'Erro ao carregar comentários'}</div>`;
     }
 }
 
 async function sendComment() {
     if (isBanned) {
-        showToast('Sua conta está banida. Não é possível comentar.', 'error');
+        showToast(__('comments.banned') || 'Sua conta está banida. Não é possível comentar.', 'error');
         return;
     }
     const commentInput = document.getElementById('comment-input');
@@ -1046,12 +1094,12 @@ async function sendComment() {
     
     const commentText = commentInput.value.trim();
     if (!commentText) {
-        showToast('Digite um comentário!', 'error');
+        showToast(__('comments.emptyText') || 'Digite um comentário!', 'error');
         return;
     }
 
     if (commentText.length > 280) {
-        showToast('Comentário muito longo! Máximo 280 caracteres.', 'error');
+        showToast(__('comments.maxLength') || 'Comentário muito longo! Máximo 280 caracteres.', 'error');
         return;
     }
 
@@ -1071,8 +1119,8 @@ async function sendComment() {
         
         await createNotification(
             currentViewingPost.userId,
-            '💬 Novo comentário',
-            `${currentUser.displayName || 'Alguém'} comentou no seu post: "${commentText.substring(0, 30)}..."`
+            __('notifications.newComment') || '💬 Novo comentário',
+            `${currentUser.displayName || 'Alguém'} ${__('notifications.commentedOnYourPost') || 'comentou no seu post'}: "${commentText.substring(0, 30)}..."`
         );
 
         commentInput.value = '';
@@ -1080,7 +1128,7 @@ async function sendComment() {
         refreshFeed();
     } catch (error) {
         console.error('Erro ao comentar:', error);
-        showToast('Erro ao enviar comentário.', 'error');
+        showToast(__('comments.errorSend') || 'Erro ao enviar comentário.', 'error');
     }
 }
 
@@ -1089,7 +1137,7 @@ async function sendComment() {
 // ============================================
 function openProfile(userId, userName) {
     if (isBanned) {
-        showToast('Sua conta está banida.', 'error');
+        showToast(__('post.banned') || 'Sua conta está banida.', 'error');
         return;
     }
     const encodedName = encodeURIComponent(userName || 'Usuário');
@@ -1099,7 +1147,7 @@ function openProfile(userId, userName) {
 async function toggleFollow(userIdToFollow) {
     if (!currentUser || userIdToFollow === currentUser.uid || isBanned) {
         if (isBanned) {
-            showToast('Sua conta está banida.', 'error');
+            showToast(__('post.banned') || 'Sua conta está banida.', 'error');
         }
         return;
     }
@@ -1125,8 +1173,8 @@ async function toggleFollow(userIdToFollow) {
             
             await createNotification(
                 userIdToFollow,
-                '👤 Novo seguidor',
-                `${currentUser.displayName || 'Alguém'} começou a seguir você!`
+                __('notifications.newFollower') || '👤 Novo seguidor',
+                `${currentUser.displayName || 'Alguém'} ${__('notifications.startedFollowingYou') || 'começou a seguir você'}!`
             );
         }
 
@@ -1135,7 +1183,7 @@ async function toggleFollow(userIdToFollow) {
         
     } catch (error) {
         console.error('Erro ao seguir:', error);
-        showToast('Erro ao seguir usuário: ' + error.message, 'error');
+        showToast((__('errors.generic') || 'Erro ao seguir usuário: ') + error.message, 'error');
     }
 }
 
@@ -1160,7 +1208,7 @@ async function loadSuggestions() {
         const suggestions = usersSnapshot.docs.filter(doc => !followingIds.includes(doc.id)).slice(0, 5);
 
         if (suggestions.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#888888;">Nenhuma sugestão no momento</div>';
+            container.innerHTML = `<div style="text-align:center; color:#888888;">${__('suggestions.empty') || 'Nenhuma sugestão no momento'}</div>`;
             return;
         }
 
@@ -1174,16 +1222,16 @@ async function loadSuggestions() {
                         <div class="suggestion-avatar">${userData.name?.charAt(0).toUpperCase() || '?'}</div>
                         <div>
                             <div style="font-weight:600; font-size:14px; color:#ffffff;">${escapeHtml(userData.name || 'Usuário')}</div>
-                            <div style="font-size:11px; color:#888888;">${level.emoji} ${karma} karma</div>
+                            <div style="font-size:11px; color:#888888;">${level.emoji} ${karma} ${__('profile.karma') || 'karma'}</div>
                         </div>
                     </div>
-                    <button class="follow-small-btn" onclick="toggleFollow('${doc.id}')">Seguir</button>
+                    <button class="follow-small-btn" onclick="toggleFollow('${doc.id}')">${__('actions.follow') || 'Seguir'}</button>
                 </div>
             `;
         }).join('');
     } catch (error) {
         console.error('Erro ao carregar sugestões:', error);
-        container.innerHTML = '<div style="text-align:center; color:#888888;">Erro ao carregar sugestões</div>';
+        container.innerHTML = `<div style="text-align:center; color:#888888;">${__('suggestions.error') || 'Erro ao carregar sugestões'}</div>`;
     }
 }
 
@@ -1197,7 +1245,7 @@ async function loadTrendingTopics() {
     try {
         const topics = await getTrendingTopics(8);
         if (topics.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#888; font-size:13px;">Nenhum trending no momento</div>';
+            container.innerHTML = `<div style="text-align:center; color:#888; font-size:13px;">${__('trending.empty') || 'Nenhum trending no momento'}</div>`;
             return;
         }
         
@@ -1205,12 +1253,12 @@ async function loadTrendingTopics() {
             <div class="trending-topic" onclick="searchTrending('${topic.name}')">
                 <span class="trending-rank">#${index + 1}</span>
                 <span class="trending-name">${escapeHtml(topic.name)}</span>
-                <span class="trending-count">${topic.count} posts</span>
+                <span class="trending-count">${topic.count} ${__('trending.posts') || 'posts'}</span>
             </div>
         `).join('');
     } catch (error) {
         console.error('Erro ao carregar trending:', error);
-        container.innerHTML = '<div style="text-align:center; color:#888; font-size:13px;">Erro ao carregar</div>';
+        container.innerHTML = `<div style="text-align:center; color:#888; font-size:13px;">${__('trending.error') || 'Erro ao carregar'}</div>`;
     }
 }
 
@@ -1256,7 +1304,7 @@ async function loadPosts(reset = false) {
         if (snapshot.empty) {
             hasMore = false;
             if (reset && postsContainer.children.length === 0) {
-                postsContainer.innerHTML = '<div class="loading">Nenhuma postagem encontrada!</div>';
+                postsContainer.innerHTML = `<div class="loading">${__('feed.empty') || 'Nenhuma postagem encontrada!'}</div>`;
             }
             loading = false;
             if (loadingIndicator) loadingIndicator.style.display = 'none';
@@ -1284,7 +1332,7 @@ async function loadPosts(reset = false) {
                             <span class="post-user-name" onclick="openProfile('${post.userId}', '${post.userNome}')">${escapeHtml(post.userNome)}</span>
                             <span class="post-user-id">@${post.userId?.substring(0, 8)}</span>
                             <span class="post-time">• ${getTimeAgo(postDate)}</span>
-                            ${post.communityId ? `<span class="post-community-tag" onclick="viewCommunity('${post.communityId}')">🏛️ Comunidade</span>` : ''}
+                            ${post.communityId ? `<span class="post-community-tag" onclick="viewCommunity('${post.communityId}')">🏛️ ${__('nav.communities') || 'Comunidade'}</span>` : ''}
                         </div>
                         <div class="post-options">
                             <button class="post-options-btn" onclick="togglePostOptions('${post.id}')">
@@ -1292,16 +1340,16 @@ async function loadPosts(reset = false) {
                             </button>
                             <div class="post-options-dropdown" id="options-${post.id}">
                                 ${post.userId === currentUser?.uid ? `
-                                    <button onclick="deletePost('${post.id}')">🗑️ Excluir</button>
+                                    <button onclick="deletePost('${post.id}')">🗑️ ${__('actions.delete') || 'Excluir'}</button>
                                 ` : `
-                                    <button onclick="reportPost('${post.id}')">🚨 Denunciar</button>
+                                    <button onclick="reportPost('${post.id}')">🚨 ${__('actions.report') || 'Denunciar'}</button>
                                 `}
-                                <button onclick="toggleSavePost('${post.id}')">${isSaved ? '📁 Remover dos salvos' : '📁 Salvar'}</button>
+                                <button onclick="toggleSavePost('${post.id}')">${isSaved ? ('📁 ' + (__('actions.unsave') || 'Remover dos salvos')) : ('📁 ' + (__('actions.save') || 'Salvar'))}</button>
                             </div>
                         </div>
                     </div>
                     <div class="post-category" style="background:${categoryColors[post.categoria] || '#666'}20; color:${categoryColors[post.categoria] || '#666'}">
-                        ${post.categoria || 'Geral'}
+                        ${getCategoryLabel(post.categoria || 'Geral')}
                     </div>
                     <div class="post-content">
                         ${escapeHtml(post.conteudo)}
@@ -1329,7 +1377,7 @@ async function loadPosts(reset = false) {
         console.error('Erro ao carregar posts:', error);
         const postsContainer = document.getElementById('posts-container');
         if (postsContainer) {
-            postsContainer.innerHTML = '<div class="loading">Erro ao carregar posts. Recarregue a página.</div>';
+            postsContainer.innerHTML = `<div class="loading">${__('feed.error') || 'Erro ao carregar posts. Recarregue a página.'}</div>`;
         }
     } finally {
         loading = false;
@@ -1344,12 +1392,12 @@ async function sharePost(postId) {
         const postDoc = await postRef.get();
         if (postDoc.exists) {
             const data = postDoc.data();
-            const shareText = `${data.conteudo || ''} - Bemtevi`;
+            const shareText = `${data.conteudo || ''} - ${__('app.name') || 'Bemtevi'}`;
             await navigator.clipboard.writeText(shareText);
-            showToast('Link copiado para a área de transferência!');
+            showToast(__('post.shareCopied') || 'Link copiado para a área de transferência!');
         }
     } catch (error) {
-        showToast('Erro ao copiar link.', 'error');
+        showToast(__('post.shareError') || 'Erro ao copiar link.', 'error');
     }
 }
 
@@ -1361,20 +1409,20 @@ function togglePostOptions(postId) {
 }
 
 async function deletePost(postId) {
-    if (!confirm('Tem certeza que deseja excluir este post?')) return;
+    if (!confirm(__('post.deleteConfirm') || 'Tem certeza que deseja excluir este post?')) return;
     
     try {
         await db.collection('Bemtevi').doc(postId).delete();
-        showToast('Post excluído com sucesso!');
+        showToast(__('post.deleteSuccess') || 'Post excluído com sucesso!');
         refreshFeed();
     } catch (error) {
         console.error('Erro ao excluir post:', error);
-        showToast('Erro ao excluir post.', 'error');
+        showToast(__('post.deleteError') || 'Erro ao excluir post.', 'error');
     }
 }
 
 async function reportPost(postId) {
-    const reason = prompt('Descreva o motivo da denúncia:');
+    const reason = prompt(__('post.reportPrompt') || 'Descreva o motivo da denúncia:');
     if (!reason) return;
     
     try {
@@ -1385,10 +1433,10 @@ async function reportPost(postId) {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'pending'
         });
-        showToast('Denúncia enviada! Iremos analisar.');
+        showToast(__('post.reportSuccess') || 'Denúncia enviada! Iremos analisar.');
     } catch (error) {
         console.error('Erro ao denunciar:', error);
-        showToast('Erro ao enviar denúncia.', 'error');
+        showToast(__('post.reportError') || 'Erro ao enviar denúncia.', 'error');
     }
 }
 
@@ -1397,6 +1445,7 @@ function refreshFeed() {
     hasMore = true;
     loadPosts(true);
 }
+
 // ============================================
 // NAVEGAÇÃO
 // ============================================
@@ -1451,7 +1500,7 @@ function viewCommunity(communityId) {
 // ============================================
 function showCreateCommunityModal() {
     if (!currentUser || isBanned) {
-        showToast('Faça login para criar uma comunidade!');
+        showToast(__('communities.loginRequired') || 'Faça login para criar uma comunidade!');
         return;
     }
     
@@ -1472,7 +1521,7 @@ async function createCommunityFromModal() {
     const category = catSelect?.value || 'Geral';
     
     if (!name || name.length < 3) {
-        showToast('O nome da comunidade deve ter pelo menos 3 caracteres.', 'error');
+        showToast(__('communities.nameRequired') || 'O nome da comunidade deve ter pelo menos 3 caracteres.', 'error');
         nameInput?.focus();
         return;
     }
@@ -1482,8 +1531,7 @@ async function createCommunityFromModal() {
         closeModal('createCommunityModal');
         if (nameInput) nameInput.value = '';
         if (descInput) descInput.value = '';
-        showToast(`Comunidade "${name}" criada com sucesso!`);
-        // Atualizar feed se estiver na página de comunidades
+        showToast(`${__('communities.success') || 'Comunidade criada com sucesso!'} "${name}"`);
         if (typeof loadCommunities === 'function') {
             loadCommunities('all');
         }
@@ -1491,7 +1539,7 @@ async function createCommunityFromModal() {
 }
 
 // ============================================
-// RENDERIZAÇÃO
+// RENDERIZAÇÃO - COM TRADUÇÃO
 // ============================================
 function renderMainApp() {
     const container = document.getElementById('app');
@@ -1500,6 +1548,7 @@ function renderMainApp() {
     const userInitial = currentUser?.displayName?.charAt(0).toUpperCase() || 
                         currentUser?.email?.charAt(0).toUpperCase() || '?';
     const userName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Usuário';
+    const feedTitle = currentFeed === 'my-posts' ? __('feed.myPosts') : __('feed.title');
     
     container.innerHTML = `
         <div class="app-container">
@@ -1507,33 +1556,33 @@ function renderMainApp() {
                 <div class="card">
                     <div class="logo">
                         <span class="logo-icon">🐦</span>
-                        <span class="logo-text">Bemtevi</span>
+                        <span class="logo-text">${__('app.name')}</span>
                     </div>
                     <ul class="nav-menu">
                         <li class="nav-item ${currentFeed === 'for-you' ? 'active' : ''}" onclick="changeFeed('for-you')">
-                            <span class="material-icons">home</span> Para Você
+                            <span class="material-icons">home</span> ${__('nav.forYou')}
                         </li>
                         <li class="nav-item ${currentFeed === 'my-posts' ? 'active' : ''}" onclick="changeFeed('my-posts')">
-                            <span class="material-icons">person</span> Minhas Postagens
+                            <span class="material-icons">person</span> ${__('nav.myPosts')}
                         </li>
                         <li class="nav-item" onclick="openExplore()">
-                            <span class="material-icons">explore</span> Explorar
+                            <span class="material-icons">explore</span> ${__('nav.explore')}
                         </li>
                         <li class="nav-item" onclick="openCommunities()">
-                            <span class="material-icons">groups</span> Comunidades
+                            <span class="material-icons">groups</span> ${__('nav.communities')}
                         </li>
                         <li class="nav-item" onclick="openMessages()">
-                            <span class="material-icons">chat</span> Mensagens
+                            <span class="material-icons">chat</span> ${__('nav.messages')}
                         </li>
                         <hr class="nav-divider">
                         <li class="nav-item" onclick="showCreateCommunityModal()" style="color: #ffb347;">
-                            <span class="material-icons" style="color:#ffb347;">add_circle</span> Criar Comunidade
+                            <span class="material-icons" style="color:#ffb347;">add_circle</span> ${__('nav.createCommunity')}
                         </li>
                         <li class="nav-item" onclick="openSavedPosts()">
-                            <span class="material-icons">bookmark</span> Salvos
+                            <span class="material-icons">bookmark</span> ${__('nav.saved')}
                         </li>
                         <li class="nav-item" onclick="openProfile('${currentUser.uid}', '${userName}')">
-                            <span class="material-icons">account_circle</span> Meu Perfil
+                            <span class="material-icons">account_circle</span> ${__('nav.myProfile')}
                         </li>
                     </ul>
                     <div style="margin-top:20px; padding-top:20px; border-top:1px solid #2a2a2a; cursor:pointer;" onclick="openProfile('${currentUser.uid}', '${userName}')">
@@ -1541,7 +1590,7 @@ function renderMainApp() {
                             <div class="post-avatar" style="width:40px; height:40px;">${userInitial}</div>
                             <div>
                                 <div style="font-weight:600; color:#ffffff;">${escapeHtml(userName)}</div>
-                                <div style="font-size:12px; color:#888888;">${getKarmaLevel(userKarma).emoji} ${userKarma} karma</div>
+                                <div style="font-size:12px; color:#888888;">${getKarmaLevel(userKarma).emoji} ${userKarma} ${__('profile.karma') || 'karma'}</div>
                             </div>
                         </div>
                     </div>
@@ -1551,44 +1600,44 @@ function renderMainApp() {
             <div>
                 <div class="feed-header">
                     <div class="feed-header-top">
-                        <div class="feed-title">📱 ${currentFeed === 'my-posts' ? 'Minhas Postagens' : 'Feed'}</div>
+                        <div class="feed-title">${feedTitle}</div>
                     </div>
                     <div class="feed-tabs">
-                        <span class="feed-tab ${currentFeed === 'for-you' ? 'active' : ''}" onclick="changeFeed('for-you')">Para Você</span>
-                        <span class="feed-tab ${currentFeed === 'latest' ? 'active' : ''}" onclick="changeFeed('latest')">Últimas</span>
-                        <span class="feed-tab ${currentFeed === 'my-posts' ? 'active' : ''}" onclick="changeFeed('my-posts')">Minhas</span>
+                        <span class="feed-tab ${currentFeed === 'for-you' ? 'active' : ''}" onclick="changeFeed('for-you')">${__('feed.tabs.forYou')}</span>
+                        <span class="feed-tab ${currentFeed === 'latest' ? 'active' : ''}" onclick="changeFeed('latest')">${__('feed.tabs.latest')}</span>
+                        <span class="feed-tab ${currentFeed === 'my-posts' ? 'active' : ''}" onclick="changeFeed('my-posts')">${__('feed.tabs.myPosts')}</span>
                     </div>
                 </div>
                 <div class="post-box">
                     <div class="post-input-area">
                         <div class="post-avatar">${userInitial}</div>
                         <div class="post-input-container">
-                            <textarea id="postText" class="post-input" rows="3" placeholder="O que está acontecendo? (Máx. 127 caracteres)" maxlength="127"></textarea>
+                            <textarea id="postText" class="post-input" rows="3" placeholder="${__('post.placeholder')}" maxlength="127"></textarea>
                             <div id="charCounter" class="char-counter">0/127</div>
                             <div class="post-actions">
-                                <select id="postCategory" class="btn-secondary">${categories.map(cat => `<option value="${cat}">📁 ${cat}</option>`).join('')}</select>
-                                <input type="text" id="postLink" class="btn-secondary" placeholder="🔗 Link (opcional)" style="width:200px;">
-                                <button class="btn-primary" onclick="submitPost()">Postar 🚀</button>
+                                <select id="postCategory" class="btn-secondary">${categories.map(cat => `<option value="${cat}">📁 ${getCategoryLabel(cat)}</option>`).join('')}</select>
+                                <input type="text" id="postLink" class="btn-secondary" placeholder="${__('post.linkPlaceholder')}" style="width:200px;">
+                                <button class="btn-primary" onclick="submitPost()">${__('post.button')}</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div id="posts-container" class="posts-container"></div>
-                <div id="loading-indicator" class="loading" style="display:none;">Carregando mais posts...</div>
+                <div id="loading-indicator" class="loading" style="display:none;">${__('feed.loading') || 'Carregando mais posts...'}</div>
             </div>
 
             <div class="sidebar-right">
                 <div class="card">
-                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">📂 Categorias</div>
-                    ${categories.map(cat => `<span class="category-chip ${currentCategoryFilter === cat ? 'selected' : ''}" onclick="filterByCategory('${cat}')">${cat}</span>`).join('')}
-                    <span class="category-chip ${!currentCategoryFilter ? 'selected' : ''}" onclick="clearCategoryFilter()">Todos</span>
+                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">📂 ${__('categories.title') || 'Categorias'}</div>
+                    ${categories.map(cat => `<span class="category-chip ${currentCategoryFilter === cat ? 'selected' : ''}" onclick="filterByCategory('${cat}')">${getCategoryLabel(cat)}</span>`).join('')}
+                    <span class="category-chip ${!currentCategoryFilter ? 'selected' : ''}" onclick="clearCategoryFilter()">${__('categories.all') || 'Todos'}</span>
                 </div>
                 <div class="card">
-                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">🔥 Trending</div>
-                    <div id="trending-container">Carregando...</div>
+                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">${__('trending.title')}</div>
+                    <div id="trending-container">${__('trending.loading') || 'Carregando...'}</div>
                 </div>
                 <div class="card">
-                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">👥 Sugestões</div>
+                    <div class="box-title" style="font-weight:700; margin-bottom:15px;">${__('suggestions.title')}</div>
                     <div id="suggestions-container"></div>
                 </div>
             </div>
@@ -1630,13 +1679,13 @@ function renderWelcomeScreen() {
             <div class="login-box">
                 <div class="logo" style="justify-content:center; margin-bottom:30px;">
                     <span class="logo-icon">🐦</span>
-                    <span class="logo-text">Bemtevi</span>
+                    <span class="logo-text">${__('app.name')}</span>
                 </div>
-                <h2 style="margin-bottom:20px;">Bem-vindo!</h2>
-                <p style="color:#aaaaaa; margin-bottom:30px;">Uma rede social livre e colaborativa</p>
-                <button id="google-login-welcome" class="btn-primary" style="width:100%;">🔑 Entrar com Google</button>
-                <div style="margin-top:20px; font-size:12px; color:#666666;">Postagens de até 127 caracteres • Comentários • Curtidas</div>
-                <div style="margin-top:10px; font-size:11px; color:#444;">Comunidades • Karma • Mensagens Diretas</div>
+                <h2 style="margin-bottom:20px;">${__('login.welcome')}</h2>
+                <p style="color:#aaaaaa; margin-bottom:30px;">${__('app.description')}</p>
+                <button id="google-login-welcome" class="btn-primary" style="width:100%;">${__('login.button')}</button>
+                <div style="margin-top:20px; font-size:12px; color:#666666;">${__('login.description')}</div>
+                <div style="margin-top:10px; font-size:11px; color:#444;">${__('login.features')}</div>
             </div>
         </div>
     `;
@@ -1650,7 +1699,7 @@ function renderWelcomeScreen() {
 // ============================================
 window.submitPost = async function() {
     if (isBanned) {
-        showToast('Sua conta está banida. Não é possível postar.', 'error');
+        showToast(__('post.banned') || 'Sua conta está banida. Não é possível postar.', 'error');
         return;
     }
     const text = document.getElementById('postText')?.value;
@@ -1719,7 +1768,7 @@ auth.onAuthStateChanged(async (user) => {
         await registerUser(user);
         isBanned = await checkIfUserIsBanned(user);
         if (isBanned) { 
-            showBannedScreen('Sua conta foi banida por violação das políticas de uso.');
+            showBannedScreen(__('banned.reason') || 'Sua conta foi banida por violação das políticas de uso.');
             await auth.signOut(); 
             updateUI(); 
             return; 
@@ -1753,3 +1802,4 @@ console.log('⭐ Sistema de Karma ativo');
 console.log('📁 Sistema de salvos ativo');
 console.log('💬 Mensagens diretas disponíveis');
 console.log('🍪 Sistema de consentimento de cookies ativo');
+console.log('🌐 Sistema de tradução I18n integrado!');
