@@ -1,4 +1,47 @@
 // ============================================
+// LISTENER PARA MUDANÇA DE IDIOMA
+// ============================================
+
+// Função para recarregar a interface quando o idioma mudar
+function onLanguageChange(locale) {
+    console.log(`🔄 Idioma mudou para: ${locale}, recarregando interface...`);
+    
+    // Recarregar o feed principal
+    if (typeof renderMainApp === 'function') {
+        renderMainApp();
+    }
+    
+    // Recarregar componentes adicionais
+    if (typeof loadSuggestions === 'function') {
+        setTimeout(loadSuggestions, 300);
+    }
+    if (typeof loadTrendingTopics === 'function') {
+        setTimeout(loadTrendingTopics, 400);
+    }
+    if (typeof loadNotifications === 'function') {
+        setTimeout(loadNotifications, 500);
+    }
+}
+
+// Aguardar I18n inicializar e registrar o listener
+document.addEventListener('DOMContentLoaded', function() {
+    // Verificar se I18n está disponível
+    if (typeof I18n !== 'undefined') {
+        // Adicionar listener para mudança de idioma
+        if (I18n.listeners) {
+            I18n.listeners.push(onLanguageChange);
+        }
+        
+        // Se o I18n já estiver inicializado, aplicar traduções
+        if (I18n.initialized) {
+            console.log('✅ I18n já inicializado, aplicando traduções...');
+            setTimeout(renderMainApp, 100);
+        }
+    }
+});
+
+
+// ============================================
 // FUNÇÕES DE TRADUÇÃO - INTEGRAÇÃO COM I18N
 // ============================================
 
