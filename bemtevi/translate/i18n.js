@@ -9,7 +9,6 @@ const I18n = {
     listeners: [],
     initialized: false,
     
-    // Inicializar
     async init() {
         if (this.initialized) return this;
         
@@ -34,9 +33,16 @@ const I18n = {
     
     async loadTranslations(locale) {
         try {
-            const response = await fetch(`/translate/bemtevi/locales/${locale}.json`);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            this.translations = await response.json();
+            // Tenta carregar do caminho correto para o Bemtevi
+            const response = await fetch(`/bemtevi/translate/locales/${locale}.json`);
+            if (!response.ok) {
+                // Tenta caminho alternativo
+                const altResponse = await fetch(`translate/locales/${locale}.json`);
+                if (!altResponse.ok) throw new Error(`HTTP ${altResponse.status}`);
+                this.translations = await altResponse.json();
+            } else {
+                this.translations = await response.json();
+            }
             this.currentLocale = locale;
             localStorage.setItem('bemtevi_locale', locale);
         } catch (error) {
@@ -105,23 +111,46 @@ const I18n = {
         this.listeners.forEach(fn => fn(this.currentLocale, this.translations));
     },
     
+    // ============================================
+    // MÉTODO setLocale CORRIGIDO - COM RECARREGAMENTO
+    // ============================================
     async setLocale(locale) {
         if (locale === this.currentLocale) return;
+        
+        console.log(`🔄 Mudando idioma de "${this.currentLocale}" para "${locale}"...`);
+        
         await this.loadTranslations(locale);
         this.applyTranslations();
         this.updateSelector();
         
-        // Recarregar feed
+        // 🔥 RECARREGAR O CONTEÚDO DA PÁGINA 🔥
+        console.log('🔄 Recarregando conteúdo após mudança de idioma...');
+        
+        // Recarregar o feed principal
         if (typeof refreshFeed === 'function') {
-            setTimeout(refreshFeed, 300);
+            refreshFeed();
+        } else if (typeof renderMainApp === 'function') {
+            renderMainApp();
         }
+        
+        // Recarregar sugestões
         if (typeof loadSuggestions === 'function') {
-            setTimeout(loadSuggestions, 400);
+            setTimeout(loadSuggestions, 300);
         }
+        
+        // Recarregar trending topics
         if (typeof loadTrendingTopics === 'function') {
-            setTimeout(loadTrendingTopics, 500);
+            setTimeout(loadTrendingTopics, 400);
         }
+        
+        // Recarregar notificações
+        if (typeof loadNotifications === 'function') {
+            setTimeout(loadNotifications, 500);
+        }
+        
+        console.log(`✅ Idioma alterado para: ${this.currentLocale}`);
     },
+    // ============================================
     
     setupSelector() {
         const selector = document.getElementById('languageSelector');
@@ -141,6 +170,10 @@ const I18n = {
     getLocale() {
         return this.currentLocale;
     },
+    
+    // ============================================
+    // FUNÇÕES AUXILIARES
+    // ============================================
     
     formatDate(date, options = {}) {
         if (!date) return '';
@@ -229,6 +262,9 @@ const I18n = {
     }
 };
 
+// ============================================
+// EXPORTAÇÃO GLOBAL
+// ============================================
 window.I18n = I18n;
 window.__ = function(key, params) { return I18n.t(key, params); };
 
