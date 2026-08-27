@@ -31,29 +31,51 @@ const I18n = {
         return this;
     },
     
+    // ============================================
+    // loadTranslations - USANDO GITHUB RAW
+    // ============================================
     async loadTranslations(locale) {
         try {
-            // Tenta carregar do caminho correto para o Bemtevi
-            const response = await fetch(`/bemtevi/translate/locales/${locale}.json`);
-            if (!response.ok) {
-                // Tenta caminho alternativo
-                const altResponse = await fetch(`translate/locales/${locale}.json`);
-                if (!altResponse.ok) throw new Error(`HTTP ${altResponse.status}`);
-                this.translations = await altResponse.json();
-            } else {
-                this.translations = await response.json();
-            }
+            // URL do GitHub Raw
+            const githubUrl = `https://raw.githubusercontent.com/WazzimaGiygg/Spot/main/bemtevi/translate/locales/${locale}.json`;
+            console.log(`📥 Carregando traduções de: ${githubUrl}`);
+            
+            const response = await fetch(githubUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            this.translations = await response.json();
             this.currentLocale = locale;
             localStorage.setItem('bemtevi_locale', locale);
+            
+            console.log(`✅ Traduções carregadas: ${locale} (${Object.keys(this.translations).length} seções)`);
         } catch (error) {
-            console.error('Erro ao carregar traduções:', error);
+            console.error('❌ Erro ao carregar traduções:', error);
+            
+            // Fallback: tentar do servidor local
+            try {
+                const localResponse = await fetch(`/translate/locales/${locale}.json`);
+                if (localResponse.ok) {
+                    this.translations = await localResponse.json();
+                    this.currentLocale = locale;
+                    localStorage.setItem('bemtevi_locale', locale);
+                    console.log(`✅ Traduções carregadas do servidor local: ${locale}`);
+                    return;
+                }
+            } catch (e) {
+                console.warn('⚠️ Fallback local também falhou');
+            }
+            
+            // Último fallback: português
             if (locale !== 'pt-BR') {
+                console.log('🔄 Tentando carregar pt-BR como fallback...');
                 await this.loadTranslations('pt-BR');
             } else {
+                console.warn('⚠️ Nenhuma tradução disponível, usando chaves como fallback');
                 this.translations = {};
             }
         }
     },
+    // ============================================
     
     t(key, params = {}) {
         let translation = this.translations[key];
@@ -111,9 +133,6 @@ const I18n = {
         this.listeners.forEach(fn => fn(this.currentLocale, this.translations));
     },
     
-    // ============================================
-    // MÉTODO setLocale CORRIGIDO - COM RECARREGAMENTO
-    // ============================================
     async setLocale(locale) {
         if (locale === this.currentLocale) return;
         
@@ -123,34 +142,29 @@ const I18n = {
         this.applyTranslations();
         this.updateSelector();
         
-        // 🔥 RECARREGAR O CONTEÚDO DA PÁGINA 🔥
+        // Recarregar o conteúdo da página
         console.log('🔄 Recarregando conteúdo após mudança de idioma...');
         
-        // Recarregar o feed principal
         if (typeof refreshFeed === 'function') {
             refreshFeed();
         } else if (typeof renderMainApp === 'function') {
             renderMainApp();
         }
         
-        // Recarregar sugestões
         if (typeof loadSuggestions === 'function') {
             setTimeout(loadSuggestions, 300);
         }
         
-        // Recarregar trending topics
         if (typeof loadTrendingTopics === 'function') {
             setTimeout(loadTrendingTopics, 400);
         }
         
-        // Recarregar notificações
         if (typeof loadNotifications === 'function') {
             setTimeout(loadNotifications, 500);
         }
         
         console.log(`✅ Idioma alterado para: ${this.currentLocale}`);
     },
-    // ============================================
     
     setupSelector() {
         const selector = document.getElementById('languageSelector');
@@ -170,10 +184,6 @@ const I18n = {
     getLocale() {
         return this.currentLocale;
     },
-    
-    // ============================================
-    // FUNÇÕES AUXILIARES
-    // ============================================
     
     formatDate(date, options = {}) {
         if (!date) return '';
