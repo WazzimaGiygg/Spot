@@ -1847,7 +1847,24 @@ auth.onAuthStateChanged(async (user) => {
         updateUI();
         await loadNotifications();
         listenNotifications();
-        renderMainApp();
+        
+        // 🔥 VERIFICAR SE I18N JÁ ESTÁ INICIALIZADO
+        if (typeof I18n !== 'undefined' && I18n.initialized) {
+            renderMainApp();
+        } else {
+            // Aguardar I18n inicializar
+            const checkI18n = setInterval(() => {
+                if (typeof I18n !== 'undefined' && I18n.initialized) {
+                    clearInterval(checkI18n);
+                    renderMainApp();
+                }
+            }, 200);
+            // Timeout de segurança
+            setTimeout(() => {
+                clearInterval(checkI18n);
+                renderMainApp();
+            }, 5000);
+        }
     } else {
         currentUser = null;
         isBanned = false;
