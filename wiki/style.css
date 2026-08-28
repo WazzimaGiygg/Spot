@@ -792,33 +792,84 @@ body {
     line-height: 1.6;
 }
 
+/* ============================================
+   SEGURANÇA PARA HTML RENDERIZADO
+   ============================================ */
 .wiki-content-rendered {
     line-height: 1.6;
+    word-wrap: break-word;
 }
 
-.wiki-content-rendered h1, .wiki-content-rendered h2 {
-    font-family: 'Times New Roman', serif;
-    border-bottom: 1px solid #a2a9b1;
-    margin: 1.5em 0 0.5em 0;
-    padding-bottom: 0.17em;
+.wiki-content-rendered img {
+    max-width: 100%;
+    height: auto;
 }
 
-.wiki-content-rendered h1 { font-size: 1.8em; }
-.wiki-content-rendered h2 { font-size: 1.5em; }
-.wiki-content-rendered h3 { font-size: 1.2em; margin: 1.2em 0 0.3em 0; }
-.wiki-content-rendered p { margin: 0.5em 0; }
-.wiki-content-rendered ul, .wiki-content-rendered ol { margin: 0.5em 0 0.5em 2em; }
 .wiki-content-rendered pre {
     background: #f8f9fa;
     border: 1px solid #eaecf0;
     padding: 12px;
     overflow-x: auto;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
 }
+
+.wiki-content-rendered table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15px 0;
+}
+
+.wiki-content-rendered th,
+.wiki-content-rendered td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.wiki-content-rendered th {
+    background: #f2f2f2;
+    font-weight: bold;
+}
+
 .wiki-content-rendered blockquote {
     border-left: 4px solid #eaecf0;
     padding-left: 16px;
     margin: 1em 0;
     color: #54595d;
+}
+
+.wiki-content-rendered .destaque {
+    background: #f0f7ff;
+    border-left: 4px solid #36c;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.wiki-content-rendered iframe {
+    max-width: 100%;
+}
+
+/* Mensagem de segurança na prévia */
+.preview-box {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    background: #fafafa;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.preview-box .security-notice {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 12px;
+    color: #856404;
 }
 
 .btn-abrir-painel {
@@ -1013,6 +1064,8 @@ body {
     padding: 15px 20px;
     background-color: #2c3e50;
     color: white;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .editor-header h3 {
@@ -1094,7 +1147,8 @@ body {
 .editor-field textarea {
     min-height: 200px;
     resize: vertical;
-    font-family: monospace;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
 }
 
 .editor-field .preview-box {
@@ -1102,8 +1156,40 @@ body {
     border-radius: 4px;
     padding: 15px;
     background: #fafafa;
-    max-height: 200px;
+    max-height: 300px;
     overflow-y: auto;
+}
+
+/* BARRA DE FERRAMENTAS DO EDITOR */
+.editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.toolbar-btn {
+    padding: 4px 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.toolbar-btn:hover {
+    background: #e9ecef;
+    border-color: #36c;
+}
+
+.toolbar-divider {
+    color: #ddd;
+    padding: 0 4px;
 }
 
 .article-list-item {
@@ -1319,6 +1405,13 @@ body {
     }
     .cookie-text p {
         font-size: 13px;
+    }
+    .editor-toolbar {
+        gap: 2px;
+    }
+    .toolbar-btn {
+        padding: 3px 6px;
+        font-size: 10px;
     }
 }
 
