@@ -31,12 +31,8 @@ const I18n = {
         return this;
     },
     
-    // ============================================
-    // loadTranslations - USANDO GITHUB RAW
-    // ============================================
     async loadTranslations(locale) {
         try {
-            // URL do GitHub Raw
             const githubUrl = `https://raw.githubusercontent.com/WazzimaGiygg/Spot/main/bemtevi/translate/locales/${locale}.json`;
             console.log(`📥 Carregando traduções de: ${githubUrl}`);
             
@@ -50,32 +46,13 @@ const I18n = {
             console.log(`✅ Traduções carregadas: ${locale} (${Object.keys(this.translations).length} seções)`);
         } catch (error) {
             console.error('❌ Erro ao carregar traduções:', error);
-            
-            // Fallback: tentar do servidor local
-            try {
-                const localResponse = await fetch(`/translate/locales/${locale}.json`);
-                if (localResponse.ok) {
-                    this.translations = await localResponse.json();
-                    this.currentLocale = locale;
-                    localStorage.setItem('bemtevi_locale', locale);
-                    console.log(`✅ Traduções carregadas do servidor local: ${locale}`);
-                    return;
-                }
-            } catch (e) {
-                console.warn('⚠️ Fallback local também falhou');
-            }
-            
-            // Último fallback: português
             if (locale !== 'pt-BR') {
-                console.log('🔄 Tentando carregar pt-BR como fallback...');
                 await this.loadTranslations('pt-BR');
             } else {
-                console.warn('⚠️ Nenhuma tradução disponível, usando chaves como fallback');
                 this.translations = {};
             }
         }
     },
-    // ============================================
     
     t(key, params = {}) {
         let translation = this.translations[key];
@@ -133,6 +110,9 @@ const I18n = {
         this.listeners.forEach(fn => fn(this.currentLocale, this.translations));
     },
     
+    // ============================================
+    // setLocale - CORRIGIDO
+    // ============================================
     async setLocale(locale) {
         if (locale === this.currentLocale) return;
         
@@ -142,29 +122,16 @@ const I18n = {
         this.applyTranslations();
         this.updateSelector();
         
-        // Recarregar o conteúdo da página
-        console.log('🔄 Recarregando conteúdo após mudança de idioma...');
-        
-        if (typeof refreshFeed === 'function') {
-            refreshFeed();
-        } else if (typeof renderMainApp === 'function') {
+        // 🔥 RECARREGAR A INTERFACE 🔥
+        console.log('🔄 Recarregando interface...');
+        if (typeof renderMainApp === 'function') {
             renderMainApp();
         }
-        
-        if (typeof loadSuggestions === 'function') {
-            setTimeout(loadSuggestions, 300);
-        }
-        
-        if (typeof loadTrendingTopics === 'function') {
-            setTimeout(loadTrendingTopics, 400);
-        }
-        
-        if (typeof loadNotifications === 'function') {
-            setTimeout(loadNotifications, 500);
-        }
+        // ===================================
         
         console.log(`✅ Idioma alterado para: ${this.currentLocale}`);
     },
+    // ============================================
     
     setupSelector() {
         const selector = document.getElementById('languageSelector');
