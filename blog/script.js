@@ -1315,6 +1315,196 @@ window.addEventListener('popstate', function(event) {
 });
 
 // ============================================
+// FUNÇÕES DO EDITOR - EXPORTADAS GLOBALMENTE
+// ============================================
+
+/**
+ * Formata o texto no editor
+ */
+window.formatText = function(type) {
+    const textarea = document.getElementById('postContentInput');
+    if (!textarea) {
+        console.warn('Editor não encontrado');
+        return;
+    }
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.substring(start, end);
+    let formatted = '';
+    
+    switch(type) {
+        case 'h1': 
+            formatted = `<h1>${selected || 'Título'}</h1>`; 
+            break;
+        case 'h2': 
+            formatted = `<h2>${selected || 'Subtítulo'}</h2>`; 
+            break;
+        case 'h3': 
+            formatted = `<h3>${selected || 'Subsubtítulo'}</h3>`; 
+            break;
+        case 'bold': 
+            formatted = `<strong>${selected || 'texto em negrito'}</strong>`; 
+            break;
+        case 'italic': 
+            formatted = `<em>${selected || 'texto em itálico'}</em>`; 
+            break;
+        case 'underline': 
+            formatted = `<u>${selected || 'texto sublinhado'}</u>`; 
+            break;
+        case 'ul': 
+            formatted = `<ul><li>${selected || 'item'}</li></ul>`; 
+            break;
+        case 'ol': 
+            formatted = `<ol><li>${selected || 'item'}</li></ol>`; 
+            break;
+        case 'link': {
+            const url = prompt('URL do link:', 'https://');
+            if (url) formatted = `<a href="${url}" target="_blank">${selected || 'link'}</a>`;
+            break;
+        }
+        case 'image': {
+            const url = prompt('URL da imagem:', 'https://');
+            if (url) formatted = `<img src="${url}" alt="imagem" style="max-width:100%;border-radius:8px;">`;
+            break;
+        }
+        default:
+            return;
+    }
+    
+    if (formatted) {
+        textarea.value = textarea.value.substring(0, start) + formatted + textarea.value.substring(end);
+        if (window.updatePreview) {
+            window.updatePreview();
+        }
+    }
+};
+
+/**
+ * Insere um bloco de código
+ */
+window.insertCodeBlock = function() {
+    const textarea = document.getElementById('postContentInput');
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const code = prompt('Digite o código:', '// seu código aqui');
+    if (code !== null) {
+        const escaped = code.replace(/&/g, '&amp;')
+                           .replace(/</g, '&lt;')
+                           .replace(/>/g, '&gt;')
+                           .replace(/"/g, '&quot;')
+                           .replace(/'/g, '&#39;');
+        const block = `<pre><code>${escaped}</code></pre>`;
+        textarea.value = textarea.value.substring(0, start) + block + textarea.value.substring(start);
+        if (window.updatePreview) {
+            window.updatePreview();
+        }
+    }
+};
+
+/**
+ * Alterna entre modo HTML e modo texto
+ */
+window.toggleMode = function() {
+    window.isHtmlMode = !window.isHtmlMode;
+    const label = document.getElementById('modeLabel');
+    const textarea = document.getElementById('postContentInput');
+    if (label) {
+        label.textContent = window.isHtmlMode ? 'HTML' : 'Texto';
+    }
+    if (textarea) {
+        textarea.placeholder = window.isHtmlMode ? 
+            'Escreva seu post em HTML...' : 
+            'Escreva seu post em texto simples...';
+    }
+};
+
+/**
+ * Atualiza a pré-visualização
+ */
+window.updatePreview = function() {
+    const textarea = document.getElementById('postContentInput');
+    const previewFrame = document.getElementById('previewFrame');
+    if (!textarea || !previewFrame) return;
+    
+    clearTimeout(window.previewTimeout);
+    window.previewTimeout = setTimeout(() => {
+        let content = textarea.value;
+        if (!window.isHtmlMode) {
+            content = content.replace(/\n/g, '<br>');
+        }
+        
+        previewFrame.srcdoc = `
+            <html>
+                <head>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body { 
+                            padding: 2rem; 
+                            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            line-height: 1.8;
+                            color: #1e293b;
+                            max-width: 100%;
+                            min-height: 400px;
+                            background: #ffffff;
+                            overflow-x: auto;
+                        }
+                        h1 { font-size: 2rem; margin: 1.2rem 0 0.8rem; font-weight: 700; color: #0f172a; }
+                        h2 { font-size: 1.6rem; margin: 1rem 0 0.6rem; font-weight: 600; color: #1e293b; }
+                        h3 { font-size: 1.3rem; margin: 0.8rem 0 0.5rem; font-weight: 600; color: #334155; }
+                        p { margin: 0.8rem 0; }
+                        pre { 
+                            background: #f1f5f9; 
+                            padding: 1rem; 
+                            border-radius: 8px; 
+                            overflow-x: auto;
+                            margin: 1rem 0;
+                        }
+                        code { 
+                            font-family: 'Courier New', monospace;
+                            background: #f1f5f9;
+                            padding: 0.2rem 0.4rem;
+                            border-radius: 4px;
+                            font-size: 0.9rem;
+                        }
+                        pre code { 
+                            background: transparent;
+                            padding: 0;
+                        }
+                        img { 
+                            max-width: 100%; 
+                            height: auto; 
+                            border-radius: 8px;
+                            margin: 1rem 0;
+                        }
+                        a { color: #2563eb; text-decoration: none; }
+                        a:hover { text-decoration: underline; }
+                        ul, ol { padding-left: 1.8rem; margin: 0.8rem 0; }
+                        li { margin: 0.4rem 0; }
+                        blockquote { 
+                            border-left: 4px solid #2563eb; 
+                            padding: 0.8rem 1.2rem; 
+                            margin: 1rem 0; 
+                            color: #475569;
+                            background: #f8fafc;
+                        }
+                    </style>
+                </head>
+                <body>${content || '<p style="color:#94a3b8; text-align:center; padding:2rem 0;">✏️ Comece a escrever seu post no editor ao lado...</p>'}</body>
+            </html>
+        `;
+    }, 300);
+};
+
+// Inicializa a variável global isHtmlMode se não existir
+if (typeof window.isHtmlMode === 'undefined') {
+    window.isHtmlMode = true;
+}
+
+console.log('✅ Funções do editor registradas globalmente');
+
+// ============================================
 // EXPOR FUNÇÕES GLOBAIS
 // ============================================
 window.navigateToHome = navigateToHome;
