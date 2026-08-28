@@ -1,7 +1,25 @@
 // ============================================
-// IMPORTAÇÃO DO SISTEMA DE TRADUÇÕES
+// INICIALIZAÇÃO
 // ============================================
-import { initI18n, t, setLocale } from './locales/index.js';
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializa o sistema de internacionalização
+    if (typeof window.initI18n === 'function') {
+        window.initI18n();
+        console.log('🌍 Sistema de idiomas inicializado via window!');
+    } else {
+        console.warn('⚠️ window.initI18n não disponível. Aguardando...');
+        // Tenta novamente após 1 segundo
+        setTimeout(() => {
+            if (typeof window.initI18n === 'function') {
+                window.initI18n();
+            } else {
+                console.error('❌ Sistema de idiomas não disponível.');
+            }
+        }, 1000);
+    }
+    
+    CookieManager.init();
+});
 
 // ============================================
 // FUNÇÕES DO EDITOR - CORREÇÃO
