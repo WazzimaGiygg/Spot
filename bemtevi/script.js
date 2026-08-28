@@ -2,43 +2,62 @@
 // LISTENER PARA MUDANÇA DE IDIOMA
 // ============================================
 
-// Função para recarregar a interface quando o idioma mudar
+let isFirstRender = true;
+
 function onLanguageChange(locale) {
     console.log(`🔄 Idioma mudou para: ${locale}, recarregando interface...`);
     
-    // Recarregar o feed principal
-    if (typeof renderMainApp === 'function') {
-        renderMainApp();
-    }
-    
-    // Recarregar componentes adicionais
-    if (typeof loadSuggestions === 'function') {
-        setTimeout(loadSuggestions, 300);
-    }
-    if (typeof loadTrendingTopics === 'function') {
-        setTimeout(loadTrendingTopics, 400);
-    }
-    if (typeof loadNotifications === 'function') {
-        setTimeout(loadNotifications, 500);
+    // 🔥 VERIFICAR SE O USUÁRIO ESTÁ LOGADO ANTES DE RENDERIZAR
+    if (currentUser && !isBanned) {
+        // Recarregar o feed principal
+        if (typeof renderMainApp === 'function') {
+            renderMainApp();
+        }
+        
+        // Recarregar componentes adicionais
+        if (typeof loadSuggestions === 'function') {
+            setTimeout(loadSuggestions, 300);
+        }
+        if (typeof loadTrendingTopics === 'function') {
+            setTimeout(loadTrendingTopics, 400);
+        }
+        if (typeof loadNotifications === 'function') {
+            setTimeout(loadNotifications, 500);
+        }
+    } else {
+        console.log('⏳ Usuário não logado, aguardando...');
+        // Se não estiver logado, apenas atualizar a tela de boas-vindas
+        if (typeof renderWelcomeScreen === 'function' && !currentUser) {
+            renderWelcomeScreen();
+        }
     }
 }
 
-// Aguardar I18n inicializar e registrar o listener
-document.addEventListener('DOMContentLoaded', function() {
-    // Verificar se I18n está disponível
+// Registrar listener quando I18n estiver disponível
+function registerI18nListener() {
     if (typeof I18n !== 'undefined') {
-        // Adicionar listener para mudança de idioma
         if (I18n.listeners) {
-            I18n.listeners.push(onLanguageChange);
+            if (!I18n._hasLanguageListener) {
+                I18n.listeners.push(onLanguageChange);
+                I18n._hasLanguageListener = true;
+                console.log('✅ Listener de idioma registrado!');
+            }
         }
         
-        // Se o I18n já estiver inicializado, aplicar traduções
-        if (I18n.initialized) {
-            console.log('✅ I18n já inicializado, aplicando traduções...');
-            setTimeout(renderMainApp, 100);
+        if (I18n.initialized && isFirstRender) {
+            isFirstRender = false;
+            console.log('✅ I18n já inicializado, verificando usuário...');
+            // Verificar se o usuário já está logado
+            if (currentUser && !isBanned) {
+                setTimeout(renderMainApp, 100);
+            } else {
+                setTimeout(renderWelcomeScreen, 100);
+            }
         }
+    } else {
+        setTimeout(registerI18nListener, 500);
     }
-});
+}
 
 
 // ============================================
@@ -1588,7 +1607,14 @@ function renderMainApp() {
     const container = document.getElementById('app');
     if (!container) return;
     
-    const userInitial = currentUser?.displayName?.charAt(0).toUpperCase() || 
+    // 🔥 VERIFICAR SE O USUÁRIO ESTÁ LOGADO
+    if (!currentUser || isBanned) {
+        console.log('⏳ Usuário não logado, exibindo tela de boas-vindas...');
+        renderWelcomeScreen();
+        return;
+    }
+    
+const userInitial = currentUser?.displayName?.charAt(0).toUpperCase() || 
                         currentUser?.email?.charAt(0).toUpperCase() || '?';
     const userName = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Usuário';
     const feedTitle = currentFeed === 'my-posts' ? __('feed.myPosts') : __('feed.title');
