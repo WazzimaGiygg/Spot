@@ -198,76 +198,50 @@ function getTimeAgo(date) {
 }
 
 // ============================================
-// FUNÇÃO DE FORMATAÇÃO WIKI PARA HTML
+// FUNÇÃO DE SANITIZAÇÃO DE HTML
 // ============================================
-function wikitextToHtml(wikitext) {
-    if (!wikitext || typeof wikitext !== 'string') return '';
+function sanitizeHtml(html) {
+    if (!html || typeof html !== 'string') return '';
     
-    let html = wikitext;
+    // Remove tags perigosas
+    const dangerousTags = ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select'];
+    let sanitized = html;
     
-    html = html.replace(/^======(.+?)======/gm, '<h6>$1</h6>');
-    html = html.replace(/^=====(.+?)=====/gm, '<h5>$1</h5>');
-    html = html.replace(/^====(.+?)====/gm, '<h4>$1</h4>');
-    html = html.replace(/^===(.+?)===/gm, '<h3>$1</h3>');
-    html = html.replace(/^==(.+?)==/gm, '<h2>$1</h2>');
-    html = html.replace(/^=(.+?)=/gm, '<h1>$1</h1>');
-    
-    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
-    
-    html = html.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (match, target, text) => {
-        const displayText = text || target;
-        return `<a href="#" class="wiki-link">${escapeHtml(displayText)}</a>`;
+    dangerousTags.forEach(tag => {
+        const regex = new RegExp(`<${tag}[^>]*>.*?<\/${tag}>`, 'gis');
+        sanitized = sanitized.replace(regex, `<!-- Tag ${tag} removida por segurança -->`);
+        const regex2 = new RegExp(`<${tag}[^>]*>`, 'gi');
+        sanitized = sanitized.replace(regex2, `<!-- Tag ${tag} removida por segurança -->`);
     });
     
-    html = html.replace(/\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$2</a>');
-    html = html.replace(/\[(https?:\/\/[^\s\]]+)\]/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    // Remove eventos JavaScript (onclick, onload, etc)
+    sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
+    sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
     
-    let inList = false;
-    let listType = '';
-    const lines = html.split('\n');
-    const processed = [];
+    // Remove protocolos perigosos em links e imagens
+    sanitized = sanitized.replace(/(src|href)\s*=\s*["'](javascript|data|vbscript):/gi, '$1="#"');
     
-    for (let line of lines) {
-        if (line.match(/^\* /)) {
-            if (!inList) { processed.push('<ul>'); inList = true; listType = 'ul'; }
-            processed.push(`<li>${line.replace(/^\* /, '')}</li>`);
-        } else if (line.match(/^# /)) {
-            if (!inList) { processed.push('<ol>'); inList = true; listType = 'ol'; }
-            processed.push(`<li>${line.replace(/^# /, '')}</li>`);
-        } else {
-            if (inList) {
-                processed.push(listType === 'ul' ? '</ul>' : '</ol>');
-                inList = false;
-                listType = '';
-            }
-            processed.push(line);
-        }
+    // Remove javascript: em links
+    sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
+    
+    return sanitized;
+}
+
+// ============================================
+// FUNÇÃO PARA RENDERIZAR HTML COM SEGURANÇA
+// ============================================
+function renderHtmlContent(html) {
+    if (!html || typeof html !== 'string') return '<em>Sem conteúdo</em>';
+    
+    // Primeiro sanitiza
+    const sanitized = sanitizeHtml(html);
+    
+    // Verifica se tem conteúdo seguro
+    if (!sanitized.trim()) {
+        return '<em>Conteúdo vazio ou removido por segurança</em>';
     }
-    if (inList) processed.push(listType === 'ul' ? '</ul>' : '</ol>');
-    html = processed.join('\n');
     
-    html = html.replace(/^&gt;(.+)$/gm, '<blockquote>$1</blockquote>');
-    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
-    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    
-    const paragraphs = html.split('\n\n');
-    html = paragraphs.map(para => {
-        para = para.trim();
-        if (!para) return '';
-        if (para.startsWith('<h') || para.startsWith('<ul') || para.startsWith('<ol') || 
-            para.startsWith('<table') || para.startsWith('<blockquote') || para.startsWith('<pre')) {
-            return para;
-        }
-        return `<p>${para}</p>`;
-    }).join('\n');
-    
-    html = html.replace(/\n/g, '<br>');
-    html = html.replace(/<p><br><\/p>/g, '');
-    
-    return html;
+    return sanitized;
 }
 
 // ============================================
@@ -645,6 +619,106 @@ function showMyDataModal() {
 function closeModal() { document.getElementById('modal').classList.remove('show'); }
 
 // ============================================
+// FUNÇÃO PARA INSERIR TAGS HTML
+// ============================================
+function insertTag(tag) {
+    const textarea = document.getElementById('editor-article-content');
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    let before, after, newText;
+    
+    switch(tag) {
+        case 'h1':
+            before = '<h1>';
+            after = '</h1>';
+            break;
+        case 'h2':
+            before = '<h2>';
+            after = '</h2>';
+            break;
+        case 'h3':
+            before = '<h3>';
+            after = '</h3>';
+            break;
+        case 'strong':
+            before = '<strong>';
+            after = '</strong>';
+            break;
+        case 'em':
+            before = '<em>';
+            after = '</em>';
+            break;
+        case 'u':
+            before = '<u>';
+            after = '</u>';
+            break;
+        case 'ul':
+            before = '<ul>\n  <li>';
+            after = '</li>\n</ul>';
+            if (!selectedText) {
+                newText = text.substring(0, start) + before + 'Item' + after + text.substring(end);
+                textarea.value = newText;
+                textarea.focus();
+                textarea.selectionStart = start + before.length;
+                textarea.selectionEnd = start + before.length + 4;
+                textarea.dispatchEvent(new Event('input'));
+                return;
+            }
+            break;
+        case 'ol':
+            before = '<ol>\n  <li>';
+            after = '</li>\n</ol>';
+            if (!selectedText) {
+                newText = text.substring(0, start) + before + 'Item' + after + text.substring(end);
+                textarea.value = newText;
+                textarea.focus();
+                textarea.selectionStart = start + before.length;
+                textarea.selectionEnd = start + before.length + 4;
+                textarea.dispatchEvent(new Event('input'));
+                return;
+            }
+            break;
+        case 'a':
+            before = '<a href="url" target="_blank">';
+            after = '</a>';
+            break;
+        case 'img':
+            before = '<img src="url" alt="descrição" style="max-width:100%;">';
+            after = '';
+            break;
+        case 'blockquote':
+            before = '<blockquote>';
+            after = '</blockquote>';
+            break;
+        case 'pre':
+            before = '<pre>';
+            after = '</pre>';
+            break;
+        default:
+            return;
+    }
+    
+    if (selectedText) {
+        newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
+    } else {
+        newText = text.substring(0, start) + before + after + text.substring(end);
+    }
+    
+    textarea.value = newText;
+    textarea.focus();
+    textarea.selectionStart = start + before.length;
+    textarea.selectionEnd = end + before.length;
+    
+    // Dispara preview
+    textarea.dispatchEvent(new Event('input'));
+}
+
+// ============================================
 // CARREGAR PÁGINAS
 // ============================================
 async function loadSubcollections() {
@@ -734,7 +808,9 @@ window.openArticle = async function(collectionUid, articleId) {
         const article = await articleRef.get();
         if (!article.exists) { alert('Artigo não encontrado'); return; }
         const data = article.data();
-        const formattedContent = wikitextToHtml(data.descricao || 'Sem conteúdo.');
+        
+        // Renderiza HTML com sanitização
+        const renderedContent = renderHtmlContent(data.descricao || '');
         
         document.getElementById('modal-title').innerHTML = `📄 ${escapeHtml(data.titulo)}`;
         document.getElementById('modal-body').innerHTML = `
@@ -742,13 +818,16 @@ window.openArticle = async function(collectionUid, articleId) {
                 <div style="margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #ccc; font-size:0.85em; color:#666;">
                     📅 Criado: ${data.dataCriacao ? formatDate(data.dataCriacao) : 'Data desconhecida'}
                     ${data.criadorNome ? `<br>👤 Criado por: ${escapeHtml(data.criadorNome)}` : ''}
+                    ${data.ultimaEdicao ? `<br>🔄 Última edição: ${formatDate(data.ultimaEdicao)}` : ''}
                 </div>
-                ${formattedContent}
+                ${renderedContent}
             </div>
             ${!isGuestUser ? `<div style="margin-top:20px; text-align:center;"><button onclick="document.getElementById('modal').classList.remove('show'); openEditor('${collectionUid}', '${articleId}')" class="btn-abrir-painel">✏️ Editar</button></div>` : ''}
         `;
         document.getElementById('modal').classList.add('show');
-    } catch (error) { alert('Erro: ' + error.message); }
+    } catch (error) {
+        alert('Erro: ' + error.message);
+    }
 };
 
 // ============================================
@@ -785,8 +864,13 @@ async function openEditor(pageUid, articleId) {
     const contentTextarea = document.getElementById('editor-article-content');
     const updatePreview = () => {
         const content = contentTextarea.value;
-        const previewHtml = wikitextToHtml(content);
-        document.getElementById('editor-preview').innerHTML = previewHtml || '<em>Sem conteúdo para pré-visualizar</em>';
+        // Renderiza HTML sanitizado
+        const previewHtml = renderHtmlContent(content);
+        // Adiciona aviso de segurança
+        document.getElementById('editor-preview').innerHTML = `
+            <div class="security-notice">🔒 Conteúdo sanitizado - Tags perigosas removidas</div>
+            ${previewHtml || '<em>Sem conteúdo para pré-visualizar</em>'}
+        `;
     };
     contentTextarea.oninput = updatePreview;
     updatePreview();
@@ -822,8 +906,12 @@ async function loadArticleData(pageUid, articleId) {
             document.getElementById('editor-article-title').value = data.titulo || '';
             document.getElementById('editor-article-content').value = data.descricao || '';
             document.getElementById('editor-article-description').value = data.resumo || '';
-            const previewHtml = wikitextToHtml(data.descricao || '');
-            document.getElementById('editor-preview').innerHTML = previewHtml || '<em>Sem conteúdo</em>';
+            // Renderiza HTML sanitizado
+            const previewHtml = renderHtmlContent(data.descricao || '');
+            document.getElementById('editor-preview').innerHTML = `
+                <div class="security-notice">🔒 Conteúdo sanitizado - Tags perigosas removidas</div>
+                ${previewHtml || '<em>Sem conteúdo</em>'}
+            `;
         }
     } catch (error) {
         alert('Erro ao carregar: ' + error.message);
@@ -834,10 +922,22 @@ async function saveArticle() {
     if (!currentEditingPageUid) { alert('Erro: página não identificada'); return; }
     
     const title = document.getElementById('editor-article-title').value.trim();
-    const content = document.getElementById('editor-article-content').value;
+    let content = document.getElementById('editor-article-content').value;
     const description = document.getElementById('editor-article-description').value;
     
     if (!title && currentEditingArticleId !== null) { alert('Digite um título'); return; }
+    
+    // Validação de segurança do HTML
+    if (content) {
+        const sanitized = sanitizeHtml(content);
+        if (sanitized !== content) {
+            // Avisa que tags perigosas foram removidas
+            if (!confirm('⚠️ Seu conteúdo continha tags de script ou eventos perigosos que foram removidos por segurança. Deseja continuar?')) {
+                return;
+            }
+            content = sanitized;
+        }
+    }
     
     const saveBtn = document.getElementById('editor-save-btn');
     saveBtn.disabled = true;
@@ -847,21 +947,21 @@ async function saveArticle() {
         if (currentEditingArticleId) {
             await db.collection('documentos').doc(currentEditingPageUid).collection('inevitavel').doc(currentEditingArticleId).update({
                 titulo: title,
-                descricao: content,
+                descricao: content, // HTML puro
                 resumo: description,
                 ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
                 editorId: currentUser.uid,
-                editorNome: currentUser.displayName
+                editorNome: currentUser.displayName || 'Usuário'
             });
             alert('✅ Artigo atualizado!');
         } else if (title) {
             const newId = title.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_' + Date.now();
             await db.collection('documentos').doc(currentEditingPageUid).collection('inevitavel').doc(newId).set({
                 titulo: title,
-                descricao: content,
+                descricao: content, // HTML puro
                 resumo: description,
-                criadorEmail: currentUser.email,
-                criadorNome: currentUser.displayName,
+                criadorEmail: currentUser.email || '',
+                criadorNome: currentUser.displayName || 'Usuário',
                 criadorUid: currentUser.uid,
                 dataCriacao: firebase.firestore.FieldValue.serverTimestamp(),
                 ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp()
@@ -1045,7 +1145,9 @@ window.toggleNotifications = toggleNotifications;
 window.markAllAsRead = markAllAsRead;
 window.showLoginModal = showLoginModal;
 window.loginWithGoogle = loginWithGoogle;
+window.insertTag = insertTag;
 
 console.log('📚 WikiZero inicializada com sucesso!');
 console.log('🔔 Notificações integradas via coleção "notifications"');
 console.log('🍪 Sistema de consentimento de cookies ativo');
+console.log('📝 Editor de HTML com sanitização de segurança ativo!');
