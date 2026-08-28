@@ -1,4 +1,92 @@
 // ============================================
+// FUNÇÕES DO EDITOR - CORREÇÃO
+// ============================================
+window.formatText = function(type) {
+    const textarea = document.getElementById('postContentInput');
+    if (!textarea) return;
+    
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = textarea.value.substring(start, end);
+    let formatted = '';
+    
+    const tags = {
+        'h1': `<h1>${selected || 'Título'}</h1>`,
+        'h2': `<h2>${selected || 'Subtítulo'}</h2>`,
+        'h3': `<h3>${selected || 'Subsubtítulo'}</h3>`,
+        'bold': `<strong>${selected || 'texto em negrito'}</strong>`,
+        'italic': `<em>${selected || 'texto em itálico'}</em>`,
+        'underline': `<u>${selected || 'texto sublinhado'}</u>`,
+        'ul': `<ul><li>${selected || 'item'}</li></ul>`,
+        'ol': `<ol><li>${selected || 'item'}</li></ol>`
+    };
+    
+    if (tags[type]) {
+        formatted = tags[type];
+    } else if (type === 'link') {
+        const url = prompt('URL do link:', 'https://');
+        if (url) formatted = `<a href="${url}" target="_blank">${selected || 'link'}</a>`;
+    } else if (type === 'image') {
+        const url = prompt('URL da imagem:', 'https://');
+        if (url) formatted = `<img src="${url}" alt="imagem" style="max-width:100%;border-radius:8px;">`;
+    }
+    
+    if (formatted) {
+        textarea.value = textarea.value.substring(0, start) + formatted + textarea.value.substring(end);
+        if (window.updatePreview) window.updatePreview();
+    }
+};
+
+window.insertCodeBlock = function() {
+    const textarea = document.getElementById('postContentInput');
+    if (!textarea) return;
+    const code = prompt('Digite o código:', '// seu código aqui');
+    if (code !== null) {
+        const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const block = `<pre><code>${escaped}</code></pre>`;
+        const start = textarea.selectionStart;
+        textarea.value = textarea.value.substring(0, start) + block + textarea.value.substring(start);
+        if (window.updatePreview) window.updatePreview();
+    }
+};
+
+window.toggleMode = function() {
+    window.isHtmlMode = !window.isHtmlMode;
+    const label = document.getElementById('modeLabel');
+    if (label) label.textContent = window.isHtmlMode ? 'HTML' : 'Texto';
+    const textarea = document.getElementById('postContentInput');
+    if (textarea) {
+        textarea.placeholder = window.isHtmlMode ? 'Escreva seu post em HTML...' : 'Escreva seu post em texto simples...';
+    }
+};
+
+window.updatePreview = function() {
+    const textarea = document.getElementById('postContentInput');
+    const preview = document.getElementById('previewFrame');
+    if (!textarea || !preview) return;
+    clearTimeout(window.previewTimeout);
+    window.previewTimeout = setTimeout(() => {
+        let content = textarea.value || '<p style="color:#94a3b8;text-align:center;padding:2rem 0;">✏️ Comece a escrever...</p>';
+        if (!window.isHtmlMode) content = content.replace(/\n/g, '<br>');
+        preview.srcdoc = `<html><head><style>
+            body{padding:2rem;font-family:Inter;line-height:1.8;color:#1e293b;max-width:100%;background:#fff}
+            h1{font-size:2rem;margin:1.2rem 0 0.8rem;font-weight:700;color:#0f172a}
+            h2{font-size:1.6rem;margin:1rem 0 0.6rem;font-weight:600}
+            h3{font-size:1.3rem;margin:0.8rem 0 0.5rem;font-weight:600}
+            pre{background:#f1f5f9;padding:1rem;border-radius:8px;overflow-x:auto;margin:1rem 0}
+            code{font-family:'Courier New',monospace;background:#f1f5f9;padding:0.2rem 0.4rem;border-radius:4px}
+            img{max-width:100%;border-radius:8px;margin:1rem 0}
+            a{color:#2563eb;text-decoration:none}
+            ul,ol{padding-left:1.8rem;margin:0.8rem 0}
+            blockquote{border-left:4px solid #2563eb;padding:0.8rem 1.2rem;margin:1rem 0;color:#475569;background:#f8fafc}
+        </style></head><body>${content}</body></html>`;
+    }, 300);
+};
+
+window.isHtmlMode = true;
+
+
+// ============================================
 // IMPORTAÇÃO DO SISTEMA DE TRADUÇÕES
 // ============================================
 // (Adicione estas linhas no topo do arquivo, antes do CookieManager)
