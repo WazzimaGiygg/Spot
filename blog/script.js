@@ -1,4 +1,9 @@
 // ============================================
+// IMPORTAÇÃO DO SISTEMA DE TRADUÇÕES
+// ============================================
+import { initI18n, t, setLocale } from './locales/index.js';
+
+// ============================================
 // FUNÇÕES DO EDITOR - CORREÇÃO
 // ============================================
 window.formatText = function(type) {
