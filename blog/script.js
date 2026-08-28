@@ -1363,6 +1363,19 @@ document.querySelectorAll('.modal').forEach(modal => {
 // INICIALIZAÇÃO
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
+    // Inicializa o sistema de internacionalização
+    if (typeof initI18n === 'function') {
+        initI18n();
+        console.log('🌍 Sistema de idiomas inicializado!');
+    } else {
+        console.warn('⚠️ initI18n não encontrada. Verificando window...');
+        if (window.initI18n) {
+            window.initI18n();
+        } else {
+            console.warn('⚠️ Sistema de idiomas não disponível.');
+        }
+    }
+    
     CookieManager.init();
 });
 
