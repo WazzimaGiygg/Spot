@@ -1,4 +1,59 @@
 // ============================================
+// IMPORTAÇÃO DO SISTEMA DE TRADUÇÕES
+// ============================================
+// (Adicione estas linhas no topo do arquivo, antes do CookieManager)
+
+// ============================================
+// INICIALIZAÇÃO DO SISTEMA DE TRADUÇÕES
+// ============================================
+// Adicione esta função e chame-a no DOMContentLoaded
+
+// Função para traduzir elementos da UI que são gerados dinamicamente
+function translateDynamicElements() {
+    // Elementos que precisam ser traduzidos após renderização
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (window.t) {
+            const translation = window.t(key);
+            if (translation && translation !== key) {
+                el.textContent = translation;
+            }
+        }
+    });
+}
+
+// Função para traduzir o título da página
+function translatePageTitle() {
+    if (window.t) {
+        document.title = window.t('app.title');
+    }
+}
+
+// ============================================
+// MODIFICAR A FUNÇÃO renderUserBlog
+// ============================================
+// Substitua os textos estáticos por chamadas de tradução
+
+// Exemplo de como modificar partes da renderização:
+
+// No início da função renderUserBlog, adicione:
+if (window.t) {
+    // Usa as traduções
+    const t = window.t;
+    
+    // Substitua textos estáticos:
+    // 'Blog de' -> t('blog.titulo')
+    // 'Seu blog' -> t('blog.seuBlog')
+    // 'Blog público' -> t('blog.publico')
+    // 'posts' -> t('blog.posts')
+    // 'Página' -> t('pagination.pagina')
+    // 'de' -> t('pagination.de')
+    // etc.
+}
+
+// Modifique o HTML gerado para usar data-i18n ou chamar t() diretamente
+
+// ============================================
 // COOKIE CONSENT MANAGER
 // ============================================
 const CookieManager = {
