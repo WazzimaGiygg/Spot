@@ -1,42 +1,19 @@
 // ============================================
-// CONFIGURAÇÃO DO FIREBASE - CORRIGIDA
+// CONFIGURAÇÃO DO FIREBASE
 // ============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+    authDomain: "wzzm-ce3fc.firebaseapp.com",
+    projectId: "wzzm-ce3fc",
+    storageBucket: "wzzm-ce3fc.appspot.com",
+    messagingSenderId: "249427877153",
+    appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
 
-if (typeof firebaseConfig === 'undefined') {
-    var firebaseConfig = {
-        apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
-        authDomain: "wzzm-ce3fc.firebaseapp.com",
-        projectId: "wzzm-ce3fc",
-        storageBucket: "wzzm-ce3fc.appspot.com",
-        messagingSenderId: "249427877153",
-        appId: "1:249427877153:web:0e4297294794a5aadeb260"
-    };
-}
-
-if (typeof firebase !== 'undefined') {
-    if (!firebase.apps.length) {
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log('✅ Firebase inicializado pelo script.js');
-        } catch (error) {
-            console.error('❌ Erro ao inicializar Firebase:', error);
-        }
-    } else {
-        console.log('✅ Firebase já estava inicializado');
-    }
-} else {
-    console.error('❌ Firebase não está disponível! Verifique os SDKs.');
-}
-
-let db, auth, googleProvider;
-try {
-    db = firebase.firestore();
-    auth = firebase.auth();
-    googleProvider = new firebase.auth.GoogleAuthProvider();
-    console.log('✅ Firestore e Auth disponíveis');
-} catch (error) {
-    console.error('❌ Erro ao obter instâncias do Firebase:', error);
-}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 // ============================================
 // VARIÁVEIS GLOBAIS
@@ -52,24 +29,8 @@ let weatherLoaded = false;
 let notifications = [];
 let unreadCount = 0;
 let notificationListener = null;
-let languageManagerInitialized = false;
 
 const SPECIFIC_ADMIN_UID = "sZxfMuOBPbXdR8nttVPXIN8QOOl1";
-
-
-
-// ============================================
-// INICIALIZAÇÃO DO LANGUAGE MANAGER
-// ============================================
-async function initLanguageManager() {
-    if (typeof LanguageManager !== 'undefined' && !languageManagerInitialized) {
-        await LanguageManager.init('pt');
-        languageManagerInitialized = true;
-        console.log('🌍 Language Manager inicializado');
-        return true;
-    }
-    return false;
-}
 
 // ============================================
 // COOKIE CONSENT MANAGER
@@ -174,7 +135,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast(getTranslation('cookie_aceitos'));
+        this.showToast('✅ Todos os cookies foram aceitos!');
     },
     
     rejectAll() {
@@ -182,7 +143,7 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast(getTranslation('cookie_recusados'), false);
+        this.showToast('ℹ️ Cookies não essenciais foram recusados.', 'info');
     },
     
     customize() {
@@ -192,12 +153,21 @@ const CookieManager = {
         this.saveConsent(consent);
         this.applyConsent(consent);
         this.hideBanner();
-        this.showToast(getTranslation('cookie_preferencias'));
+        this.showToast('✅ Suas preferências foram salvas!', 'success');
     },
     
-    showToast(message, isError = false) {
+    showToast(message, type = 'info') {
         if (typeof showToast === 'function') {
-            showToast(message, isError);
+            showToast(message, type === 'error');
+        } else {
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.textContent = message;
+                toast.style.background = type === 'error' ? '#c0392b' : 
+                                        type === 'success' ? '#27ae60' : '#2980b9';
+                toast.style.display = 'block';
+                setTimeout(() => toast.style.display = 'none', 3000);
+            }
         }
     },
     
@@ -211,13 +181,6 @@ const CookieManager = {
 // ============================================
 // FUNÇÕES AUXILIARES
 // ============================================
-function getTranslation(key, params = {}) {
-    if (typeof LanguageManager !== 'undefined' && LanguageManager.translate) {
-        return LanguageManager.translate(key, params);
-    }
-    return key;
-}
-
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -256,11 +219,8 @@ function getCategoryIcon(cat) {
 }
 
 function formatDate(timestamp) {
-    if (!timestamp) return getTranslation('data_desconhecida');
+    if (!timestamp) return 'Data desconhecida';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    if (typeof LanguageManager !== 'undefined' && LanguageManager.formatDate) {
-        return LanguageManager.formatDate(date);
-    }
     return date.toLocaleDateString('pt-BR');
 }
 
@@ -303,8 +263,7 @@ async function registerUser(user) {
             createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
-            cookiePreferences: CookieManager.getConsent() || null,
-            language: existingData.language || (typeof LanguageManager !== 'undefined' ? LanguageManager.currentLang : 'pt')
+            cookiePreferences: CookieManager.getConsent() || null
         };
 
         await db.collection('users').doc(uid).set(userData, { merge: true });
@@ -402,7 +361,7 @@ function renderNotifications() {
         list.innerHTML = `
             <div class="notification-empty">
                 <span class="material-icons">notifications_off</span>
-                <p>${getTranslation('nenhuma_notificacao')}</p>
+                <p>Nenhuma notificação</p>
             </div>
         `;
         return;
@@ -411,7 +370,7 @@ function renderNotifications() {
     const recentNotifs = notifications.slice(0, 10);
     list.innerHTML = recentNotifs.map(notif => `
         <div class="notification-item ${notif.lida ? '' : 'unread'}" onclick="markAsRead('${notif.id}')">
-            <div class="notif-title">${escapeHtml(notif.titulo || getTranslation('notificacao'))}</div>
+            <div class="notif-title">${escapeHtml(notif.titulo || 'Notificação')}</div>
             <div class="notif-message">${escapeHtml(notif.mensagem || '')}</div>
             <div class="notif-time">${getTimeAgo(notif.timestamp)}</div>
         </div>
@@ -542,7 +501,7 @@ function updateUI() {
         btnLogout.style.display = 'inline-block';
     } else {
         userAvatar.innerHTML = '👤';
-        userName.textContent = getTranslation('visitante');
+        userName.textContent = 'Visitante';
         userEmail.textContent = '';
         userBadge.innerHTML = '';
         btnLogin.style.display = 'inline-block';
@@ -601,7 +560,7 @@ function logout() {
         unreadCount = 0;
         updateNotificationBadge();
         updateUI();
-        showToast(getTranslation('logout_sucesso'));
+        showToast('Logout realizado com sucesso!');
         setTimeout(() => navigateToHome(), 500);
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
@@ -615,7 +574,7 @@ function logout() {
 function showBannedScreen(reason = 'Violação das políticas de uso') {
     const overlay = document.getElementById('bannedOverlay');
     const details = document.getElementById('banDetails');
-    details.textContent = `${getTranslation('motivo')} ${reason}`;
+    details.textContent = `Motivo: ${reason}`;
     overlay.classList.add('show');
     document.querySelector('.newspaper-container').style.opacity = '0.5';
     document.querySelector('.newspaper-container').style.pointerEvents = 'none';
@@ -766,12 +725,12 @@ async function renderWeather() {
     
     weatherContainer.innerHTML = `
         <div class="weather-header">
-            <h3><i class="fas fa-cloud-sun"></i> ${getTranslation('previsao_tempo')}</h3>
+            <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
             <i class="fas fa-map-pin"></i>
         </div>
         <div class="weather-loading">
             <div class="spinner-small"></div>
-            <p style="font-size:12px; opacity:0.7;">${getTranslation('carregando_previsao')}</p>
+            <p style="font-size:12px; opacity:0.7;">Carregando previsão...</p>
         </div>
     `;
     
@@ -787,12 +746,12 @@ async function updateWeatherContent(widget) {
     if (!data || !data.current) {
         widget.innerHTML = `
             <div class="weather-header">
-                <h3><i class="fas fa-cloud-sun"></i> ${getTranslation('previsao_tempo')}</h3>
+                <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
                 <i class="fas fa-map-pin"></i>
             </div>
             <div class="weather-error">
                 <i class="fas fa-exclamation-triangle"></i>
-                ${getTranslation('erro_previsao')}
+                Não foi possível carregar a previsão do tempo.
             </div>
             <div class="weather-update">Santa Fé do Sul - SP</div>
         `;
@@ -811,7 +770,7 @@ async function updateWeatherContent(widget) {
     
     widget.innerHTML = `
         <div class="weather-header">
-            <h3><i class="fas fa-cloud-sun"></i> ${getTranslation('previsao_tempo')}</h3>
+            <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
             <i class="fas fa-map-pin"></i>
         </div>
         <div class="weather-main">
@@ -827,103 +786,58 @@ async function updateWeatherContent(widget) {
             <div class="detail-item">
                 <i class="fas fa-tint"></i>
                 <div class="value">${humidity}%</div>
-                <div class="label">${getTranslation('umidade')}</div>
+                <div class="label">Umidade</div>
             </div>
             <div class="detail-item">
                 <i class="fas fa-wind"></i>
                 <div class="value">${Math.round(windSpeed)} km/h</div>
-                <div class="label">${getTranslation('vento')}</div>
+                <div class="label">Vento</div>
             </div>
             <div class="detail-item">
                 <i class="fas ${iconClass}"></i>
                 <div class="value">${desc}</div>
-                <div class="label">${getTranslation('condicao')}</div>
+                <div class="label">Condição</div>
             </div>
         </div>
         <div class="weather-update">
-            <i class="far fa-clock"></i> ${getTranslation('atualizado_agora')} • Santa Fé do Sul - SP
+            <i class="far fa-clock"></i> Atualizado agora • Santa Fé do Sul - SP
         </div>
     `;
     weatherLoaded = true;
 }
 
 // ============================================
-// LOAD ARTICLES - CORRIGIDA (sem duplicação)
+// ARTIGOS
 // ============================================
 async function loadArticles() {
     const grid = document.getElementById('newspaperGrid');
-    grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${getTranslation('carregando_noticias')}</p></div>`;
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando notícias...</p></div>';
     
     try {
-        const userLang = typeof LanguageManager !== 'undefined' 
-            ? LanguageManager.currentLang 
-            : 'pt';
-        
-        console.log(`🔍 Buscando artigos no idioma: "${userLang}"`);
-        console.log(`📂 Categoria: "${currentCategory}"`);
-        
-        let articles = [];
-        
-        if (typeof multiLangArticles !== 'undefined' && multiLangArticles) {
-            console.log('✅ Usando MultiLanguageArticles para buscar');
-            articles = await multiLangArticles.searchArticles(userLang, currentCategory);
-            console.log(`📊 Encontrados ${articles.length} artigos`);
-        } else {
-            console.warn('⚠️ MultiLanguageArticles não disponível, usando fallback');
-            let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
-            if (currentCategory !== 'todos') {
-                query = query.where('categoria', '==', currentCategory);
-            }
-            const snapshot = await query.get();
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                articles.push({ id: doc.id, ...data });
-            });
-            console.log(`📊 Encontrados ${articles.length} artigos (fallback)`);
+        let query = db.collection('articlesdoc').orderBy('dataPublicacao', 'desc');
+        if (currentCategory !== 'todos') {
+            query = db.collection('articlesdoc').where('categoria', '==', currentCategory).orderBy('dataPublicacao', 'desc');
         }
         
+        const snapshot = await query.get();
+        const articles = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            articles.push({ id: doc.id, ...data });
+        });
+        
         if (articles.length === 0) {
-            grid.innerHTML = `<div class="loading"><p>${getTranslation('sem_materias')}</p></div>`;
+            grid.innerHTML = '<div class="loading"><p>📭 Nenhuma matéria encontrada nesta categoria.</p></div>';
             return;
         }
         
-        renderArticlesByLanguage(articles);
-        
+        renderArticles(articles);
     } catch (error) {
-        console.error('❌ Erro ao carregar artigos:', error);
-        grid.innerHTML = `<div class="loading"><p>${getTranslation('erro_carregar')} ${error.message}</p></div>`;
+        grid.innerHTML = `<div class="loading"><p>❌ Erro ao carregar: ${error.message}</p></div>`;
     }
 }
 
-// ============================================
-// RENDER ARTICLES BY LANGUAGE
-// ============================================
-function renderArticlesByLanguage(articles) {
-    // Separa artigos por idioma
-    const userLang = typeof LanguageManager !== 'undefined' 
-        ? LanguageManager.currentLang 
-        : 'pt';
-    
-    // Organiza: artigos no idioma do usuário primeiro, depois fallback
-    const primaryLangArticles = articles.filter(a => a._currentLanguage === userLang);
-    const fallbackArticles = articles.filter(a => a._isFallback === true);
-    const otherArticles = articles.filter(a => a._currentLanguage !== userLang && !a._isFallback);
-    
-    // Ordena: primeiro os do idioma do usuário, depois os fallback, depois outros
-    const sortedArticles = [...primaryLangArticles, ...fallbackArticles, ...otherArticles];
-    
-    renderArticles(sortedArticles);
-}
-
-// ============================================
-// RENDER ARTICLES (função existente atualizada)
-// ============================================
 function renderArticles(articles) {
-    // Mostra indicador de idioma nos artigos
-    const userLang = typeof LanguageManager !== 'undefined' 
-        ? LanguageManager.currentLang 
-        : 'pt';
-    
     const mainArticle = articles[0];
     const leftArticles = articles.slice(1, 4);
     const rightArticles = articles.slice(4, 8);
@@ -941,34 +855,21 @@ function renderArticles(articles) {
     const renderArticleCard = (article, isMain = false) => {
         const tag = getCategoryIcon(article.categoria) + ' ' + (article.categoria || 'geral').toUpperCase();
         const date = formatDate(article.dataPublicacao);
-        const autor = article.autorNome || getTranslation('redacao');
-        const views = article.visualizacoes || 0;
-        
-        // Mostra indicador de idioma se for fallback ou tradução
-        let langIndicator = '';
-        if (article._isFallback) {
-            langIndicator = `<span style="font-size:10px; color:#999; background:#f0f0f0; padding:2px 8px; border-radius:10px; margin-left:5px;">🌐 Traduzido</span>`;
-        } else if (article._currentLanguage && article._currentLanguage !== 'pt') {
-            const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-                ? LanguageManager.availableLanguages[article._currentLanguage] 
-                : null;
-            langIndicator = `<span style="font-size:10px; color:#999; background:#f0f0f0; padding:2px 8px; border-radius:10px; margin-left:5px;">${langInfo?.flag || '🌐'} ${langInfo?.name || article._currentLanguage.toUpperCase()}</span>`;
-        }
         
         if (isMain) {
             return `
                 <div class="main-article" style="position: relative;">
                     ${renderAdminActions(article.id)}
-                    <div class="article-tag">${tag} · ${getTranslation('destaque')} ${langIndicator}</div>
+                    <div class="article-tag">${tag} · DESTAQUE</div>
                     <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
                     <div class="article-meta">
-                        <span><i class="far fa-user"></i> ${getTranslation('por')} ${escapeHtml(autor)}</span>
+                        <span><i class="far fa-user"></i> Por ${escapeHtml(article.autorNome || 'Redação')}</span>
                         <span><i class="far fa-calendar"></i> ${date}</span>
-                        <span><i class="fas fa-eye"></i> ${views} ${getTranslation('visualizacoes')}</span>
+                        <span><i class="fas fa-eye"></i> ${article.visualizacoes || 0} visualizações</span>
                     </div>
-                    ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">${getTranslation('foto_divulgacao')}</div></div>` : ''}
+                    ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">Foto: Divulgação</div></div>` : ''}
                     <div class="article-excerpt">${escapeHtml((article.resumo || article.conteudo || '').substring(0, 300))}${(article.resumo || article.conteudo || '').length > 300 ? '...' : ''}</div>
-                    <a class="read-more" onclick="openArticleById('${article.id}')">${getTranslation('continue_lendo')}</a>
+                    <a class="read-more" onclick="openArticleById('${article.id}')">Continue lendo →</a>
                 </div>
             `;
         }
@@ -976,14 +877,14 @@ function renderArticles(articles) {
         return `
             <div class="article-card" style="position: relative;">
                 ${renderAdminActions(article.id)}
-                <div class="article-tag">${tag} ${langIndicator}</div>
+                <div class="article-tag">${tag}</div>
                 <div class="article-title"><a onclick="openArticleById('${article.id}')">${escapeHtml(article.titulo)}</a></div>
                 <div class="article-meta">
-                    <span><i class="far fa-user"></i> ${escapeHtml(autor)}</span>
+                    <span><i class="far fa-user"></i> ${escapeHtml(article.autorNome || 'Redação')}</span>
                     <span><i class="far fa-calendar"></i> ${date}</span>
                 </div>
                 <div class="article-excerpt">${escapeHtml((article.resumo || article.conteudo || '').substring(0, 150))}${(article.resumo || article.conteudo || '').length > 150 ? '...' : ''}</div>
-                <a class="read-more" onclick="openArticleById('${article.id}')">${getTranslation('continue_lendo')}</a>
+                <a class="read-more" onclick="openArticleById('${article.id}')">Continue lendo →</a>
             </div>
         `;
     };
@@ -992,167 +893,85 @@ function renderArticles(articles) {
     const rightHtml = rightArticles.map(a => renderArticleCard(a, false)).join('');
 
     document.getElementById('newspaperGrid').innerHTML = `
-        <div class="sidebar-left">${leftHtml || `<div class="article-card"><p>${getTranslation('materias_breve')}</p></div>`}</div>
+        <div class="sidebar-left">${leftHtml || '<div class="article-card"><p>📭 Mais matérias em breve...</p></div>'}</div>
         <div>${renderArticleCard(mainArticle, true)}</div>
-        <div class="sidebar-right">${rightHtml || `<div class="article-card"><p>${getTranslation('aguardem_publicacoes')}</p></div>`}</div>
+        <div class="sidebar-right">${rightHtml || '<div class="article-card"><p>📭 Aguardem novas publicações...</p></div>'}</div>
     `;
-    
-    // Adiciona aviso se estiver vendo traduções
-    const hasFallback = articles.some(a => a._isFallback === true);
-    if (hasFallback) {
-        const langName = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-            ? LanguageManager.availableLanguages[LanguageManager.currentLang]?.nativeName 
-            : 'Português';
-        const notice = document.createElement('div');
-        notice.style.cssText = 'text-align:center; padding:10px; font-size:12px; color:#999; border-top:1px solid #eee; margin-top:20px;';
-        notice.innerHTML = `ℹ️ Algumas matérias estão sendo exibidas em Português (tradução automática) pois não estão disponíveis em ${langName}.`;
-        document.querySelector('.newspaper-grid').appendChild(notice);
-    }
     
     setTimeout(() => renderWeather(), 300);
 }
 
-window.openArticleById = async function(articleId) {
+window.openArticleById = function(articleId) {
     updateUrl(currentCategory, articleId);
-    await loadArticleById(articleId);
+    loadArticleById(articleId);
 };
 
 // ============================================
-// CARREGAR MATÉRIA POR ID - CORRIGIDA
+// CARREGAR MATÉRIA POR ID
 // ============================================
 async function loadArticleById(articleId) {
     const grid = document.getElementById('newspaperGrid');
-    grid.innerHTML = `<div class="loading"><div class="spinner"></div><p>${getTranslation('carregando_materia')}</p></div>`;
+    grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando matéria...</p></div>';
     
     try {
-        let article = null;
-        const userLang = typeof LanguageManager !== 'undefined' 
-            ? LanguageManager.currentLang 
-            : 'pt';
-        
-        // Tenta usar o sistema multi-idioma
-        if (typeof multiLangArticles !== 'undefined' && multiLangArticles) {
-            console.log(`🔍 Buscando artigo ${articleId} no idioma: ${userLang}`);
-            article = await multiLangArticles.getArticleById(articleId, userLang);
-        }
-        
-        // Fallback: busca direto se o multi-idioma falhou
-        if (!article) {
-            console.log(`📄 Fallback: buscando artigo ${articleId} diretamente`);
-            const doc = await db.collection('articlesdoc').doc(articleId).get();
-            if (doc.exists) {
-                article = { id: doc.id, ...doc.data() };
-                // Marca como fallback
-                article._isFallback = true;
-                article._currentLanguage = article.language || 'pt';
-            }
-        }
-        
-        if (!article) {
-            grid.innerHTML = `<div class="loading"><p>${getTranslation('materia_nao_encontrada')} <a onclick="navigateToHome()" style="color:#c0392b; cursor:pointer;">${getTranslation('voltar_inicio')}</a></p></div>`;
+        const doc = await db.collection('articlesdoc').doc(articleId).get();
+        if (!doc.exists) {
+            grid.innerHTML = '<div class="loading"><p>📭 Matéria não encontrada. <a onclick="navigateToHome()" style="color:#c0392b; cursor:pointer;">Voltar para página inicial</a></p></div>';
             return;
         }
         
-        // GARANTE que o conteúdo existe
-        if (!article.conteudo && !article.resumo) {
-            console.warn(`⚠️ Artigo ${articleId} não tem conteúdo nem resumo`);
-            article.conteudo = '<p>Conteúdo não disponível para este artigo.</p>';
-            article.resumo = 'Conteúdo não disponível.';
-        }
-        
-        // GARANTE que o título existe
-        if (!article.titulo) {
-            article.titulo = 'Artigo sem título';
-        }
-        
+        const article = { id: doc.id, ...doc.data() };
         currentViewArticleId = articleId;
         currentViewArticleData = article;
         
-        // Incrementa visualizações (apenas se não for admin)
         if (!currentUserIsAdmin) {
             try {
                 const novasViews = (article.visualizacoes || 0) + 1;
                 await db.collection('articlesdoc').doc(articleId).update({ visualizacoes: novasViews });
             } catch (e) {
-                console.log("⚠️ Não foi possível incrementar visualizações:", e);
+                console.log("Não foi possível incrementar visualizações:", e);
             }
         }
         
         renderSingleArticle(article);
     } catch (error) {
-        console.error('❌ Erro ao carregar artigo:', error);
-        grid.innerHTML = `<div class="loading"><p>${getTranslation('erro_carregar')} ${error.message}</p></div>`;
+        grid.innerHTML = `<div class="loading"><p>❌ Erro ao carregar: ${error.message}</p></div>`;
     }
 }
 
-// ============================================
-// RENDER SINGLE ARTICLE - CORRIGIDA
-// ============================================
 function renderSingleArticle(article) {
-    // GARANTE que temos conteúdo
-    const content = article.conteudo || article.resumo || '<p>Conteúdo não disponível.</p>';
-    const title = article.titulo || 'Artigo sem título';
     const date = article.dataPublicacao?.toDate?.() ? article.dataPublicacao.toDate().toLocaleDateString('pt-BR') : 'Data desconhecida';
     const categoryIcon = getCategoryIcon(article.categoria);
-    const autor = article.autorNome || getTranslation('redacao');
-    const views = article.visualizacoes || 0;
-    
-    // Mostra informações de idioma
-    let languageInfo = '';
-    if (article._isFallback) {
-        languageInfo = `
-            <div style="background:#fff3cd; border:1px solid #ffc107; border-radius:8px; padding:10px; margin-bottom:15px; font-size:13px; color:#856404;">
-                <i class="fas fa-language"></i> 
-                ⚠️ Esta matéria não está disponível no idioma selecionado. Exibindo em Português (tradução automática).
-            </div>
-        `;
-    } else if (article._currentLanguage && article._currentLanguage !== 'pt') {
-        const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-            ? LanguageManager.availableLanguages[article._currentLanguage] 
-            : null;
-        languageInfo = `
-            <div style="background:#d4edda; border:1px solid #28a745; border-radius:8px; padding:10px; margin-bottom:15px; font-size:13px; color:#155724;">
-                <i class="fas fa-language"></i> 
-                📖 Lendo em ${langInfo?.nativeName || article._currentLanguage.toUpperCase()}
-                ${article._availableLanguages ? `| Disponível em: ${article._availableLanguages.map(l => {
-                    const info = LanguageManager?.availableLanguages?.[l];
-                    return info ? `${info.flag} ${info.name}` : l.toUpperCase();
-                }).join(', ')}` : ''}
-            </div>
-        `;
-    }
     
     const adminButtonsHtml = currentUserIsAdmin ? `
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
-            <button class="btn-warning" onclick="editArticle('${article.id}')">${getTranslation('editar')}</button>
-            <button class="btn-danger" onclick="deleteArticle('${article.id}')">${getTranslation('excluir')}</button>
-            ${article.isMultiLanguage ? `<button class="btn-primary" onclick="showTranslationManager('${article.id}')" style="font-size:12px;">${getTranslation('gerenciar_traducoes')}</button>` : ''}
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
+            <button class="btn-warning" onclick="editArticle('${article.id}')">✏️ Editar</button>
+            <button class="btn-danger" onclick="deleteArticle('${article.id}')">🗑️ Excluir</button>
         </div>
     ` : '';
     
     document.getElementById('newspaperGrid').innerHTML = `
         <div style="grid-column: 1 / -1; max-width: 900px; margin: 0 auto;">
             ${adminButtonsHtml}
-            ${languageInfo}
             <div class="main-article">
                 <div class="article-tag">${categoryIcon} ${article.categoria?.toUpperCase() || 'GERAL'}</div>
                 <div class="article-title">${escapeHtml(article.titulo)}</div>
                 <div class="article-meta">
-                    <span><i class="far fa-user"></i> ${getTranslation('por')} ${escapeHtml(autor)}</span>
+                    <span><i class="far fa-user"></i> Por ${escapeHtml(article.autorNome || 'Redação')}</span>
                     <span><i class="far fa-calendar"></i> ${date}</span>
-                    <span><i class="fas fa-eye"></i> ${views} ${getTranslation('visualizacoes')}</span>
+                    <span><i class="fas fa-eye"></i> ${article.visualizacoes || 0} visualizações</span>
                 </div>
-                ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">${getTranslation('foto_divulgacao')}</div></div>` : ''}
+                ${article.imagemUrl ? `<div class="article-image"><img src="${article.imagemUrl}" alt="${escapeHtml(article.titulo)}"><div class="image-caption">Foto: Divulgação</div></div>` : ''}
                 <div class="article-content" style="font-size: 16px; line-height: 1.8;">
-                    ${article.conteudo || article.resumo || getTranslation('conteudo_indisponivel')}
+                    ${article.conteudo || article.resumo || 'Conteúdo não disponível.'}
                 </div>
                 <hr style="margin: 30px 0 20px 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                     <button class="btn-share" onclick="showShareModal()">
-                        <i class="fas fa-share-alt"></i> ${getTranslation('compartilhar_materia')}
+                        <i class="fas fa-share-alt"></i> Compartilhar esta matéria
                     </button>
                     <button class="btn-outline" onclick="navigateToHome()">
-                        <i class="fas fa-home"></i> ${getTranslation('voltar_inicio')}
+                        <i class="fas fa-home"></i> Voltar para página inicial
                     </button>
                 </div>
             </div>
@@ -1181,23 +1000,12 @@ window.editArticle = async function(articleId) {
         const article = doc.data();
         currentEditArticleId = articleId;
         
-        document.getElementById('modalTitle').textContent = getTranslation('editar_materia_titulo');
+        document.getElementById('modalTitle').textContent = 'Editar Matéria';
         document.getElementById('articleTitle').value = article.titulo || '';
         document.getElementById('articleCategory').value = article.categoria || 'política';
         document.getElementById('articleExcerpt').value = article.resumo || '';
         document.getElementById('articleContent').value = article.conteudo || '';
         document.getElementById('articleImage').value = article.imagemUrl || '';
-        
-        const translationsContainer = document.getElementById('translationsContainer');
-        if (translationsContainer) {
-            translationsContainer.style.display = 'none';
-        }
-        
-        const saveBtn = document.querySelector('#articleModal .btn-primary');
-        if (saveBtn) {
-            saveBtn.textContent = getTranslation('publicar_materia');
-            saveBtn.onclick = saveArticle;
-        }
         
         document.getElementById('articleModal').classList.add('show');
     } catch (error) {
@@ -1217,7 +1025,7 @@ window.deleteArticle = async function(articleId) {
     
     try {
         await db.collection('articlesdoc').doc(articleId).delete();
-        showToast(getTranslation('materia_excluida'));
+        showToast('Matéria excluída com sucesso!');
         closeModals();
         
         const params = getUrlParams();
@@ -1241,27 +1049,24 @@ window.deleteCurrentArticle = function() {
     setTimeout(() => deleteArticle(currentViewArticleId), 300);
 };
 
-// ============================================
-// SAVE ARTICLE
-// ============================================
 async function saveArticle() {
     if (!currentUserIsAdmin) {
         showToast('Apenas administradores podem publicar matérias!', true);
         return;
     }
     
-    const langSelect = document.getElementById('articleLanguages');
-    const selectedLanguages = langSelect ? Array.from(langSelect.selectedOptions).map(opt => opt.value) : ['pt'];
-    
     const articleData = {
-        titulo: document.getElementById('articleTitle').value.trim(),
+        titulo: document.getElementById('articleTitle').value,
         categoria: document.getElementById('articleCategory').value,
-        resumo: document.getElementById('articleExcerpt').value.trim(),
+        resumo: document.getElementById('articleExcerpt').value,
         conteudo: document.getElementById('articleContent').value,
         imagemUrl: document.getElementById('articleImage').value || null,
         autorId: currentUser.uid,
         autorNome: currentUser.displayName || currentUser.email?.split('@')[0] || 'Administrador',
         autorEmail: currentUser.email,
+        dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
+        ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
+        visualizacoes: 0
     };
     
     if (!articleData.titulo || !articleData.resumo) {
@@ -1271,42 +1076,11 @@ async function saveArticle() {
     
     try {
         if (currentEditArticleId) {
-            await db.collection('articlesdoc').doc(currentEditArticleId).update({
-                ...articleData,
-                ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            showToast(getTranslation('materia_atualizada'));
+            await db.collection('articlesdoc').doc(currentEditArticleId).update(articleData);
+            showToast('Matéria atualizada com sucesso!');
         } else {
-            // Coleta traduções para outros idiomas
-            for (const lang of selectedLanguages) {
-                if (lang === 'pt') continue;
-                const titleField = document.getElementById(`trans_title_${lang}`);
-                const excerptField = document.getElementById(`trans_excerpt_${lang}`);
-                const contentField = document.getElementById(`trans_content_${lang}`);
-                if (titleField) {
-                    articleData[`translation_${lang}`] = {
-                        titulo: titleField.value || `[${lang.toUpperCase()}] ${articleData.titulo}`,
-                        resumo: excerptField?.value || `[${lang.toUpperCase()}] ${articleData.resumo}`,
-                        conteudo: contentField?.value || `[${lang.toUpperCase()}] ${articleData.conteudo}`
-                    };
-                }
-            }
-            
-            const hasMultipleLanguages = selectedLanguages.length > 1 || (selectedLanguages.length === 1 && selectedLanguages[0] !== 'pt');
-            
-            if (hasMultipleLanguages && typeof multiLangArticles !== 'undefined' && multiLangArticles) {
-                await multiLangArticles.saveArticleWithLanguages(articleData, selectedLanguages);
-            } else {
-                await db.collection('articlesdoc').add({
-                    ...articleData,
-                    isMultiLanguage: false,
-                    language: 'pt',
-                    dataPublicacao: firebase.firestore.FieldValue.serverTimestamp(),
-                    ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
-                    visualizacoes: 0
-                });
-            }
-            showToast(getTranslation('materia_publicada'));
+            const docRef = await db.collection('articlesdoc').add(articleData);
+            showToast('Matéria publicada com sucesso!');
         }
         closeModals();
         resetArticleForm();
@@ -1316,215 +1090,14 @@ async function saveArticle() {
     }
 }
 
-// ============================================
-// RESET ARTICLE FORM
-// ============================================
 function resetArticleForm() {
     currentEditArticleId = null;
-    document.getElementById('modalTitle').textContent = getTranslation('nova_materia_titulo');
+    document.getElementById('modalTitle').textContent = 'Nova Matéria';
     document.getElementById('articleTitle').value = '';
     document.getElementById('articleCategory').value = 'política';
     document.getElementById('articleExcerpt').value = '';
     document.getElementById('articleContent').value = '';
     document.getElementById('articleImage').value = '';
-    
-    const translationsContainer = document.getElementById('translationsContainer');
-    if (translationsContainer) {
-        translationsContainer.style.display = 'none';
-    }
-    
-    const translationFields = document.getElementById('translationFields');
-    if (translationFields) {
-        translationFields.innerHTML = '';
-    }
-    
-    const saveBtn = document.querySelector('#articleModal .btn-primary');
-    if (saveBtn) {
-        saveBtn.textContent = getTranslation('publicar_materia');
-        saveBtn.onclick = saveArticle;
-    }
-}
-
-// ============================================
-// GERENCIADOR DE TRADUÇÕES
-// ============================================
-function showTranslationManager(articleId) {
-    if (!currentUserIsAdmin) {
-        showToast(getTranslation('apenas_admin'), true);
-        return;
-    }
-    
-    db.collection('articlesdoc').doc(articleId).get().then(doc => {
-        if (!doc.exists) {
-            showToast('Artigo não encontrado!', true);
-            return;
-        }
-        
-        const data = doc.data();
-        currentEditArticleId = articleId;
-        
-        document.getElementById('modalTitle').textContent = getTranslation('gerenciar_traducoes');
-        document.getElementById('articleTitle').value = data.titulo || '';
-        document.getElementById('articleCategory').value = data.categoria || 'política';
-        document.getElementById('articleExcerpt').value = data.resumo || '';
-        document.getElementById('articleContent').value = data.conteudo || '';
-        document.getElementById('articleImage').value = data.imagemUrl || '';
-        
-        const translationsContainer = document.getElementById('translationsContainer');
-        translationsContainer.style.display = 'block';
-        
-        const translationFields = document.getElementById('translationFields');
-        const languages = data.languages || ['pt'];
-        const translations = data.translations || {};
-        
-        let fieldsHtml = '';
-        languages.forEach(lang => {
-            if (lang === 'pt') return;
-            const t = translations[lang] || {};
-            const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-                ? LanguageManager.availableLanguages[lang] 
-                : null;
-            const langName = langInfo?.nativeName || lang.toUpperCase();
-            const flag = langInfo?.flag || '🌐';
-            
-            fieldsHtml += `
-                <div style="border:1px solid #e0e0e0; padding:15px; border-radius:8px; margin-bottom:12px; background:#f9f9f9;">
-                    <h5 style="color:#1a3c5e; margin-bottom:10px; font-size:14px;">${flag} ${langName}</h5>
-                    <div class="form-group" style="margin-bottom:8px;">
-                        <label style="font-size:12px; color:#666;">Título em ${langName}</label>
-                        <input type="text" id="trans_title_${lang}" value="${escapeHtml(t.titulo || '')}" placeholder="Título traduzido" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
-                    </div>
-                    <div class="form-group" style="margin-bottom:8px;">
-                        <label style="font-size:12px; color:#666;">Resumo em ${langName}</label>
-                        <textarea id="trans_excerpt_${lang}" rows="2" placeholder="Resumo traduzido" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;">${escapeHtml(t.resumo || '')}</textarea>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label style="font-size:12px; color:#666;">Conteúdo em ${langName}</label>
-                        <textarea id="trans_content_${lang}" rows="4" placeholder="Conteúdo traduzido" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;">${escapeHtml(t.conteudo || '')}</textarea>
-                    </div>
-                </div>
-            `;
-        });
-        translationFields.innerHTML = fieldsHtml;
-        
-        // Botão para adicionar novo idioma
-        const availableLangs = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-            ? Object.keys(LanguageManager.availableLanguages) 
-            : [];
-        const usedLangs = languages;
-        const availableToAdd = availableLangs.filter(l => !usedLangs.includes(l) && l !== 'pt');
-        
-        if (availableToAdd.length > 0) {
-            const addHtml = `
-                <div style="margin-top:10px; padding:12px; border:1px dashed #ccc; border-radius:8px;">
-                    <label style="font-size:13px; color:#666; display:block; margin-bottom:5px;">${getTranslation('adicionar_idioma')}</label>
-                    <select id="addLanguageSelect" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ddd;">
-                        ${availableToAdd.map(l => `<option value="${l}">${LanguageManager.availableLanguages[l].flag} ${LanguageManager.availableLanguages[l].nativeName}</option>`).join('')}
-                    </select>
-                    <button onclick="addLanguageField()" class="btn-primary" style="margin-top:8px; font-size:12px; padding:8px 16px;">${getTranslation('adicionar_idioma')}</button>
-                </div>
-            `;
-            translationFields.innerHTML += addHtml;
-        }
-        
-        const saveBtn = document.querySelector('#articleModal .btn-primary');
-        saveBtn.textContent = getTranslation('salvar_traducoes');
-        saveBtn.onclick = saveTranslations;
-        
-        document.getElementById('articleModal').classList.add('show');
-    }).catch(error => {
-        showToast('Erro ao carregar traduções: ' + error.message, true);
-    });
-}
-
-function addLanguageField() {
-    const select = document.getElementById('addLanguageSelect');
-    if (!select) return;
-    
-    const lang = select.value;
-    if (!lang) return;
-    
-    const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-        ? LanguageManager.availableLanguages[lang] 
-        : null;
-    const langName = langInfo?.nativeName || lang.toUpperCase();
-    const flag = langInfo?.flag || '🌐';
-    
-    const container = document.getElementById('translationFields');
-    
-    const div = document.createElement('div');
-    div.style.cssText = 'border:2px solid #4a9eff; padding:15px; border-radius:8px; margin-bottom:12px; background:#f0f7ff;';
-    div.innerHTML = `
-        <h5 style="color:#1a3c5e; margin-bottom:10px; font-size:14px;">${flag} ${langName} <span style="font-size:11px; color:#999;">${getTranslation('novo_idioma')}</span></h5>
-        <div class="form-group" style="margin-bottom:8px;">
-            <label style="font-size:12px; color:#666;">Título em ${langName}</label>
-            <input type="text" id="trans_title_${lang}" placeholder="Título traduzido" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
-        </div>
-        <div class="form-group" style="margin-bottom:8px;">
-            <label style="font-size:12px; color:#666;">Resumo em ${langName}</label>
-            <textarea id="trans_excerpt_${lang}" rows="2" placeholder="Resumo traduzido" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;"></textarea>
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-            <label style="font-size:12px; color:#666;">Conteúdo em ${langName}</label>
-            <textarea id="trans_content_${lang}" rows="4" placeholder="Conteúdo traduzido" style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;"></textarea>
-        </div>
-    `;
-    container.appendChild(div);
-    
-    select.remove(select.selectedIndex);
-    if (select.options.length === 0) {
-        select.parentElement.style.display = 'none';
-    }
-}
-
-async function saveTranslations() {
-    if (!currentEditArticleId) {
-        showToast('Erro: Nenhum artigo selecionado!', true);
-        return;
-    }
-    
-    try {
-        const docRef = db.collection('articlesdoc').doc(currentEditArticleId);
-        const doc = await docRef.get();
-        if (!doc.exists) {
-            showToast('Artigo não encontrado!', true);
-            return;
-        }
-        
-        const data = doc.data();
-        const translations = data.translations || {};
-        const languages = data.languages || ['pt'];
-        
-        // Coleta todas as traduções dos campos
-        const translationFields = document.querySelectorAll('#translationFields [id^="trans_title_"]');
-        translationFields.forEach(field => {
-            const lang = field.id.replace('trans_title_', '');
-            const title = document.getElementById(`trans_title_${lang}`)?.value || '';
-            const excerpt = document.getElementById(`trans_excerpt_${lang}`)?.value || '';
-            const content = document.getElementById(`trans_content_${lang}`)?.value || '';
-            
-            if (title || excerpt || content) {
-                translations[lang] = { titulo: title, resumo: excerpt, conteudo: content };
-                if (!languages.includes(lang)) {
-                    languages.push(lang);
-                }
-            }
-        });
-        
-        await docRef.update({
-            translations: translations,
-            languages: languages,
-            isMultiLanguage: true,
-            ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        
-        showToast(getTranslation('traducoes_salvas'));
-        closeModals();
-        resetArticleForm();
-        loadArticles();
-    } catch (error) {
-        showToast(getTranslation('erro_salvar_traducoes') + ' ' + error.message, true);
-    }
 }
 
 // ============================================
@@ -1543,61 +1116,6 @@ window.showNewArticleModal = function() {
         return;
     }
     resetArticleForm();
-    
-    const translationsContainer = document.getElementById('translationsContainer');
-    if (translationsContainer) {
-        translationsContainer.style.display = 'block';
-    }
-    
-    const langSelect = document.getElementById('articleLanguages');
-    const translationFields = document.getElementById('translationFields');
-    
-    if (langSelect && translationFields) {
-        const newLangSelect = langSelect.cloneNode(true);
-        langSelect.parentNode.replaceChild(newLangSelect, langSelect);
-        
-        newLangSelect.addEventListener('change', function() {
-            const selected = Array.from(this.selectedOptions).map(opt => opt.value);
-            let fieldsHtml = '';
-            
-            selected.forEach(lang => {
-                if (lang === 'pt') return;
-                const langInfo = typeof LanguageManager !== 'undefined' && LanguageManager.availableLanguages 
-                    ? LanguageManager.availableLanguages[lang] 
-                    : null;
-                const langName = langInfo?.nativeName || lang.toUpperCase();
-                const flag = langInfo?.flag || '🌐';
-                
-                fieldsHtml += `
-                    <div style="border:1px solid #e0e0e0; padding:15px; border-radius:8px; margin-bottom:12px; background:#f9f9f9;">
-                        <h5 style="color:#1a3c5e; margin-bottom:10px; font-size:14px;">${flag} ${langName}</h5>
-                        <div class="form-group" style="margin-bottom:8px;">
-                            <label style="font-size:12px; color:#666;">Título em ${langName}</label>
-                            <input type="text" id="trans_title_${lang}" placeholder="Digite o título traduzido..." style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px;">
-                        </div>
-                        <div class="form-group" style="margin-bottom:8px;">
-                            <label style="font-size:12px; color:#666;">Resumo em ${langName}</label>
-                            <textarea id="trans_excerpt_${lang}" rows="2" placeholder="Digite o resumo traduzido..." style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;"></textarea>
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label style="font-size:12px; color:#666;">Conteúdo em ${langName}</label>
-                            <textarea id="trans_content_${lang}" rows="4" placeholder="Digite o conteúdo traduzido..." style="width:100%; padding:8px 12px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;"></textarea>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            translationFields.innerHTML = fieldsHtml;
-            
-            if (translationsContainer) {
-                translationsContainer.style.display = selected.length > 1 || (selected.length === 1 && selected[0] !== 'pt') ? 'block' : 'none';
-            }
-        });
-        
-        const event = new Event('change');
-        newLangSelect.dispatchEvent(event);
-    }
-    
     document.getElementById('articleModal').classList.add('show');
 };
 
@@ -1617,10 +1135,10 @@ window.showShareModal = function() {
 window.copyShareUrl = function() {
     const url = document.getElementById('shareUrlContainer').textContent;
     navigator.clipboard.writeText(url).then(() => {
-        showToast(getTranslation('link_copiado'));
+        showToast('Link copiado para compartilhar!');
         closeModals();
     }).catch(() => {
-        showToast(getTranslation('erro_copiar_link'), true);
+        showToast('Erro ao copiar link', true);
     });
 };
 
@@ -1649,24 +1167,13 @@ window.onpopstate = (event) => {
 // ============================================
 // INICIALIZAÇÃO
 // ============================================
-document.addEventListener('DOMContentLoaded', async function() {
-    // Inicializa Cookie Manager
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar Cookie Manager
     CookieManager.init();
     
-    // Inicializa Language Manager
-    await initLanguageManager();
-    
-    // Atualiza data
-    const dateElement = document.getElementById('currentDate');
-    if (dateElement) {
-        if (typeof LanguageManager !== 'undefined' && LanguageManager.updateDateLocale) {
-            LanguageManager.updateDateLocale();
-        } else {
-            dateElement.textContent = new Date().toLocaleDateString('pt-BR', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            });
-        }
-    }
+    document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
 });
 
 // ============================================
@@ -1749,46 +1256,64 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================
-// LINK INTERCEPTOR
+// INTEGRAÇÃO COM LINK INTERCEPTOR
 // ============================================
+
+/**
+ * Carrega e inicializa o LinkInterceptor
+ */
 function loadLinkInterceptor() {
+    // Verifica se já está carregado
     if (typeof LinkInterceptor !== 'undefined') {
         LinkInterceptor.init();
         return;
     }
     
+    // Carrega o script
     const script = document.createElement('script');
-    script.src = 'https://gspotfverwazzimagiygg.wazzimagiygg.com/jornal/link-interceptor.js';
+    script.src = 'https://wazzimagiygg.com/jornal/link-interceptor.js';
     script.onload = function() {
         console.log('✅ LinkInterceptor carregado com sucesso');
         if (typeof LinkInterceptor !== 'undefined') {
             LinkInterceptor.init();
+            
+            // Atualiza o REDIRECT_PAGE para usar a URL correta
             LinkInterceptor.REDIRECT_PAGE = 'https://wazzimagiygg.com/rv/';
         }
     };
     script.onerror = function() {
         console.warn('⚠️ Não foi possível carregar o LinkInterceptor');
+        // Fallback: intercepta links manualmente
         setupFallbackInterceptor();
     };
     document.head.appendChild(script);
 }
 
+/**
+ * Fallback caso o LinkInterceptor não carregue
+ */
 function setupFallbackInterceptor() {
     console.log('🔄 Usando fallback para interceptação de links');
+    
     document.addEventListener('click', function(e) {
         const link = e.target.closest('a[href]');
         if (!link) return;
+        
         const href = link.getAttribute('href');
         if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+        
+        // Verifica se é externo
         try {
             const url = new URL(href, window.location.origin);
             const isExternal = !['wazzimagiygg.com', 'localhost'].some(d => 
                 url.hostname === d || url.hostname.endsWith('.' + d)
             );
+            
             if (isExternal) {
                 e.preventDefault();
-                const uid = currentUser ? currentUser.uid : 'visitante';
+                const uid = typeof currentUser !== 'undefined' && currentUser ? currentUser.uid : 'visitante';
                 const redirectUrl = `https://wazzimagiygg.com/rv/?uid=${encodeURIComponent(href)}&url=${encodeURIComponent(href)}&ref=${encodeURIComponent(window.location.href)}`;
+                
                 if (link.target === '_blank') {
                     window.open(redirectUrl, '_blank');
                 } else {
@@ -1801,23 +1326,31 @@ function setupFallbackInterceptor() {
     });
 }
 
+/**
+ * Função para criar links seguros manualmente
+ */
 function createSecureLink(url, text, options = {}) {
     if (typeof LinkInterceptor !== 'undefined') {
         const uid = LinkInterceptor.getUserUID();
         const secureUrl = LinkInterceptor.buildRedirectUrl(url, uid);
+        
         const link = document.createElement('a');
         link.href = secureUrl;
         link.textContent = text || url;
         link.target = options.target || '_blank';
         link.rel = 'noopener noreferrer';
+        
         if (options.className) link.className = options.className;
         if (options.icon) {
             const icon = document.createElement('span');
             icon.textContent = options.icon + ' ';
             link.prepend(icon);
         }
+        
         return link;
     }
+    
+    // Fallback
     const link = document.createElement('a');
     link.href = url;
     link.textContent = text || url;
@@ -1825,6 +1358,7 @@ function createSecureLink(url, text, options = {}) {
     return link;
 }
 
+// Exporta funções
 window.createSecureLink = createSecureLink;
 window.secureExternalLinks = function(container) {
     if (typeof LinkInterceptor !== 'undefined') {
@@ -1832,7 +1366,11 @@ window.secureExternalLinks = function(container) {
     }
 };
 
-// Carrega o LinkInterceptor
+// ============================================
+// INICIALIZAÇÃO AUTOMÁTICA
+// ============================================
+
+// Carrega o LinkInterceptor junto com o resto do sistema
 if (document.readyState === 'complete') {
     setTimeout(loadLinkInterceptor, 1000);
 } else {
@@ -1841,6 +1379,7 @@ if (document.readyState === 'complete') {
     });
 }
 
+// Também tenta carregar quando o Firebase estiver pronto
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged(function(user) {
         if (user && user.uid) {
@@ -1852,9 +1391,7 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
 
 console.log('🔗 Sistema de links seguros integrado ao script.js');
 
-// ============================================
-// EXPORTA FUNÇÕES GLOBALMENTE
-// ============================================
+// Expor funções globalmente
 window.logout = logout;
 window.logoutBanned = logoutBanned;
 window.loginWithGoogle = loginWithGoogle;
@@ -1872,13 +1409,3 @@ window.deleteArticle = deleteArticle;
 window.editCurrentArticle = editCurrentArticle;
 window.deleteCurrentArticle = deleteCurrentArticle;
 window.openArticleById = openArticleById;
-window.showTranslationManager = showTranslationManager;
-window.addLanguageField = addLanguageField;
-window.saveTranslations = saveTranslations;
-window.initLanguageManager = initLanguageManager;
-window.getTranslation = getTranslation;
-
-
-
-
-//end of script
