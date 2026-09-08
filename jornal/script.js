@@ -233,7 +233,7 @@ function showToast(message, isError = false) {
 }
 
 // ============================================
-// SISTEMA DE LINKS SEGUROS
+// SISTEMA DE LINKS SEGUROS - CORRIGIDO
 // ============================================
 
 const LinkInterceptor = {
@@ -258,19 +258,16 @@ const LinkInterceptor = {
     },
     
     /**
-     * Constrói a URL de redirecionamento
+     * Constrói a URL de redirecionamento - CORRIGIDO
+     * Agora o uid é a URL codificada, não o UID do usuário
      */
     buildRedirectUrl(originalUrl, uid = null) {
-        if (!uid) {
-            uid = this.getUserUID();
-        }
-        
-        // Se a URL já tiver parâmetros, adiciona com &
-        const separator = originalUrl.includes('?') ? '&' : '?';
+        // O uid agora é a URL original codificada
         const encodedUrl = encodeURIComponent(originalUrl);
         const encodedRef = encodeURIComponent(window.location.href);
         
-        return `${this.REDIRECT_PAGE}?uid=${uid}&url=${encodedUrl}&ref=${encodedRef}`;
+        // URL correta: https://wazzimagiygg.com/rv/?uid={URL_CODIFICADA}&ref={REFERER}
+        return `${this.REDIRECT_PAGE}?uid=${encodedUrl}&ref=${encodedRef}`;
     },
     
     /**
@@ -293,7 +290,9 @@ const LinkInterceptor = {
                               url.startsWith('archive.html') ||
                               url.startsWith('javascript:') ||
                               url.includes('wazzimagiygg.com/jornal/') ||
-                              url.includes('wazzimagiygg.com/favicom.png');
+                              url.includes('wazzimagiygg.com/favicom.png') ||
+                              url.includes('wazzimagiygg.com/rv/'); // Evita loop
+                              
             
             return !isAllowed && !isInternal;
         } catch {
@@ -325,9 +324,8 @@ const LinkInterceptor = {
                 return;
             }
             
-            // Protege o link
-            const uid = this.getUserUID();
-            const newUrl = this.buildRedirectUrl(href, uid);
+            // Protege o link - NÃO passa UID, só a URL
+            const newUrl = this.buildRedirectUrl(href);
             link.setAttribute('data-original-href', href);
             link.href = newUrl;
             link.setAttribute('data-secure', 'true');
@@ -344,7 +342,7 @@ const LinkInterceptor = {
      * Inicializa o interceptor
      */
     init() {
-        console.log('🔗 LinkInterceptor iniciado');
+        console.log('🔗 LinkInterceptor iniciado (versão corrigida)');
         
         // Processa links existentes após carregar
         if (document.readyState === 'complete') {
@@ -373,7 +371,6 @@ const LinkInterceptor = {
                     }
                 }
                 if (hasNewLinks) {
-                    // Debounce para evitar processamento excessivo
                     clearTimeout(timeout);
                     timeout = setTimeout(() => {
                         this.processExistingLinks();
@@ -398,8 +395,7 @@ const LinkInterceptor = {
             // Se o link não estiver protegido e for externo
             if (!href.includes('wazzimagiygg.com/rv/') && this.isExternalUrl(href)) {
                 e.preventDefault();
-                const uid = this.getUserUID();
-                const redirectUrl = this.buildRedirectUrl(href, uid);
+                const redirectUrl = this.buildRedirectUrl(href);
                 
                 if (link.target === '_blank') {
                     window.open(redirectUrl, '_blank');
@@ -412,7 +408,7 @@ const LinkInterceptor = {
 };
 
 // ============================================
-// FUNÇÃO PARA CRIAR LINKS SEGUROS
+// FUNÇÃO PARA CRIAR LINKS SEGUROS - CORRIGIDA
 // ============================================
 
 /**
@@ -423,8 +419,7 @@ const LinkInterceptor = {
  * @returns {HTMLAnchorElement}
  */
 function createSecureLink(url, text, options = {}) {
-    const uid = LinkInterceptor.getUserUID();
-    const secureUrl = LinkInterceptor.buildRedirectUrl(url, uid);
+    const secureUrl = LinkInterceptor.buildRedirectUrl(url);
     
     const link = document.createElement('a');
     link.href = secureUrl;
