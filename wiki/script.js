@@ -1093,13 +1093,12 @@ function updateUserPageInfo() {
 }
 
 // ============================================
-// USER PAGE - FUNÇÃO COMPLETA CORRIGIDA
+// ABRIR PÁGINA DO USUÁRIO (COM IFRAME)
 // ============================================
 
-async function openUserPage() {
-    console.log('🚀 Abrindo página do usuário...');
+function openUserPage() {
+    console.log('🚀 Abrindo página do usuário com iframe...');
     
-    // 1. VERIFICA USUÁRIO
     if (!currentUser) {
         alert('Faça login para acessar sua página.');
         showLoginModal();
@@ -1113,81 +1112,51 @@ async function openUserPage() {
     }
 
     try {
-        currentUserPageUid = currentUser.uid;
-        console.log('👤 UID:', currentUserPageUid);
-        console.log('👤 Nome:', currentUser.displayName);
-        console.log('👤 Email:', currentUser.email);
-        
-        // 2. ENCONTRA O CONTAINER
         const container = document.getElementById('userPageContainer');
         if (!container) {
             console.error('❌ Container não encontrado!');
-            alert('Erro: container da página não encontrado.');
             return;
         }
         
-        // 3. ABRE A PÁGINA
-        container.classList.add('user-page-open');
+        // Recarrega o iframe
+        const iframe = document.getElementById('userPageIframe');
+        if (iframe) {
+            iframe.src = iframe.src;
+        }
+        
+        // Mostra o container
         container.style.display = 'block';
         container.style.visibility = 'visible';
         container.style.opacity = '1';
         container.style.height = 'auto';
-        container.style.minHeight = '500px';
-        container.style.overflow = 'visible';
-        container.style.padding = '25px';
+        container.style.minHeight = '600px';
+        container.style.padding = '0';
         container.style.margin = '20px 0';
-        container.style.background = 'white';
-        container.style.border = '1px solid #eaecf0';
-        container.style.borderRadius = '12px';
+        container.style.background = 'transparent';
+        container.style.border = 'none';
         container.style.position = 'relative';
         container.style.pointerEvents = 'auto';
+        container.style.width = '100%';
         
-        console.log('✅ Container visível (classe adicionada)');
+        console.log('✅ Container com iframe visível');
         
-        // 4. ESCONDE O CONTEÚDO PRINCIPAL
+        // Esconde o conteúdo principal
         const contentArea = document.querySelector('.content-area');
         if (contentArea) {
             contentArea.style.display = 'none';
         }
         
-        // 5. ESCONDE OUTRAS VIEWS
+        // Esconde outras views
         document.querySelectorAll('.article-view').forEach(v => {
             v.classList.remove('active');
         });
         
-        // 6. PREENCHE AS INFORMAÇÕES DO USUÁRIO
-        console.log('📝 Preenchendo informações do usuário...');
-        updateUserPageInfo();
+        // Rola para o iframe
+        setTimeout(() => {
+            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
         
-        // 7. CARREGA DADOS
-        console.log('📥 Carregando contribuições...');
-        await loadUserContributions();
-        console.log('✅ Contribuições carregadas');
-        
-        console.log('📥 Carregando discussão...');
-        await loadUserDiscussion();
-        console.log('✅ Discussão carregada');
-        
-        console.log('📥 Carregando notificações...');
-        await loadUserNotifications();
-        console.log('✅ Notificações carregadas');
-        
-        // 8. ABRE A PRIMEIRA TAB
-        switchUserTab('contributions');
-        console.log('✅ Tab inicial aberta');
-        
-        // 9. VERIFICAÇÃO FINAL
-        console.log('📊 VERIFICAÇÃO FINAL:');
-        console.log('  📛 Nome no DOM:', document.getElementById('userPageName')?.textContent);
-        console.log('  🆔 UID no DOM:', document.getElementById('userPageUid')?.textContent);
-        console.log('  📸 Avatar no DOM:', document.getElementById('userPageAvatar')?.innerHTML?.substring(0, 50));
-        console.log('  📦 Container visível:', container.offsetHeight > 0);
-        console.log('  📦 Classe do container:', container.className);
-        
-        // 10. ROLA PARA A PÁGINA
-        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        
-        console.log('🎉 Página do usuário carregada com sucesso!');
+        console.log('🎉 Página do usuário carregada no iframe!');
         
     } catch (error) {
         console.error('❌ Erro ao abrir página do usuário:', error);
@@ -1196,7 +1165,7 @@ async function openUserPage() {
 }
 
 // ============================================
-// FECHAR PÁGINA DO USUÁRIO
+// FECHAR PÁGINA DO USUÁRIO (COM IFRAME)
 // ============================================
 
 function closeUserPage() {
@@ -1204,27 +1173,24 @@ function closeUserPage() {
     
     const container = document.getElementById('userPageContainer');
     if (container) {
-        container.classList.remove('user-page-open');
         container.style.display = 'none';
         container.style.visibility = 'hidden';
         container.style.opacity = '0';
         container.style.height = '0';
         container.style.minHeight = '0';
-        container.style.overflow = 'hidden';
         container.style.padding = '0';
         container.style.margin = '0';
-        container.style.border = 'none';
-        container.style.position = 'absolute';
+        container.style.overflow = 'hidden';
         container.style.pointerEvents = 'none';
     }
     
-    // MOSTRA O CONTEÚDO PRINCIPAL
+    // Mostra o conteúdo principal
     const contentArea = document.querySelector('.content-area');
     if (contentArea) {
         contentArea.style.display = 'block';
     }
     
-    // MOSTRA A LISTA DE PÁGINAS
+    // Mostra a lista de páginas
     document.querySelectorAll('.article-view').forEach(v => {
         if (v.id === 'list-view') {
             v.classList.add('active');
@@ -1233,13 +1199,39 @@ function closeUserPage() {
         }
     });
     
-    if (discussionListener) {
-        discussionListener();
-        discussionListener = null;
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     
     console.log('✅ Página do usuário fechada');
 }
+
+// ============================================
+// COMUNICAÇÃO COM O IFRAME
+// ============================================
+
+window.addEventListener('message', function(event) {
+    console.log('📨 Mensagem recebida:', event.data);
+    
+    if (event.data && event.data.type) {
+        switch(event.data.type) {
+            case 'openSubcollection':
+                if (event.data.uid) {
+                    openSubcollection(event.data.uid);
+                }
+                break;
+            case 'openArticle':
+                if (event.data.collectionUid && event.data.articleId) {
+                    openArticle(event.data.collectionUid, event.data.articleId);
+                }
+                break;
+            case 'closeUserPage':
+                closeUserPage();
+                break;
+            case 'showLogin':
+                showLoginModal();
+                break;
+        }
+    }
+});
 
 // ============================================
 // USER PAGE - FUNÇÃO COMPLETA CORRIGIDA
