@@ -144,6 +144,14 @@
             background-color: #c82333;
         }
 
+        .btn-close {
+            background-color: #dc3545;
+        }
+
+        .btn-close:hover {
+            background-color: #c82333;
+        }
+
         /* ===== TABS ===== */
         .user-tabs {
             display: flex;
@@ -359,6 +367,33 @@
             margin-bottom: 15px;
         }
 
+        /* ===== NOT LOGGED ===== */
+        .not-logged {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .not-logged .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .not-logged h2 {
+            margin-bottom: 10px;
+            color: #1a1a2e;
+        }
+
+        .not-logged p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .not-logged a {
+            color: #36c;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .user-page-header {
@@ -408,6 +443,7 @@
             </div>
             <div class="user-page-actions">
                 <button onclick="showUserDiscussion()" class="btn-abrir-painel" style="background:#28a745;">💬 Discussão</button>
+                <button onclick="closeParentUserPage()" class="btn-abrir-painel btn-close">✕ Fechar</button>
             </div>
         </div>
 
@@ -493,19 +529,56 @@ function formatDate(timestamp) {
 }
 
 // ============================================
+// COMUNICAÇÃO COM A PÁGINA PAI
+// ============================================
+function openParentSubcollection(uid) {
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+            type: 'openSubcollection',
+            uid: uid
+        }, '*');
+    }
+}
+
+function openParentArticle(collectionUid, articleId) {
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+            type: 'openArticle',
+            collectionUid: collectionUid,
+            articleId: articleId
+        }, '*');
+    }
+}
+
+function closeParentUserPage() {
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+            type: 'closeUserPage'
+        }, '*');
+    }
+}
+
+function showParentLogin() {
+    if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+            type: 'showLogin'
+        }, '*');
+    }
+}
+
+// ============================================
 // CARREGAR DADOS DO USUÁRIO
 // ============================================
 async function loadUserData() {
     console.log('📥 Carregando dados do usuário...');
     
     try {
-        // Busca o documento do usuário
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         const userData = userDoc.exists ? userDoc.data() : {};
         
         console.log('📊 Dados do usuário:', userData);
         
-        // Atualiza avatar
+        // Avatar
         const avatar = document.getElementById('userPageAvatar');
         if (currentUser.photoURL) {
             avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="Avatar">`;
@@ -513,13 +586,13 @@ async function loadUserData() {
             avatar.textContent = getInitials(currentUser.displayName || 'Usuário');
         }
         
-        // Atualiza nome
+        // Nome
         document.getElementById('userPageName').textContent = currentUser.displayName || 'Usuário';
         
-        // Atualiza UID
+        // UID
         document.getElementById('userPageUid').textContent = currentUser.uid;
         
-        // Atualiza data de criação
+        // Data de criação
         const joinDate = document.getElementById('userJoinDate');
         if (userData.createdAt) {
             joinDate.textContent = formatDate(userData.createdAt);
@@ -544,27 +617,23 @@ async function loadUserContributions() {
     container.innerHTML = '<div class="loading">Carregando contribuições...</div>';
     
     try {
-        // Busca artigos criados pelo usuário
         const articlesSnapshot = await db.collectionGroup('inevitavel')
             .where('criadorUid', '==', currentUser.uid)
             .orderBy('dataCriacao', 'desc')
             .limit(100)
             .get();
         
-        // Busca páginas criadas pelo usuário
         const pagesSnapshot = await db.collection('documentos')
             .where('criadoPor', '==', currentUser.uid)
             .orderBy('criadoEm', 'desc')
             .limit(50)
             .get();
         
-        // Atualiza contadores
         document.getElementById('userContribCount').textContent = articlesSnapshot.size + pagesSnapshot.size;
         document.getElementById('userArticlesCount').textContent = articlesSnapshot.size;
         
         let html = '';
         
-        // Páginas criadas
         if (pagesSnapshot.size > 0) {
             html += `<h3 style="margin:15px 0 10px 0;">📚 Páginas criadas</h3>`;
             pagesSnapshot.forEach(doc => {
@@ -573,7 +642,7 @@ async function loadUserContributions() {
                     <div class="contribution-item">
                         <div class="contribution-icon">📖</div>
                         <div class="contribution-info">
-                            <div class="contribution-title" onclick="window.parent.openSubcollection('${doc.id}')">
+                            <div class="contribution-title" onclick="openParentSubcollection('${doc.id}')">
                                 ${escapeHtml(data.titulo || doc.id)}
                             </div>
                             <div class="contribution-meta">
@@ -586,7 +655,6 @@ async function loadUserContributions() {
             });
         }
         
-        // Artigos criados
         if (articlesSnapshot.size > 0) {
             html += `<h3 style="margin:15px 0 10px 0;">📄 Artigos criados</h3>`;
             articlesSnapshot.forEach(doc => {
@@ -598,7 +666,7 @@ async function loadUserContributions() {
                     <div class="contribution-item">
                         <div class="contribution-icon">📄</div>
                         <div class="contribution-info">
-                            <div class="contribution-title" onclick="window.parent.openArticle('${parentId}', '${doc.id}')">
+                            <div class="contribution-title" onclick="openParentArticle('${parentId}', '${doc.id}')">
                                 ${escapeHtml(data.titulo || 'Sem título')}
                             </div>
                             <div class="contribution-meta">
@@ -674,7 +742,6 @@ async function loadUserDiscussion() {
         
         container.innerHTML = html;
         
-        // Listener para novas mensagens
         if (discussionListener) {
             discussionListener();
             discussionListener = null;
@@ -815,6 +882,8 @@ window.postDiscussionMessage = postDiscussionMessage;
 window.loadUserContributions = loadUserContributions;
 window.loadUserDiscussion = loadUserDiscussion;
 window.loadUserNotifications = loadUserNotifications;
+window.closeParentUserPage = closeParentUserPage;
+window.showParentLogin = showParentLogin;
 
 // ============================================
 // INICIALIZAÇÃO
@@ -824,11 +893,9 @@ auth.onAuthStateChanged(async (user) => {
         currentUser = user;
         console.log('👤 Usuário autenticado:', currentUser.displayName);
         
-        // Esconde loading
         document.getElementById('loading').style.display = 'none';
         document.getElementById('userPageContent').style.display = 'block';
         
-        // Carrega dados
         await loadUserData();
         await loadUserContributions();
         await loadUserDiscussion();
@@ -836,15 +903,12 @@ auth.onAuthStateChanged(async (user) => {
         
         console.log('🎉 Página do usuário carregada com sucesso!');
     } else {
-        // Usuário não autenticado
         document.getElementById('loading').innerHTML = `
-            <div style="text-align:center; padding:40px;">
-                <div style="font-size:48px; margin-bottom:15px;">🔒</div>
+            <div class="not-logged">
+                <div class="icon">🔒</div>
                 <h2>Faça login para acessar sua página</h2>
-                <p style="color:#666; margin-top:10px;">
-                    <a href="#" onclick="window.parent.showLoginModal(); return false;" style="color:#36c; text-decoration:underline;">
-                        Clique aqui para fazer login
-                    </a>
+                <p>
+                    <a href="#" onclick="showParentLogin(); return false;">Clique aqui para fazer login</a>
                 </p>
             </div>
         `;
