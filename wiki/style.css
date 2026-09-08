@@ -1716,3 +1716,84 @@ body {
         padding: 30px 20px;
     }
 }
+/* ============================================
+   CORREÇÃO DE VISIBILIDADE - PÁGINA DO USUÁRIO
+   ============================================ */
+
+/* FORÇA O CONTAINER A TER ALTURA */
+.user-page-container {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 500px !important;
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 100 !important;
+    background: white !important;
+    padding: 25px !important;
+    margin: 20px 0 !important;
+    border-radius: 12px !important;
+    border: 1px solid #eaecf0 !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+    width: 100% !important;
+}
+
+/* FORÇA TODOS OS FILHOS A TEREM ALTURA */
+.user-page-container * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+}
+
+.user-page-container .user-page-header {
+    display: flex !important;
+    min-height: 80px !important;
+}
+
+.user-page-container .user-page-stats {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 25px !important;
+}
+
+.user-page-container .user-tabs {
+    display: flex !important;
+    flex-wrap: wrap !important;
+}
+
+.user-page-container .user-tab-content.active {
+    display: block !important;
+    height: auto !important;
+    min-height: 100px !important;
+    overflow: visible !important;
+}
+
+/* FORÇA A LISTA DE CONTRIBUIÇÕES */
+#userContributionsList {
+    display: block !important;
+    height: auto !important;
+    min-height: 100px !important;
+    overflow: visible !important;
+}
+
+/* FORÇA A LISTA DE NOTIFICAÇÕES */
+#userNotificationsList {
+    display: block !important;
+    height: auto !important;
+    min-height: 100px !important;
+    overflow: visible !important;
+}
+
+/* FORÇA A DISCUSSÃO */
+#discussionMessages {
+    display: block !important;
+    height: auto !important;
+    min-height: 100px !important;
+    overflow: visible !important;
+}
+
+.discussion-form {
+    display: block !important;
+    height: auto !important;
+}
