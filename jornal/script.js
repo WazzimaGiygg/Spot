@@ -233,6 +233,216 @@ function showToast(message, isError = false) {
 }
 
 // ============================================
+// SISTEMA DE LINKS SEGUROS
+// ============================================
+
+const LinkInterceptor = {
+    REDIRECT_PAGE: 'https://wazzimagiygg.com/rv/',
+    
+    /**
+     * Obtém o UID do usuário atual
+     */
+    getUserUID() {
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.uid) {
+            return currentUser.uid;
+        }
+        // Tenta obter do localStorage ou cookie
+        const storedUid = localStorage.getItem('wzzm_user_uid');
+        if (storedUid) return storedUid;
+        
+        // Tenta do cookie
+        const cookieMatch = document.cookie.match(/wzzm_uid=([^;]+)/);
+        if (cookieMatch) return cookieMatch[1];
+        
+        return 'visitante';
+    },
+    
+    /**
+     * Constrói a URL de redirecionamento
+     */
+    buildRedirectUrl(originalUrl, uid = null) {
+        if (!uid) {
+            uid = this.getUserUID();
+        }
+        
+        // Se a URL já tiver parâmetros, adiciona com &
+        const separator = originalUrl.includes('?') ? '&' : '?';
+        const encodedUrl = encodeURIComponent(originalUrl);
+        const encodedRef = encodeURIComponent(window.location.href);
+        
+        return `${this.REDIRECT_PAGE}?uid=${uid}&url=${encodedUrl}&ref=${encodedRef}`;
+    },
+    
+    /**
+     * Verifica se uma URL é externa
+     */
+    isExternalUrl(url) {
+        try {
+            const urlObj = new URL(url, window.location.origin);
+            const allowedDomains = ['wazzimagiygg.com', 'localhost', '127.0.0.1'];
+            
+            // Verifica se é um domínio permitido
+            const isAllowed = allowedDomains.some(domain => 
+                urlObj.hostname === domain || urlObj.hostname.endsWith('.' + domain)
+            );
+            
+            // Verifica se é um link interno do jornal
+            const isInternal = url.startsWith('/') || 
+                              url.startsWith('?') || 
+                              url.startsWith('#') ||
+                              url.startsWith('archive.html') ||
+                              url.startsWith('javascript:') ||
+                              url.includes('wazzimagiygg.com/jornal/') ||
+                              url.includes('wazzimagiygg.com/favicom.png');
+            
+            return !isAllowed && !isInternal;
+        } catch {
+            return false;
+        }
+    },
+    
+    /**
+     * Processa e substitui todos os links externos
+     */
+    processExistingLinks() {
+        const links = document.querySelectorAll('a[href]');
+        let modifiedCount = 0;
+        let skippedCount = 0;
+        
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            // Pula links que já estão protegidos
+            if (href.includes('wazzimagiygg.com/rv/')) {
+                skippedCount++;
+                return;
+            }
+            
+            // Pula links internos
+            if (!this.isExternalUrl(href)) {
+                skippedCount++;
+                return;
+            }
+            
+            // Protege o link
+            const uid = this.getUserUID();
+            const newUrl = this.buildRedirectUrl(href, uid);
+            link.setAttribute('data-original-href', href);
+            link.href = newUrl;
+            link.setAttribute('data-secure', 'true');
+            modifiedCount++;
+        });
+        
+        if (modifiedCount > 0) {
+            console.log(`🔒 ${modifiedCount} links externos protegidos (${skippedCount} ignorados)`);
+        }
+        return modifiedCount;
+    },
+    
+    /**
+     * Inicializa o interceptor
+     */
+    init() {
+        console.log('🔗 LinkInterceptor iniciado');
+        
+        // Processa links existentes após carregar
+        if (document.readyState === 'complete') {
+            setTimeout(() => this.processExistingLinks(), 500);
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => this.processExistingLinks(), 500);
+            });
+        }
+        
+        // Observa mudanças no DOM para novos links
+        if (window.MutationObserver) {
+            let timeout = null;
+            const observer = new MutationObserver((mutations) => {
+                let hasNewLinks = false;
+                for (const mutation of mutations) {
+                    if (mutation.type === 'childList') {
+                        for (const node of mutation.addedNodes) {
+                            if (node.nodeType === 1) {
+                                if (node.tagName === 'A' || (node.querySelector && node.querySelector('a'))) {
+                                    hasNewLinks = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (hasNewLinks) {
+                    // Debounce para evitar processamento excessivo
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        this.processExistingLinks();
+                    }, 500);
+                }
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+        
+        // Intercepta cliques como fallback
+        document.addEventListener('click', (e) => {
+            const link = e.target.closest('a[href]');
+            if (!link) return;
+            
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            // Se o link não estiver protegido e for externo
+            if (!href.includes('wazzimagiygg.com/rv/') && this.isExternalUrl(href)) {
+                e.preventDefault();
+                const uid = this.getUserUID();
+                const redirectUrl = this.buildRedirectUrl(href, uid);
+                
+                if (link.target === '_blank') {
+                    window.open(redirectUrl, '_blank');
+                } else {
+                    window.location.href = redirectUrl;
+                }
+            }
+        });
+    }
+};
+
+// ============================================
+// FUNÇÃO PARA CRIAR LINKS SEGUROS
+// ============================================
+
+/**
+ * Cria um link seguro para URLs externas
+ * @param {string} url - URL original
+ * @param {string} text - Texto do link
+ * @param {Object} options - Opções adicionais
+ * @returns {HTMLAnchorElement}
+ */
+function createSecureLink(url, text, options = {}) {
+    const uid = LinkInterceptor.getUserUID();
+    const secureUrl = LinkInterceptor.buildRedirectUrl(url, uid);
+    
+    const link = document.createElement('a');
+    link.href = secureUrl;
+    link.textContent = text || url;
+    link.target = options.target || '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    if (options.className) link.className = options.className;
+    if (options.icon) {
+        const icon = document.createElement('span');
+        icon.textContent = options.icon + ' ';
+        link.prepend(icon);
+    }
+    
+    return link;
+}
+
+// ============================================
 // REGISTRO DE USUÁRIO
 // ============================================
 async function registerUser(user) {
@@ -899,6 +1109,13 @@ function renderArticles(articles) {
     `;
     
     setTimeout(() => renderWeather(), 300);
+    
+    // Processa links seguros após renderizar
+    setTimeout(() => {
+        if (typeof LinkInterceptor !== 'undefined') {
+            LinkInterceptor.processExistingLinks();
+        }
+    }, 500);
 }
 
 window.openArticleById = function(articleId) {
@@ -979,6 +1196,13 @@ function renderSingleArticle(article) {
     `;
     
     setTimeout(() => renderWeather(), 300);
+    
+    // Processa links seguros após renderizar
+    setTimeout(() => {
+        if (typeof LinkInterceptor !== 'undefined') {
+            LinkInterceptor.processExistingLinks();
+        }
+    }, 500);
 }
 
 // ============================================
@@ -1165,6 +1389,22 @@ window.onpopstate = (event) => {
 };
 
 // ============================================
+// INICIALIZAÇÃO DO LINK INTERCEPTOR
+// ============================================
+
+function initializeLinkInterceptor() {
+    if (typeof LinkInterceptor !== 'undefined') {
+        LinkInterceptor.init();
+        console.log('✅ LinkInterceptor inicializado');
+        
+        // Processa links existentes
+        setTimeout(() => {
+            LinkInterceptor.processExistingLinks();
+        }, 1000);
+    }
+}
+
+// ============================================
 // INICIALIZAÇÃO
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1174,6 +1414,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('currentDate').textContent = new Date().toLocaleDateString('pt-BR', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
+    
+    // Inicializar Link Interceptor
+    setTimeout(initializeLinkInterceptor, 500);
 });
 
 // ============================================
@@ -1183,6 +1426,10 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
         await registerUser(user);
+        
+        // Atualiza o UID no localStorage e cookie
+        localStorage.setItem('wzzm_user_uid', user.uid);
+        document.cookie = `wzzm_uid=${user.uid}; path=/; max-age=86400; samesite=lax`;
         
         currentUserIsBanned = await checkIfUserIsBanned(user);
         if (currentUserIsBanned) {
@@ -1214,6 +1461,13 @@ auth.onAuthStateChanged(async (user) => {
         if (!weatherLoaded) {
             setTimeout(() => renderWeather(), 300);
         }
+        
+        // Reprocessa links após login
+        setTimeout(() => {
+            if (typeof LinkInterceptor !== 'undefined') {
+                LinkInterceptor.processExistingLinks();
+            }
+        }, 1000);
     } else {
         currentUser = null;
         currentUserIsAdmin = false;
@@ -1256,150 +1510,24 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ============================================
-// INTEGRAÇÃO COM LINK INTERCEPTOR
+// EXPORTA FUNÇÕES GLOBAIS
 // ============================================
 
-/**
- * Carrega e inicializa o LinkInterceptor
- */
-function loadLinkInterceptor() {
-    // Verifica se já está carregado
-    if (typeof LinkInterceptor !== 'undefined') {
-        LinkInterceptor.init();
-        return;
-    }
-    
-    // Carrega o script
-    const script = document.createElement('script');
-    script.src = 'https://wazzimagiygg.com/jornal/link-interceptor.js';
-    script.onload = function() {
-        console.log('✅ LinkInterceptor carregado com sucesso');
-        if (typeof LinkInterceptor !== 'undefined') {
-            LinkInterceptor.init();
-            
-            // Atualiza o REDIRECT_PAGE para usar a URL correta
-            LinkInterceptor.REDIRECT_PAGE = 'https://wazzimagiygg.com/rv/';
-        }
-    };
-    script.onerror = function() {
-        console.warn('⚠️ Não foi possível carregar o LinkInterceptor');
-        // Fallback: intercepta links manualmente
-        setupFallbackInterceptor();
-    };
-    document.head.appendChild(script);
-}
-
-/**
- * Fallback caso o LinkInterceptor não carregue
- */
-function setupFallbackInterceptor() {
-    console.log('🔄 Usando fallback para interceptação de links');
-    
-    document.addEventListener('click', function(e) {
-        const link = e.target.closest('a[href]');
-        if (!link) return;
-        
-        const href = link.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
-        
-        // Verifica se é externo
-        try {
-            const url = new URL(href, window.location.origin);
-            const isExternal = !['wazzimagiygg.com', 'localhost'].some(d => 
-                url.hostname === d || url.hostname.endsWith('.' + d)
-            );
-            
-            if (isExternal) {
-                e.preventDefault();
-                const uid = typeof currentUser !== 'undefined' && currentUser ? currentUser.uid : 'visitante';
-                const redirectUrl = `https://wazzimagiygg.com/rv/?uid=${encodeURIComponent(href)}&url=${encodeURIComponent(href)}&ref=${encodeURIComponent(window.location.href)}`;
-                
-                if (link.target === '_blank') {
-                    window.open(redirectUrl, '_blank');
-                } else {
-                    window.location.href = redirectUrl;
-                }
-            }
-        } catch {
-            // URL inválida, ignora
-        }
-    });
-}
-
-/**
- * Função para criar links seguros manualmente
- */
-function createSecureLink(url, text, options = {}) {
-    if (typeof LinkInterceptor !== 'undefined') {
-        const uid = LinkInterceptor.getUserUID();
-        const secureUrl = LinkInterceptor.buildRedirectUrl(url, uid);
-        
-        const link = document.createElement('a');
-        link.href = secureUrl;
-        link.textContent = text || url;
-        link.target = options.target || '_blank';
-        link.rel = 'noopener noreferrer';
-        
-        if (options.className) link.className = options.className;
-        if (options.icon) {
-            const icon = document.createElement('span');
-            icon.textContent = options.icon + ' ';
-            link.prepend(icon);
-        }
-        
-        return link;
-    }
-    
-    // Fallback
-    const link = document.createElement('a');
-    link.href = url;
-    link.textContent = text || url;
-    link.target = options.target || '_blank';
-    return link;
-}
-
-// Exporta funções
-window.createSecureLink = createSecureLink;
-window.secureExternalLinks = function(container) {
-    if (typeof LinkInterceptor !== 'undefined') {
-        LinkInterceptor.processExistingLinks();
-    }
-};
-
-// ============================================
-// INICIALIZAÇÃO AUTOMÁTICA
-// ============================================
-
-// Carrega o LinkInterceptor junto com o resto do sistema
-if (document.readyState === 'complete') {
-    setTimeout(loadLinkInterceptor, 1000);
-} else {
-    document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(loadLinkInterceptor, 1000);
-    });
-}
-
-// Também tenta carregar quando o Firebase estiver pronto
-if (typeof firebase !== 'undefined' && firebase.auth) {
-    firebase.auth().onAuthStateChanged(function(user) {
-        if (user && user.uid) {
-            document.cookie = `wzzm_uid=${user.uid}; path=/; max-age=86400; samesite=lax`;
-            localStorage.setItem('wzzm_user_uid', user.uid);
-        }
-    });
-}
-
-console.log('🔗 Sistema de links seguros integrado ao script.js');
-
-// Expor funções globalmente
+// Funções de autenticação
 window.logout = logout;
 window.logoutBanned = logoutBanned;
 window.loginWithGoogle = loginWithGoogle;
+
+// Funções de navegação
 window.navigateToHome = navigateToHome;
 window.closeModals = closeModals;
 window.showLoginModal = showLoginModal;
+
+// Funções de notificações
 window.toggleNotifications = toggleNotifications;
 window.markAllAsRead = markAllAsRead;
+
+// Funções de artigos
 window.saveArticle = saveArticle;
 window.getCurrentArticleUrl = getCurrentArticleUrl;
 window.showShareModal = showShareModal;
@@ -1409,3 +1537,17 @@ window.deleteArticle = deleteArticle;
 window.editCurrentArticle = editCurrentArticle;
 window.deleteCurrentArticle = deleteCurrentArticle;
 window.openArticleById = openArticleById;
+window.filterByCategory = filterByCategory;
+window.showNewArticleModal = showNewArticleModal;
+
+// Funções de links seguros
+window.LinkInterceptor = LinkInterceptor;
+window.createSecureLink = createSecureLink;
+window.secureExternalLinks = function(container) {
+    if (typeof LinkInterceptor !== 'undefined') {
+        LinkInterceptor.processExistingLinks();
+    }
+};
+
+console.log('🔗 Sistema de links seguros integrado ao script.js');
+console.log('📰 Jornal WazzimaGiygg carregado com sucesso!');
