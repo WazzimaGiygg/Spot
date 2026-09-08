@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Página - WikiZero</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Lato', 'Noto Sans', sans-serif;
+            background: #f6f6f6;
+            color: #202122;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* ===== LOADING ===== */
+        #loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        #loading .spinner {
+            animation: spin 1s linear infinite;
+            font-size: 2em;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== USER PAGE ===== */
+        .user-page-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            border: 1px solid #eaecf0;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .user-page-header {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eaf3ff;
+            flex-wrap: wrap;
+        }
+
+        .user-page-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            color: white;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .user-page-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-page-info {
+            flex: 1;
+        }
+
+        .user-page-info h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.6em;
+            color: #1a1a2e;
+        }
+
+        .user-page-uid {
+            color: #666;
+            font-size: 0.85em;
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        .user-page-stats {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .user-page-stats strong {
+            color: #1a1a2e;
+        }
+
+        .user-page-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-abrir-painel {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #36c;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-abrir-painel:hover {
+            background-color: #2a5a9e;
+        }
+
+        .btn-abrir-painel.danger {
+            background-color: #dc3545;
+        }
+
+        .btn-abrir-painel.danger:hover {
+            background-color: #c82333;
+        }
+
+        /* ===== TABS ===== */
+        .user-tabs {
+            display: flex;
+            gap: 0;
+            margin: 20px 0;
+            border-bottom: 2px solid #eaecf0;
+        }
+
+        .user-tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .user-tab:hover {
+            color: #1a1a2e;
+            background: #f8f9fa;
+        }
+
+        .user-tab.active {
+            color: #36c;
+            font-weight: 600;
+        }
+
+        .user-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #36c;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .user-tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+
+        .user-tab-content.active {
+            display: block;
+        }
+
+        /* ===== CONTRIBUIÇÕES ===== */
+        .contribution-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .contribution-item:hover {
+            background: #f8f9fa;
+        }
+
+        .contribution-item .contribution-icon {
+            font-size: 24px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .contribution-item .contribution-info {
+            flex: 1;
+        }
+
+        .contribution-item .contribution-title {
+            font-weight: 600;
+            color: #0645ad;
+            cursor: pointer;
+        }
+
+        .contribution-item .contribution-title:hover {
+            text-decoration: underline;
+        }
+
+        .contribution-item .contribution-meta {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .contribution-item .contribution-type {
+            background: #eaf3ff;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 600;
+            color: #36c;
+        }
+
+        /* ===== DISCUSSÃO ===== */
+        .discussion-message {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .discussion-message .msg-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .discussion-message .msg-author {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .discussion-message .msg-time {
+            font-size: 0.75em;
+            color: #999;
+        }
+
+        .discussion-message .msg-content {
+            color: #333;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .discussion-form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .discussion-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .discussion-form textarea:focus {
+            outline: none;
+            border-color: #36c;
+        }
+
+        .discussion-form .submit-btn {
+            align-self: flex-end;
+            padding: 10px 30px;
+            background-color: #36c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .discussion-form .submit-btn:hover {
+            background-color: #2a5a9e;
+        }
+
+        /* ===== NOTIFICAÇÕES ===== */
+        .user-notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .user-notification-item:hover {
+            background: #f8f9fa;
+        }
+
+        .user-notification-item.unread {
+            background: #eef2ff;
+            border-left: 3px solid #4a6cf7;
+        }
+
+        .user-notification-item .notif-title {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .user-notification-item .notif-message {
+            color: #555;
+            font-size: 0.9em;
+            margin-top: 3px;
+        }
+
+        .user-notification-item .notif-time {
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 3px;
+        }
+
+        /* ===== LOADING ===== */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .user-page-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .user-page-stats {
+                justify-content: center;
+            }
+            .user-page-actions {
+                justify-content: center;
+            }
+            .user-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            .user-tab {
+                white-space: nowrap;
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading">
+    <span class="spinner">⏳</span>
+    <span>Carregando sua página...</span>
+</div>
+
+<div id="userPageContent" style="display:none;">
+    <div class="user-page-container">
+        <div class="user-page-header">
+            <div class="user-page-avatar" id="userPageAvatar">👤</div>
+            <div class="user-page-info">
+                <h2 id="userPageName">Carregando...</h2>
+                <p class="user-page-uid"><strong>UID:</strong> <span id="userPageUid">-</span></p>
+                <div class="user-page-stats">
+                    <span>📄 Contribuições: <strong id="userContribCount">0</strong></span>
+                    <span>📝 Artigos criados: <strong id="userArticlesCount">0</strong></span>
+                    <span>📅 Membro desde: <strong id="userJoinDate">-</strong></span>
+                </div>
+            </div>
+            <div class="user-page-actions">
+                <button onclick="showUserDiscussion()" class="btn-abrir-painel" style="background:#28a745;">💬 Discussão</button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="user-tabs">
+            <button class="user-tab active" data-tab="contributions" onclick="switchUserTab('contributions')">📄 Contribuições</button>
+            <button class="user-tab" data-tab="discussion" onclick="switchUserTab('discussion')">💬 Discussão</button>
+            <button class="user-tab" data-tab="notifications" onclick="switchUserTab('notifications')">🔔 Notificações</button>
+        </div>
+
+        <!-- TAB: Contribuições -->
+        <div id="userTabContributions" class="user-tab-content active">
+            <div id="userContributionsList"><div class="loading">Carregando contribuições...</div></div>
+        </div>
+
+        <!-- TAB: Discussão -->
+        <div id="userTabDiscussion" class="user-tab-content">
+            <div id="userDiscussionContainer">
+                <div id="discussionMessages"><div class="loading">Carregando discussão...</div></div>
+                <div class="discussion-form">
+                    <textarea id="discussionInput" rows="3" placeholder="Escreva uma mensagem na discussão..."></textarea>
+                    <button onclick="postDiscussionMessage()" class="submit-btn">💬 Enviar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: Notificações -->
+        <div id="userTabNotifications" class="user-tab-content">
+            <div id="userNotificationsList"><div class="loading">Carregando notificações...</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+// ============================================
+// FIREBASE CONFIG
+// ============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+    authDomain: "wzzm-ce3fc.firebaseapp.com",
+    projectId: "wzzm-ce3fc",
+    storageBucket: "wzzm-ce3fc.appspot.com",
+    messagingSenderId: "249427877153",
+    appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// ============================================
+// VARIÁVEIS GLOBAIS
+// ============================================
+let currentUser = null;
+let discussionListener = null;
+
+// ============================================
+// FUNÇÕES DE UTILIDADE
+// ============================================
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+    return name.substring(0, 2).toUpperCase();
+}
+
+function formatDate(timestamp) {
+    if (!timestamp) return 'Data desconhecida';
+    if (timestamp.toDate) timestamp = timestamp.toDate();
+    return timestamp.toLocaleString('pt-BR');
+}
+
+// ============================================
+// CARREGAR DADOS DO USUÁRIO
+// ============================================
+async function loadUserData() {
+    console.log('📥 Carregando dados do usuário...');
+    
+    try {
+        // Busca o documento do usuário
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        const userData = userDoc.exists ? userDoc.data() : {};
+        
+        console.log('📊 Dados do usuário:', userData);
+        
+        // Atualiza avatar
+        const avatar = document.getElementById('userPageAvatar');
+        if (currentUser.photoURL) {
+            avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="Avatar">`;
+        } else {
+            avatar.textContent = getInitials(currentUser.displayName || 'Usuário');
+        }
+        
+        // Atualiza nome
+        document.getElementById('userPageName').textContent = currentUser.displayName || 'Usuário';
+        
+        // Atualiza UID
+        document.getElementById('userPageUid').textContent = currentUser.uid;
+        
+        // Atualiza data de criação
+        const joinDate = document.getElementById('userJoinDate');
+        if (userData.createdAt) {
+            joinDate.textContent = formatDate(userData.createdAt);
+        } else if (userData.criadoEm) {
+            joinDate.textContent = formatDate(userData.criadoEm);
+        } else {
+            joinDate.textContent = 'Data desconhecida';
+        }
+        
+        console.log('✅ Dados do usuário carregados');
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar dados:', error);
+    }
+}
+
+// ============================================
+// CARREGAR CONTRIBUIÇÕES
+// ============================================
+async function loadUserContributions() {
+    const container = document.getElementById('userContributionsList');
+    container.innerHTML = '<div class="loading">Carregando contribuições...</div>';
+    
+    try {
+        // Busca artigos criados pelo usuário
+        const articlesSnapshot = await db.collectionGroup('inevitavel')
+            .where('criadorUid', '==', currentUser.uid)
+            .orderBy('dataCriacao', 'desc')
+            .limit(100)
+            .get();
+        
+        // Busca páginas criadas pelo usuário
+        const pagesSnapshot = await db.collection('documentos')
+            .where('criadoPor', '==', currentUser.uid)
+            .orderBy('criadoEm', 'desc')
+            .limit(50)
+            .get();
+        
+        // Atualiza contadores
+        document.getElementById('userContribCount').textContent = articlesSnapshot.size + pagesSnapshot.size;
+        document.getElementById('userArticlesCount').textContent = articlesSnapshot.size;
+        
+        let html = '';
+        
+        // Páginas criadas
+        if (pagesSnapshot.size > 0) {
+            html += `<h3 style="margin:15px 0 10px 0;">📚 Páginas criadas</h3>`;
+            pagesSnapshot.forEach(doc => {
+                const data = doc.data();
+                html += `
+                    <div class="contribution-item">
+                        <div class="contribution-icon">📖</div>
+                        <div class="contribution-info">
+                            <div class="contribution-title" onclick="window.parent.openSubcollection('${doc.id}')">
+                                ${escapeHtml(data.titulo || doc.id)}
+                            </div>
+                            <div class="contribution-meta">
+                                Criado em ${formatDate(data.criadoEm)} · ${data.categoria || 'Geral'}
+                            </div>
+                        </div>
+                        <span class="contribution-type">Página</span>
+                    </div>
+                `;
+            });
+        }
+        
+        // Artigos criados
+        if (articlesSnapshot.size > 0) {
+            html += `<h3 style="margin:15px 0 10px 0;">📄 Artigos criados</h3>`;
+            articlesSnapshot.forEach(doc => {
+                const data = doc.data();
+                const parentRef = doc.ref.parent.parent;
+                const parentId = parentRef ? parentRef.id : 'desconhecido';
+                
+                html += `
+                    <div class="contribution-item">
+                        <div class="contribution-icon">📄</div>
+                        <div class="contribution-info">
+                            <div class="contribution-title" onclick="window.parent.openArticle('${parentId}', '${doc.id}')">
+                                ${escapeHtml(data.titulo || 'Sem título')}
+                            </div>
+                            <div class="contribution-meta">
+                                Criado em ${formatDate(data.dataCriacao)} · Página: ${escapeHtml(parentId)}
+                                ${data.ultimaEdicao ? ` · Última edição: ${formatDate(data.ultimaEdicao)}` : ''}
+                            </div>
+                        </div>
+                        <span class="contribution-type">Artigo</span>
+                    </div>
+                `;
+            });
+        }
+        
+        if (!html) {
+            html = `
+                <div class="empty-state">
+                    <div class="icon">📝</div>
+                    <p>Você ainda não fez nenhuma contribuição.</p>
+                    <p style="font-size:0.9em;">Crie sua primeira página ou artigo!</p>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar contribuições:', error);
+        container.innerHTML = `<div class="loading">Erro ao carregar: ${error.message}</div>`;
+    }
+}
+
+// ============================================
+// CARREGAR DISCUSSÃO
+// ============================================
+async function loadUserDiscussion() {
+    const container = document.getElementById('discussionMessages');
+    container.innerHTML = '<div class="loading">Carregando discussão...</div>';
+    
+    if (!currentUser) return;
+    
+    try {
+        const discussionRef = db.collection('discussions').doc(currentUser.uid);
+        const messagesSnapshot = await discussionRef.collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(100)
+            .get();
+        
+        if (messagesSnapshot.empty) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">💬</div>
+                    <p>Nenhuma mensagem na discussão.</p>
+                    <p style="font-size:0.9em;">Seja o primeiro a comentar!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        messagesSnapshot.forEach(doc => {
+            const data = doc.data();
+            const isOwn = data.authorUid === currentUser.uid;
+            html += `
+                <div class="discussion-message" style="${isOwn ? 'background:#eaf3ff; border-radius:8px; margin:5px 0;' : ''}">
+                    <div class="msg-header">
+                        <span class="msg-author">${isOwn ? '👤 Você' : escapeHtml(data.authorName || 'Usuário')}</span>
+                        <span class="msg-time">${formatDate(data.timestamp)}</span>
+                    </div>
+                    <div class="msg-content">${escapeHtml(data.content)}</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+        // Listener para novas mensagens
+        if (discussionListener) {
+            discussionListener();
+            discussionListener = null;
+        }
+        
+        discussionListener = discussionRef.collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(100)
+            .onSnapshot((snapshot) => {
+                if (snapshot.docChanges().length > 0) {
+                    loadUserDiscussion();
+                }
+            });
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar discussão:', error);
+        container.innerHTML = `<div class="loading">Erro ao carregar: ${error.message}</div>`;
+    }
+}
+
+// ============================================
+// POSTAR MENSAGEM NA DISCUSSÃO
+// ============================================
+async function postDiscussionMessage() {
+    const input = document.getElementById('discussionInput');
+    const content = input.value.trim();
+    
+    if (!content) {
+        alert('Digite uma mensagem.');
+        return;
+    }
+    
+    if (!currentUser) return;
+    
+    const btn = document.querySelector('.discussion-form .submit-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    
+    try {
+        const discussionRef = db.collection('discussions').doc(currentUser.uid);
+        await discussionRef.set({ userId: currentUser.uid }, { merge: true });
+        
+        await discussionRef.collection('messages').add({
+            authorUid: currentUser.uid,
+            authorName: currentUser.displayName || 'Usuário',
+            content: content,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        input.value = '';
+        await loadUserDiscussion();
+        
+    } catch (error) {
+        console.error('❌ Erro ao enviar mensagem:', error);
+        alert('Erro ao enviar: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💬 Enviar';
+    }
+}
+
+// ============================================
+// CARREGAR NOTIFICAÇÕES
+// ============================================
+async function loadUserNotifications() {
+    const container = document.getElementById('userNotificationsList');
+    container.innerHTML = '<div class="loading">Carregando notificações...</div>';
+    
+    if (!currentUser) return;
+    
+    try {
+        const snapshot = await db.collection('notifications')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(100)
+            .get();
+        
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🔔</div>
+                    <p>Nenhuma notificação.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const isUnread = !data.lida;
+            html += `
+                <div class="user-notification-item ${isUnread ? 'unread' : ''}">
+                    <div class="notif-title">${escapeHtml(data.titulo || 'Notificação')}</div>
+                    <div class="notif-message">${escapeHtml(data.mensagem || '')}</div>
+                    <div class="notif-time">${formatDate(data.timestamp)} ${isUnread ? '· 🔴 Não lida' : '· ✅ Lida'}</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar notificações:', error);
+        container.innerHTML = `<div class="loading">Erro ao carregar: ${error.message}</div>`;
+    }
+}
+
+// ============================================
+// NAVEGAÇÃO ENTRE TABS
+// ============================================
+function switchUserTab(tab) {
+    document.querySelectorAll('.user-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.user-tab[data-tab="${tab}"]`)?.classList.add('active');
+    
+    document.querySelectorAll('.user-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`userTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)?.classList.add('active');
+    
+    if (tab === 'notifications') {
+        loadUserNotifications();
+    } else if (tab === 'discussion') {
+        loadUserDiscussion();
+    } else if (tab === 'contributions') {
+        loadUserContributions();
+    }
+}
+
+function showUserDiscussion() {
+    switchUserTab('discussion');
+}
+
+// ============================================
+// EXPOR FUNÇÕES GLOBALMENTE
+// ============================================
+window.switchUserTab = switchUserTab;
+window.showUserDiscussion = showUserDiscussion;
+window.postDiscussionMessage = postDiscussionMessage;
+window.loadUserContributions = loadUserContributions;
+window.loadUserDiscussion = loadUserDiscussion;
+window.loadUserNotifications = loadUserNotifications;
+
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        currentUser = user;
+        console.log('👤 Usuário autenticado:', currentUser.displayName);
+        
+        // Esconde loading
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('userPageContent').style.display = 'block';
+        
+        // Carrega dados
+        await loadUserData();
+        await loadUserContributions();
+        await loadUserDiscussion();
+        await loadUserNotifications();
+        
+        console.log('🎉 Página do usuário carregada com sucesso!');
+    } else {
+        // Usuário não autenticado
+        document.getElementById('loading').innerHTML = `
+            <div style="text-align:center; padding:40px;">
+                <div style="font-size:48px; margin-bottom:15px;">🔒</div>
+                <h2>Faça login para acessar sua página</h2>
+                <p style="color:#666; margin-top:10px;">
+                    <a href="#" onclick="window.parent.showLoginModal(); return false;" style="color:#36c; text-decoration:underline;">
+                        Clique aqui para fazer login
+                    </a>
+                </p>
+            </div>
+        `;
+    }
+});
+</script>
+
+</body>
+</html>
