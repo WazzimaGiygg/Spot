@@ -962,6 +962,286 @@ function openHelperEditor() {
 }
 
 // ============================================
+// FUNÇÕES DA PÁGINA DO USUÁRIO
+// ============================================
+
+// ============================================
+// CARREGAR DATA DE CRIAÇÃO DO USUÁRIO
+// ============================================
+async function loadUserJoinDate() {
+    console.log('📅 Carregando data de criação do usuário...');
+    
+    if (!currentUser) {
+        console.warn('⚠️ Usuário não logado');
+        return;
+    }
+    
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).get();
+        const joinDateEl = document.getElementById('userJoinDate');
+        
+        if (doc.exists) {
+            const data = doc.data();
+            console.log('📅 Dados do usuário:', data);
+            
+            if (data.createdAt) {
+                const date = formatDate(data.createdAt);
+                if (joinDateEl) {
+                    joinDateEl.textContent = date;
+                    console.log('✅ Data de criação definida:', date);
+                }
+            } else if (data.criadoEm) {
+                const date = formatDate(data.criadoEm);
+                if (joinDateEl) {
+                    joinDateEl.textContent = date;
+                    console.log('✅ Data de criação definida (criadoEm):', date);
+                }
+            } else if (data.creationTime) {
+                const date = formatDate(data.creationTime);
+                if (joinDateEl) {
+                    joinDateEl.textContent = date;
+                    console.log('✅ Data de criação definida (creationTime):', date);
+                }
+            } else {
+                if (joinDateEl) {
+                    joinDateEl.textContent = 'Data desconhecida';
+                }
+                console.warn('⚠️ Data de criação não encontrada');
+            }
+        } else {
+            if (joinDateEl) {
+                joinDateEl.textContent = 'Data desconhecida';
+            }
+            console.warn('⚠️ Documento do usuário não encontrado');
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar data de criação:', error);
+        const joinDateEl = document.getElementById('userJoinDate');
+        if (joinDateEl) {
+            joinDateEl.textContent = 'Erro ao carregar';
+        }
+    }
+}
+
+// ============================================
+// ATUALIZAR INFORMAÇÕES DO USUÁRIO
+// ============================================
+function updateUserPageInfo() {
+    console.log('📝 Atualizando informações do usuário...');
+    
+    if (!currentUser) {
+        console.warn('⚠️ Usuário não logado');
+        return;
+    }
+    
+    console.log('👤 Usuário:', currentUser.displayName);
+    console.log('🆔 UID:', currentUser.uid);
+    
+    // 1. AVATAR
+    const avatar = document.getElementById('userPageAvatar');
+    if (avatar) {
+        if (currentUser.photoURL) {
+            avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="Avatar" style="width:80px;height:80px;border-radius:50%;object-fit:cover;">`;
+            console.log('✅ Avatar com foto');
+        } else {
+            const initials = getInitials(currentUser.displayName || 'Usuário');
+            avatar.textContent = initials;
+            avatar.style.cssText = `
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 2.5em !important;
+                background: linear-gradient(135deg, #e94560, #ff6b6b) !important;
+                color: white !important;
+                width: 80px !important;
+                height: 80px !important;
+                border-radius: 50% !important;
+                flex-shrink: 0 !important;
+            `;
+            console.log('✅ Avatar com iniciais:', initials);
+        }
+    } else {
+        console.error('❌ Elemento #userPageAvatar não encontrado!');
+    }
+    
+    // 2. NOME
+    const nameEl = document.getElementById('userPageName');
+    if (nameEl) {
+        nameEl.textContent = currentUser.displayName || 'Usuário';
+        console.log('✅ Nome definido:', nameEl.textContent);
+    } else {
+        console.error('❌ Elemento #userPageName não encontrado!');
+    }
+    
+    // 3. UID
+    const uidEl = document.getElementById('userPageUid');
+    if (uidEl) {
+        uidEl.textContent = currentUser.uid;
+        console.log('✅ UID definido:', uidEl.textContent);
+    } else {
+        console.error('❌ Elemento #userPageUid não encontrado!');
+    }
+    
+    // 4. CARREGA DATA DE CRIAÇÃO
+    loadUserJoinDate();
+    
+    // 5. VERIFICAÇÃO FINAL
+    console.log('📊 VERIFICAÇÃO DOS ELEMENTOS:');
+    console.log('  📛 Nome:', document.getElementById('userPageName')?.textContent);
+    console.log('  🆔 UID:', document.getElementById('userPageUid')?.textContent);
+    console.log('  📸 Avatar:', document.getElementById('userPageAvatar')?.innerHTML?.substring(0, 50));
+}
+
+// ============================================
+// USER PAGE - FUNÇÃO COMPLETA CORRIGIDA
+// ============================================
+
+async function openUserPage() {
+    console.log('🚀 Abrindo página do usuário...');
+    
+    // 1. VERIFICA USUÁRIO
+    if (!currentUser) {
+        alert('Faça login para acessar sua página.');
+        showLoginModal();
+        return;
+    }
+
+    if (isGuestUser) {
+        alert('Usuários convidados não têm página pessoal. Faça login com Google.');
+        showLoginModal();
+        return;
+    }
+
+    try {
+        currentUserPageUid = currentUser.uid;
+        console.log('👤 UID:', currentUserPageUid);
+        console.log('👤 Nome:', currentUser.displayName);
+        console.log('👤 Email:', currentUser.email);
+        
+        // 2. ENCONTRA O CONTAINER
+        const container = document.getElementById('userPageContainer');
+        if (!container) {
+            console.error('❌ Container não encontrado!');
+            alert('Erro: container da página não encontrado.');
+            return;
+        }
+        
+        // 3. ABRE A PÁGINA
+        container.classList.add('user-page-open');
+        container.style.display = 'block';
+        container.style.visibility = 'visible';
+        container.style.opacity = '1';
+        container.style.height = 'auto';
+        container.style.minHeight = '500px';
+        container.style.overflow = 'visible';
+        container.style.padding = '25px';
+        container.style.margin = '20px 0';
+        container.style.background = 'white';
+        container.style.border = '1px solid #eaecf0';
+        container.style.borderRadius = '12px';
+        container.style.position = 'relative';
+        container.style.pointerEvents = 'auto';
+        
+        console.log('✅ Container visível (classe adicionada)');
+        
+        // 4. ESCONDE O CONTEÚDO PRINCIPAL
+        const contentArea = document.querySelector('.content-area');
+        if (contentArea) {
+            contentArea.style.display = 'none';
+        }
+        
+        // 5. ESCONDE OUTRAS VIEWS
+        document.querySelectorAll('.article-view').forEach(v => {
+            v.classList.remove('active');
+        });
+        
+        // 6. PREENCHE AS INFORMAÇÕES DO USUÁRIO
+        console.log('📝 Preenchendo informações do usuário...');
+        updateUserPageInfo();
+        
+        // 7. CARREGA DADOS
+        console.log('📥 Carregando contribuições...');
+        await loadUserContributions();
+        console.log('✅ Contribuições carregadas');
+        
+        console.log('📥 Carregando discussão...');
+        await loadUserDiscussion();
+        console.log('✅ Discussão carregada');
+        
+        console.log('📥 Carregando notificações...');
+        await loadUserNotifications();
+        console.log('✅ Notificações carregadas');
+        
+        // 8. ABRE A PRIMEIRA TAB
+        switchUserTab('contributions');
+        console.log('✅ Tab inicial aberta');
+        
+        // 9. VERIFICAÇÃO FINAL
+        console.log('📊 VERIFICAÇÃO FINAL:');
+        console.log('  📛 Nome no DOM:', document.getElementById('userPageName')?.textContent);
+        console.log('  🆔 UID no DOM:', document.getElementById('userPageUid')?.textContent);
+        console.log('  📸 Avatar no DOM:', document.getElementById('userPageAvatar')?.innerHTML?.substring(0, 50));
+        console.log('  📦 Container visível:', container.offsetHeight > 0);
+        console.log('  📦 Classe do container:', container.className);
+        
+        // 10. ROLA PARA A PÁGINA
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        console.log('🎉 Página do usuário carregada com sucesso!');
+        
+    } catch (error) {
+        console.error('❌ Erro ao abrir página do usuário:', error);
+        alert('Erro ao carregar página do usuário: ' + error.message);
+    }
+}
+
+// ============================================
+// FECHAR PÁGINA DO USUÁRIO
+// ============================================
+
+function closeUserPage() {
+    console.log('🚪 Fechando página do usuário...');
+    
+    const container = document.getElementById('userPageContainer');
+    if (container) {
+        container.classList.remove('user-page-open');
+        container.style.display = 'none';
+        container.style.visibility = 'hidden';
+        container.style.opacity = '0';
+        container.style.height = '0';
+        container.style.minHeight = '0';
+        container.style.overflow = 'hidden';
+        container.style.padding = '0';
+        container.style.margin = '0';
+        container.style.border = 'none';
+        container.style.position = 'absolute';
+        container.style.pointerEvents = 'none';
+    }
+    
+    // MOSTRA O CONTEÚDO PRINCIPAL
+    const contentArea = document.querySelector('.content-area');
+    if (contentArea) {
+        contentArea.style.display = 'block';
+    }
+    
+    // MOSTRA A LISTA DE PÁGINAS
+    document.querySelectorAll('.article-view').forEach(v => {
+        if (v.id === 'list-view') {
+            v.classList.add('active');
+        } else {
+            v.classList.remove('active');
+        }
+    });
+    
+    if (discussionListener) {
+        discussionListener();
+        discussionListener = null;
+    }
+    
+    console.log('✅ Página do usuário fechada');
+}
+
+// ============================================
 // USER PAGE - FUNÇÃO COMPLETA CORRIGIDA
 // ============================================
 
