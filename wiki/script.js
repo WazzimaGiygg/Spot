@@ -160,6 +160,8 @@ let currentEditingArticleId = null;
 let notifications = [];
 let unreadCount = 0;
 let notificationListener = null;
+let discussionListener = null;
+let currentUserPageUid = null;
 
 // ============================================
 // FUNÇÕES DE UTILIDADE
@@ -203,7 +205,6 @@ function getTimeAgo(date) {
 function sanitizeHtml(html) {
     if (!html || typeof html !== 'string') return '';
     
-    // Remove tags perigosas
     const dangerousTags = ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button', 'textarea', 'select'];
     let sanitized = html;
     
@@ -214,33 +215,20 @@ function sanitizeHtml(html) {
         sanitized = sanitized.replace(regex2, `<!-- Tag ${tag} removida por segurança -->`);
     });
     
-    // Remove eventos JavaScript (onclick, onload, etc)
     sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
     sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
-    
-    // Remove protocolos perigosos em links e imagens
     sanitized = sanitized.replace(/(src|href)\s*=\s*["'](javascript|data|vbscript):/gi, '$1="#"');
-    
-    // Remove javascript: em links
     sanitized = sanitized.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
     
     return sanitized;
 }
 
-// ============================================
-// FUNÇÃO PARA RENDERIZAR HTML COM SEGURANÇA
-// ============================================
 function renderHtmlContent(html) {
     if (!html || typeof html !== 'string') return '<em>Sem conteúdo</em>';
-    
-    // Primeiro sanitiza
     const sanitized = sanitizeHtml(html);
-    
-    // Verifica se tem conteúdo seguro
     if (!sanitized.trim()) {
         return '<em>Conteúdo vazio ou removido por segurança</em>';
     }
-    
     return sanitized;
 }
 
@@ -261,8 +249,6 @@ async function registerUser(user) {
             isAdmin: false,
             isBan: existingData.isBan || false,
             isBanned: existingData.isBanned || false,
-            isTeacher: false,
-            isTeatcher: false,
             createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp(),
             updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
             lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -270,8 +256,6 @@ async function registerUser(user) {
         };
 
         await db.collection('users').doc(uid).set(userData, { merge: true });
-        await db.collection('usuários').doc(uid).set(userData, { merge: true });
-
         console.log(`Usuário ${uid} registrado com sucesso!`);
         return userData;
     } catch (error) {
@@ -633,30 +617,12 @@ function insertTag(tag) {
     let before, after, newText;
     
     switch(tag) {
-        case 'h1':
-            before = '<h1>';
-            after = '</h1>';
-            break;
-        case 'h2':
-            before = '<h2>';
-            after = '</h2>';
-            break;
-        case 'h3':
-            before = '<h3>';
-            after = '</h3>';
-            break;
-        case 'strong':
-            before = '<strong>';
-            after = '</strong>';
-            break;
-        case 'em':
-            before = '<em>';
-            after = '</em>';
-            break;
-        case 'u':
-            before = '<u>';
-            after = '</u>';
-            break;
+        case 'h1': before = '<h1>'; after = '</h1>'; break;
+        case 'h2': before = '<h2>'; after = '</h2>'; break;
+        case 'h3': before = '<h3>'; after = '</h3>'; break;
+        case 'strong': before = '<strong>'; after = '</strong>'; break;
+        case 'em': before = '<em>'; after = '</em>'; break;
+        case 'u': before = '<u>'; after = '</u>'; break;
         case 'ul':
             before = '<ul>\n  <li>';
             after = '</li>\n</ul>';
@@ -683,24 +649,11 @@ function insertTag(tag) {
                 return;
             }
             break;
-        case 'a':
-            before = '<a href="url" target="_blank">';
-            after = '</a>';
-            break;
-        case 'img':
-            before = '<img src="url" alt="descrição" style="max-width:100%;">';
-            after = '';
-            break;
-        case 'blockquote':
-            before = '<blockquote>';
-            after = '</blockquote>';
-            break;
-        case 'pre':
-            before = '<pre>';
-            after = '</pre>';
-            break;
-        default:
-            return;
+        case 'a': before = '<a href="url" target="_blank">'; after = '</a>'; break;
+        case 'img': before = '<img src="url" alt="descrição" style="max-width:100%;">'; after = ''; break;
+        case 'blockquote': before = '<blockquote>'; after = '</blockquote>'; break;
+        case 'pre': before = '<pre>'; after = '</pre>'; break;
+        default: return;
     }
     
     if (selectedText) {
@@ -713,8 +666,6 @@ function insertTag(tag) {
     textarea.focus();
     textarea.selectionStart = start + before.length;
     textarea.selectionEnd = end + before.length;
-    
-    // Dispara preview
     textarea.dispatchEvent(new Event('input'));
 }
 
@@ -808,8 +759,6 @@ window.openArticle = async function(collectionUid, articleId) {
         const article = await articleRef.get();
         if (!article.exists) { alert('Artigo não encontrado'); return; }
         const data = article.data();
-        
-        // Renderiza HTML com sanitização
         const renderedContent = renderHtmlContent(data.descricao || '');
         
         document.getElementById('modal-title').innerHTML = `📄 ${escapeHtml(data.titulo)}`;
@@ -864,9 +813,7 @@ async function openEditor(pageUid, articleId) {
     const contentTextarea = document.getElementById('editor-article-content');
     const updatePreview = () => {
         const content = contentTextarea.value;
-        // Renderiza HTML sanitizado
         const previewHtml = renderHtmlContent(content);
-        // Adiciona aviso de segurança
         document.getElementById('editor-preview').innerHTML = `
             <div class="security-notice">🔒 Conteúdo sanitizado - Tags perigosas removidas</div>
             ${previewHtml || '<em>Sem conteúdo para pré-visualizar</em>'}
@@ -906,7 +853,6 @@ async function loadArticleData(pageUid, articleId) {
             document.getElementById('editor-article-title').value = data.titulo || '';
             document.getElementById('editor-article-content').value = data.descricao || '';
             document.getElementById('editor-article-description').value = data.resumo || '';
-            // Renderiza HTML sanitizado
             const previewHtml = renderHtmlContent(data.descricao || '');
             document.getElementById('editor-preview').innerHTML = `
                 <div class="security-notice">🔒 Conteúdo sanitizado - Tags perigosas removidas</div>
@@ -927,11 +873,9 @@ async function saveArticle() {
     
     if (!title && currentEditingArticleId !== null) { alert('Digite um título'); return; }
     
-    // Validação de segurança do HTML
     if (content) {
         const sanitized = sanitizeHtml(content);
         if (sanitized !== content) {
-            // Avisa que tags perigosas foram removidas
             if (!confirm('⚠️ Seu conteúdo continha tags de script ou eventos perigosos que foram removidos por segurança. Deseja continuar?')) {
                 return;
             }
@@ -947,7 +891,7 @@ async function saveArticle() {
         if (currentEditingArticleId) {
             await db.collection('documentos').doc(currentEditingPageUid).collection('inevitavel').doc(currentEditingArticleId).update({
                 titulo: title,
-                descricao: content, // HTML puro
+                descricao: content,
                 resumo: description,
                 ultimaEdicao: firebase.firestore.FieldValue.serverTimestamp(),
                 editorId: currentUser.uid,
@@ -958,7 +902,7 @@ async function saveArticle() {
             const newId = title.toLowerCase().replace(/[^a-z0-9_]/g, '_') + '_' + Date.now();
             await db.collection('documentos').doc(currentEditingPageUid).collection('inevitavel').doc(newId).set({
                 titulo: title,
-                descricao: content, // HTML puro
+                descricao: content,
                 resumo: description,
                 criadorEmail: currentUser.email || '',
                 criadorNome: currentUser.displayName || 'Usuário',
@@ -1018,6 +962,341 @@ function openHelperEditor() {
 }
 
 // ============================================
+// USER PAGE - FUNÇÕES
+// ============================================
+
+async function openUserPage() {
+    if (!currentUser) {
+        alert('Faça login para acessar sua página.');
+        showLoginModal();
+        return;
+    }
+
+    if (isGuestUser) {
+        alert('Usuários convidados não têm página pessoal. Faça login com Google.');
+        showLoginModal();
+        return;
+    }
+
+    currentUserPageUid = currentUser.uid;
+    
+    const container = document.getElementById('userPageContainer');
+    container.style.display = 'block';
+    document.querySelector('.content-area').style.display = 'none';
+    
+    updateUserPageInfo();
+    await loadUserContributions();
+    await loadUserDiscussion();
+    await loadUserNotifications();
+    
+    switchUserTab('contributions');
+}
+
+function closeUserPage() {
+    document.getElementById('userPageContainer').style.display = 'none';
+    document.querySelector('.content-area').style.display = 'block';
+    if (discussionListener) {
+        discussionListener();
+        discussionListener = null;
+    }
+}
+
+function updateUserPageInfo() {
+    const avatar = document.getElementById('userPageAvatar');
+    const name = document.getElementById('userPageName');
+    const uid = document.getElementById('userPageUid');
+    
+    if (currentUser.photoURL) {
+        avatar.innerHTML = `<img src="${currentUser.photoURL}" alt="Avatar">`;
+    } else {
+        avatar.textContent = getInitials(currentUser.displayName || 'Usuário');
+    }
+    
+    name.textContent = currentUser.displayName || 'Usuário';
+    uid.textContent = currentUser.uid;
+    
+    loadUserJoinDate();
+}
+
+async function loadUserJoinDate() {
+    try {
+        const doc = await db.collection('users').doc(currentUser.uid).get();
+        if (doc.exists) {
+            const data = doc.data();
+            const joinDate = document.getElementById('userJoinDate');
+            if (data.createdAt) {
+                joinDate.textContent = formatDate(data.createdAt);
+            } else {
+                joinDate.textContent = 'Data desconhecida';
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao carregar data:', error);
+    }
+}
+
+// ============================================
+// TAB: CONTRIBUIÇÕES
+// ============================================
+async function loadUserContributions() {
+    const container = document.getElementById('userContributionsList');
+    container.innerHTML = '<div class="loading">Carregando contribuições...</div>';
+    
+    try {
+        const articlesSnapshot = await db.collectionGroup('inevitavel')
+            .where('criadorUid', '==', currentUser.uid)
+            .orderBy('dataCriacao', 'desc')
+            .limit(100)
+            .get();
+        
+        const pagesSnapshot = await db.collection('documentos')
+            .where('criadoPor', '==', currentUser.uid)
+            .orderBy('criadoEm', 'desc')
+            .limit(50)
+            .get();
+        
+        document.getElementById('userContribCount').textContent = articlesSnapshot.size + pagesSnapshot.size;
+        document.getElementById('userArticlesCount').textContent = articlesSnapshot.size;
+        
+        let html = '';
+        
+        if (pagesSnapshot.size > 0) {
+            html += `<h3 style="margin:15px 0 10px 0;">📚 Páginas criadas</h3>`;
+            pagesSnapshot.forEach(doc => {
+                const data = doc.data();
+                html += `
+                    <div class="contribution-item">
+                        <div class="contribution-icon">📖</div>
+                        <div class="contribution-info">
+                            <div class="contribution-title" onclick="openSubcollection('${doc.id}')">
+                                ${escapeHtml(data.titulo || doc.id)}
+                            </div>
+                            <div class="contribution-meta">
+                                Criado em ${formatDate(data.criadoEm)} · ${data.categoria || 'Geral'}
+                            </div>
+                        </div>
+                        <span class="contribution-type">Página</span>
+                    </div>
+                `;
+            });
+        }
+        
+        if (articlesSnapshot.size > 0) {
+            html += `<h3 style="margin:15px 0 10px 0;">📄 Artigos criados</h3>`;
+            articlesSnapshot.forEach(doc => {
+                const data = doc.data();
+                const parentRef = doc.ref.parent.parent;
+                const parentId = parentRef ? parentRef.id : 'desconhecido';
+                
+                html += `
+                    <div class="contribution-item">
+                        <div class="contribution-icon">📄</div>
+                        <div class="contribution-info">
+                            <div class="contribution-title" onclick="openArticle('${parentId}', '${doc.id}')">
+                                ${escapeHtml(data.titulo || 'Sem título')}
+                            </div>
+                            <div class="contribution-meta">
+                                Criado em ${formatDate(data.dataCriacao)} · Página: ${escapeHtml(parentId)}
+                                ${data.ultimaEdicao ? ` · Última edição: ${formatDate(data.ultimaEdicao)}` : ''}
+                            </div>
+                        </div>
+                        <span class="contribution-type">Artigo</span>
+                    </div>
+                `;
+            });
+        }
+        
+        if (!html) {
+            html = `
+                <div style="text-align:center; padding:40px; color:#999;">
+                    <div style="font-size:48px; margin-bottom:15px;">📝</div>
+                    <p>Você ainda não fez nenhuma contribuição.</p>
+                    <p style="font-size:0.9em;">Crie sua primeira página ou artigo!</p>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Erro ao carregar contribuições:', error);
+        container.innerHTML = `<div class="loading">Erro ao carregar: ${error.message}</div>`;
+    }
+}
+
+// ============================================
+// TAB: DISCUSSÃO
+// ============================================
+async function loadUserDiscussion() {
+    const container = document.getElementById('discussionMessages');
+    container.innerHTML = '<div class="loading">Carregando discussão...</div>';
+    
+    if (!currentUserPageUid) return;
+    
+    try {
+        const discussionRef = db.collection('discussions').doc(currentUserPageUid);
+        const messagesSnapshot = await discussionRef.collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(100)
+            .get();
+        
+        if (messagesSnapshot.empty) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#999;">
+                    <div style="font-size:48px; margin-bottom:15px;">💬</div>
+                    <p>Nenhuma mensagem na discussão.</p>
+                    <p style="font-size:0.9em;">Seja o primeiro a comentar!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        messagesSnapshot.forEach(doc => {
+            const data = doc.data();
+            const isOwn = data.authorUid === currentUser.uid;
+            html += `
+                <div class="discussion-message" style="${isOwn ? 'background:#eaf3ff; border-radius:8px; margin:5px 0;' : ''}">
+                    <div class="msg-header">
+                        <span class="msg-author">${isOwn ? '👤 Você' : escapeHtml(data.authorName || 'Usuário')}</span>
+                        <span class="msg-time">${formatDate(data.timestamp)}</span>
+                    </div>
+                    <div class="msg-content">${escapeHtml(data.content)}</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+        if (discussionListener) {
+            discussionListener();
+            discussionListener = null;
+        }
+        
+        discussionListener = discussionRef.collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(100)
+            .onSnapshot((snapshot) => {
+                if (snapshot.docChanges().length > 0) {
+                    loadUserDiscussion();
+                }
+            });
+        
+    } catch (error) {
+        console.error('Erro ao carregar discussão:', error);
+        container.innerHTML = `<div class="loading">Erro ao carregar: ${error.message}</div>`;
+    }
+}
+
+async function postDiscussionMessage() {
+    const input = document.getElementById('discussionInput');
+    const content = input.value.trim();
+    
+    if (!content) {
+        alert('Digite uma mensagem.');
+        return;
+    }
+    
+    if (!currentUserPageUid) return;
+    
+    const btn = document.querySelector('.discussion-form .submit-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+    
+    try {
+        const discussionRef = db.collection('discussions').doc(currentUserPageUid);
+        await discussionRef.set({ userId: currentUserPageUid }, { merge: true });
+        
+        await discussionRef.collection('messages').add({
+            authorUid: currentUser.uid,
+            authorName: currentUser.displayName || 'Usuário',
+            content: content,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        input.value = '';
+        await loadUserDiscussion();
+        
+    } catch (error) {
+        console.error('Erro ao enviar mensagem:', error);
+        alert('Erro ao enviar: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💬 Enviar';
+    }
+}
+
+// ============================================
+// TAB: NOTIFICAÇÕES
+// ============================================
+async function loadUserNotifications() {
+    const container = document.getElementById('userNotificationsList');
+    container.innerHTML = '<div class="loading">Carregando notificações...</div>';
+    
+    if (!currentUser) return;
+    
+    try {
+        const snapshot = await db.collection('notifications')
+            .where('userId', '==', currentUser.uid)
+            .orderBy('timestamp', 'desc')
+            .limit(100)
+            .get();
+        
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#999;">
+                    <div style="font-size:48px; margin-bottom:15px;">🔔</div>
+                    <p>Nenhuma notificação.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const isUnread = !data.lida;
+            html += `
+                <div class="user-notification-item ${isUnread ? 'unread' : ''}" onclick="markAsRead('${doc.id}')">
+                    <div class="notif-title">${escapeHtml(data.titulo || 'Notificação')}</div>
+                    <div class="notif-message">${escapeHtml(data.mensagem || '')}</div>
+                    <div class="notif-time">${formatDate(data.timestamp)} ${isUnread ? '· 🔴 Não lida' : '· ✅ Lida'}</div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Erro ao carregar notificações:', error);
+        container.innerHTML = `<div class="loading">Erro ao carregar: ${error.message}</div>`;
+    }
+}
+
+// ============================================
+// FUNÇÕES DE NAVEGAÇÃO ENTRE TABS
+// ============================================
+function switchUserTab(tab) {
+    document.querySelectorAll('.user-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.user-tab[data-tab="${tab}"]`)?.classList.add('active');
+    
+    document.querySelectorAll('.user-tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(`userTab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)?.classList.add('active');
+    
+    if (tab === 'notifications') {
+        loadUserNotifications();
+    } else if (tab === 'discussion') {
+        loadUserDiscussion();
+    } else if (tab === 'contributions') {
+        loadUserContributions();
+    }
+}
+
+function showUserDiscussion() {
+    switchUserTab('discussion');
+}
+
+// ============================================
 // EVENT LISTENERS
 // ============================================
 document.getElementById('create-subcollection-form')?.addEventListener('submit', async (e) => {
@@ -1053,14 +1332,12 @@ document.getElementById('random-btn')?.addEventListener('click', showRandomPage)
 document.getElementById('google-login-btn')?.addEventListener('click', loginWithGoogle);
 document.getElementById('guest-login-btn')?.addEventListener('click', guestLogin);
 
-// Editor eventos
 document.getElementById('editor-save-btn')?.addEventListener('click', saveArticle);
 document.getElementById('editor-close-btn')?.addEventListener('click', closeEditor);
 document.getElementById('editor-new-article-btn')?.addEventListener('click', () => { if (currentEditingPageUid) openEditor(currentEditingPageUid, 'novo'); });
 document.getElementById('open-helper-editor')?.addEventListener('click', openHelperEditor);
 document.getElementById('editor-helper-btn')?.addEventListener('click', openHelperEditor);
 
-// Menu lateral
 const sideMenu = document.getElementById('sidebar-menu');
 const menuToggle = document.getElementById('menu-toggle-btn');
 let isCollapsed = false;
@@ -1072,7 +1349,6 @@ if (menuToggle) {
     });
 }
 
-// Fechar modais ao clicar fora
 document.querySelectorAll('.modal, .editor-modal').forEach(modal => {
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -1123,7 +1399,9 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// Expor funções globalmente
+// ============================================
+// EXPOR FUNÇÕES GLOBALMENTE
+// ============================================
 window.showListView = showListView;
 window.showRandomPage = showRandomPage;
 window.showCreateView = showCreateView;
@@ -1146,8 +1424,18 @@ window.markAllAsRead = markAllAsRead;
 window.showLoginModal = showLoginModal;
 window.loginWithGoogle = loginWithGoogle;
 window.insertTag = insertTag;
+window.openUserPage = openUserPage;
+window.closeUserPage = closeUserPage;
+window.switchUserTab = switchUserTab;
+window.showUserDiscussion = showUserDiscussion;
+window.postDiscussionMessage = postDiscussionMessage;
+window.loadUserContributions = loadUserContributions;
+window.loadUserDiscussion = loadUserDiscussion;
+window.loadUserNotifications = loadUserNotifications;
+window.updateUserPageInfo = updateUserPageInfo;
 
 console.log('📚 WikiZero inicializada com sucesso!');
 console.log('🔔 Notificações integradas via coleção "notifications"');
 console.log('🍪 Sistema de consentimento de cookies ativo');
 console.log('📝 Editor de HTML com sanitização de segurança ativo!');
+console.log('👤 Página do usuário com UID, contribuições, discussão e notificações ativa!');
