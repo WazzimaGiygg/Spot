@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wiki Zero — Registro de Configuração</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #2f81f7;
+    --success: #238636;
+    --error: #da3633;
+    --code-bg: #010409;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 0.9rem; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: var(--code-bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  input[type="file"]:hover { border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status {
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.ok { background: rgba(35,134,54,0.15); border: 1px solid var(--success); color: #7ee787; }
+  .status.err { background: rgba(218,54,51,0.15); border: 1px solid var(--error); color: #ff7b72; }
+  .status.info { background: rgba(47,129,247,0.15); border: 1px solid var(--accent); color: #79c0ff; }
+  .result { display: none; }
+  .result.show { display: block; }
+  .url-box {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .url-box input {
+    flex: 1;
+    padding: 10px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+  .url-box button { width: auto; margin: 0; padding: 10px 16px; font-size: 0.85rem; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    font-family: "SF Mono", Consolas, Monaco, monospace;
+    max-height: 400px;
+  }
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    width: auto;
+    margin: 0;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>📚 Wiki Zero — Registro de Configuração</h1>
+  <p class="subtitle">Faça upload dos arquivos de configuração para gerar uma chave de acesso única.</p>
+
+  <!-- ============================================ -->
+  <!-- FORMULÁRIO DE UPLOAD                          -->
+  <!-- ============================================ -->
+  <div class="card" id="uploadCard">
+    <div class="section-title">1. Applet Config</div>
+    <label for="appletFile">firebase-applet-config.json</label>
+    <p class="hint">Metadados do applet e governança (não contém segredos).</p>
+    <input type="file" id="appletFile" accept=".json,application/json" />
+
+    <div class="section-title" style="margin-top:20px;">2. Blueprint</div>
+    <label for="blueprintFile">firebase-blueprint.json</label>
+    <p class="hint">Estrutura de coleções e widgets do dashboard.</p>
+    <input type="file" id="blueprintFile" accept=".json,application/json" />
+
+    <button id="submitBtn" disabled>🔐 Registrar e gerar UID</button>
+    <div class="status" id="uploadStatus"></div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- RESULTADO DO REGISTRO                         -->
+  <!-- ============================================ -->
+  <div class="card result" id="resultCard">
+    <div class="section-title">✅ Registro concluído</div>
+    <label>UID gerado</label>
+    <div class="url-box">
+      <input type="text" id="uidDisplay" readonly />
+      <button onclick="copyText('uidDisplay', this)">Copiar</button>
+    </div>
+
+    <label style="margin-top:16px;">URL de acesso</label>
+    <div class="url-box">
+      <input type="text" id="urlDisplay" readonly />
+      <button onclick="copyText('urlDisplay', this)">Copiar</button>
+    </div>
+    <p class="hint" style="margin-top:8px;">
+      Abra esta URL para visualizar os códigos registrados.
+    </p>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- VISUALIZAÇÃO POR ?uid=                        -->
+  <!-- ============================================ -->
+  <div class="card result" id="viewCard">
+    <div class="section-title">📂 Configuração registrada</div>
+    <p style="font-size:0.9rem;">
+      UID: <span class="badge" id="viewUid"></span>
+      &nbsp;•&nbsp;
+      Registrado em: <span class="badge" id="viewDate"></span>
+    </p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="applet">firebase-applet-config.json</button>
+      <button class="tab" data-tab="blueprint">firebase-blueprint.json</button>
+    </div>
+    <div class="tab-panel active" id="panel-applet">
+      <pre id="codeApplet"></pre>
+    </div>
+    <div class="tab-panel" id="panel-blueprint">
+      <pre id="codeBlueprint"></pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FIREBASE SDK (v10 modular via CDN)            -->
+<!-- ============================================ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ============================================
+// FIREBASE CONFIG (conexão real)
+// ============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+  authDomain: "wzzm-ce3fc.firebaseapp.com",
+  projectId: "wzzm-ce3fc",
+  storageBucket: "wzzm-ce3fc.appspot.com",
+  messagingSenderId: "249427877153",
+  appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const COLLECTION = "wikizerikey";
+
+// ============================================
+// ESTADO
+// ============================================
+let appletData = null;
+let blueprintData = null;
+
+// ============================================
+// HELPERS DE UI
+// ============================================
+const $ = (id) => document.getElementById(id);
+
+function setStatus(el, type, msg) {
+  el.className = "status show " + type;
+  el.textContent = msg;
+}
+
+function copyText(inputId, btn) {
+  const input = $(inputId);
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = "✓ Copiado";
+    setTimeout(() => (btn.textContent = orig), 1500);
+  });
+}
+window.copyText = copyText;
+
+/** Gera UID estilo Firebase (20 chars alfanuméricos) */
+function generateUid() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let uid = "";
+  const arr = new Uint8Array(20);
+  crypto.getRandomValues(arr);
+  for (const b of arr) uid += chars[b % chars.length];
+  return uid;
+}
+
+/** Lê arquivo JSON e valida */
+function readJsonFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        resolve(parsed);
+      } catch (err) {
+        reject(new Error(`JSON inválido em "${file.name}": ${err.message}`));
+      }
+    };
+    reader.onerror = () => reject(new Error(`Falha ao ler "${file.name}"`));
+    reader.readAsText(file);
+  });
+}
+
+// ============================================
+// UPLOAD DOS ARQUIVOS
+// ============================================
+$("appletFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    appletData = await readJsonFile(file);
+    setStatus($("uploadStatus"), "info", `✓ "${file.name}" carregado.`);
+    checkReady();
+  } catch (err) {
+    appletData = null;
+    setStatus($("uploadStatus"), "err", err.message);
+    checkReady();
+  }
+});
+
+$("blueprintFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    blueprintData = await readJsonFile(file);
+    setStatus($("uploadStatus"), "info", `✓ "${file.name}" carregado.`);
+    checkReady();
+  } catch (err) {
+    blueprintData = null;
+    setStatus($("uploadStatus"), "err", err.message);
+    checkReady();
+  }
+});
+
+function checkReady() {
+  $("submitBtn").disabled = !(appletData && blueprintData);
+}
+
+// ============================================
+// GRAVAÇÃO NO FIRESTORE
+// ============================================
+$("submitBtn").addEventListener("click", async () => {
+  const btn = $("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Gravando…";
+
+  try {
+    const uid = generateUid();
+
+    await setDoc(doc(db, COLLECTION, uid), {
+      uid,
+      appletConfig: appletData,
+      blueprint: blueprintData,
+      createdAt: serverTimestamp()
+    });
+
+    // Monta URL com ?uid=
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?uid=${uid}`;
+
+    $("uidDisplay").value = uid;
+    $("urlDisplay").value = shareUrl;
+    $("resultCard").classList.add("show");
+    $("uploadCard").style.display = "none";
+
+    // Atualiza histórico sem recarregar
+    history.replaceState(null, "", `?uid=${uid}`);
+    renderView({ uid, appletConfig: appletData, blueprint: blueprintData, createdAt: new Date() });
+
+  } catch (err) {
+    console.error(err);
+    setStatus($("uploadStatus"), "err", "Erro ao gravar: " + err.message);
+    btn.disabled = false;
+    btn.textContent = "🔐 Registrar e gerar UID";
+  }
+});
+
+// ============================================
+// VISUALIZAÇÃO POR ?uid=
+// ============================================
+function renderView(docData) {
+  $("viewUid").textContent = docData.uid;
+  $("viewDate").textContent = docData.createdAt
+    ? new Date(docData.createdAt.seconds ? docData.createdAt.seconds * 1000 : docData.createdAt)
+        .toLocaleString("pt-BR")
+    : "—";
+
+  $("codeApplet").textContent    = JSON.stringify(docData.appletConfig, null, 2);
+  $("codeBlueprint").textContent = JSON.stringify(docData.blueprint, null, 2);
+  $("viewCard").classList.add("show");
+}
+
+async function loadByUid(uid) {
+  setStatus($("uploadStatus"), "info", "🔎 Buscando configuração…");
+  try {
+    const snap = await getDoc(doc(db, COLLECTION, uid));
+    if (!snap.exists()) {
+      setStatus($("uploadStatus"), "err", "❌ UID não encontrado.");
+      return;
+    }
+    $("uploadCard").style.display = "none";
+    renderView(snap.data());
+  } catch (err) {
+    console.error(err);
+    setStatus($("uploadStatus"), "err", "Erro ao buscar: " + err.message);
+  }
+}
+
+// ============================================
+// TABS
+// ============================================
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+    tab.classList.add("active");
+    $("panel-" + tab.dataset.tab).classList.add("active");
+  });
+});
+
+// ============================================
+// BOOTSTRAP
+// ============================================
+const params = new URLSearchParams(window.location.search);
+const uidParam = params.get("uid");
+if (uidParam) {
+  loadByUid(uidParam);
+}
+</script>
+</body>
+</html>
