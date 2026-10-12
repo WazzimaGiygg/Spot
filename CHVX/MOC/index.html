@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wiki Zero — Registro de Applet Config</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #2f81f7;
+    --success: #238636;
+    --error: #da3633;
+    --code-bg: #010409;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); margin-bottom: 24px; font-size: 0.9rem; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+  }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+  input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    background: var(--code-bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  input[type="file"]:hover { border-color: var(--accent); }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: opacity 0.15s;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status {
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.ok { background: rgba(35,134,54,0.15); border: 1px solid var(--success); color: #7ee787; }
+  .status.err { background: rgba(218,54,51,0.15); border: 1px solid var(--error); color: #ff7b72; }
+  .status.info { background: rgba(47,129,247,0.15); border: 1px solid var(--accent); color: #79c0ff; }
+  .result { display: none; }
+  .result.show { display: block; }
+  .url-box {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .url-box input {
+    flex: 1;
+    padding: 10px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--accent);
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+  .url-box button { width: auto; margin: 0; padding: 10px 16px; font-size: 0.85rem; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    font-family: "SF Mono", Consolas, Monaco, monospace;
+    max-height: 400px;
+  }
+  .section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 8px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--muted);
+  }
+  .download-box {
+    text-align: center;
+    padding: 32px 16px;
+  }
+  .download-box .icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+  }
+  .download-box h2 {
+    margin: 0 0 8px;
+    font-size: 1.2rem;
+  }
+  .download-box p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0 0 20px;
+  }
+  .download-box a.btn-download {
+    display: inline-block;
+    background: var(--success);
+    color: #fff;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: opacity 0.15s;
+  }
+  .download-box a.btn-download:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ============================================ -->
+  <!-- CABEÇALHO DINÂMICO                            -->
+  <!-- ============================================ -->
+  <h1 id="pageTitle">📦 Wiki Zero — Registro de Applet Config</h1>
+  <p class="subtitle" id="pageSubtitle">
+    Faça upload do arquivo <code>firebase-applet-config.json</code> para gerar uma chave de acesso.
+  </p>
+
+  <!-- ============================================ -->
+  <!-- FORMULÁRIO DE UPLOAD (modo registro)          -->
+  <!-- ============================================ -->
+  <div class="card" id="uploadCard">
+    <div class="section-title">Arquivo de configuração</div>
+    <label for="appletFile">firebase-applet-config.json</label>
+    <p class="hint">Somente este arquivo será armazenado sob um UID único.</p>
+    <input type="file" id="appletFile" accept=".json,application/json" />
+
+    <button id="submitBtn" disabled>🔐 Registrar e gerar UID</button>
+    <div class="status" id="uploadStatus"></div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- RESULTADO DO REGISTRO                          -->
+  <!-- ============================================ -->
+  <div class="card result" id="resultCard">
+    <div class="section-title">✅ Registro concluído</div>
+    <label>UID gerado</label>
+    <div class="url-box">
+      <input type="text" id="uidDisplay" readonly />
+      <button onclick="copyText('uidDisplay', this)">Copiar</button>
+    </div>
+
+    <label style="margin-top:16px;">URL de acesso / download</label>
+    <div class="url-box">
+      <input type="text" id="urlDisplay" readonly />
+      <button onclick="copyText('urlDisplay', this)">Copiar</button>
+    </div>
+    <p class="hint" style="margin-top:8px;">
+      Ao abrir esta URL, o arquivo <code>firebase-applet-config.json</code> será baixado automaticamente.
+    </p>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- VISUALIZAÇÃO POR ?uid= (modo download)        -->
+  <!-- ============================================ -->
+  <div class="card result" id="downloadCard">
+    <div class="download-box">
+      <div class="icon">📥</div>
+      <h2>Arquivo pronto para download</h2>
+      <p>
+        UID: <span class="badge" id="viewUid"></span><br/>
+        Registrado em: <span class="badge" id="viewDate"></span>
+      </p>
+      <a id="downloadLink" class="btn-download" download="firebase-applet-config.json">
+        ⬇️ Baixar firebase-applet-config.json
+      </a>
+      <p style="margin-top:20px;">
+        <small>Se o download não iniciar automaticamente, clique no botão acima.</small>
+      </p>
+    </div>
+
+    <div class="section-title" style="margin-top:24px;">Pré-visualização</div>
+    <pre id="codePreview"></pre>
+  </div>
+
+</div>
+
+<!-- ============================================ -->
+<!-- FIREBASE SDK v10 (CDN modular)                -->
+<!-- ============================================ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ============================================
+// FIREBASE CONFIG
+// ============================================
+const firebaseConfig = {
+  apiKey: "AIzaSyB9GkSqTIZ0kbVsba_WOdQeVAETrF9qna0",
+  authDomain: "wzzm-ce3fc.firebaseapp.com",
+  projectId: "wzzm-ce3fc",
+  storageBucket: "wzzm-ce3fc.appspot.com",
+  messagingSenderId: "249427877153",
+  appId: "1:249427877153:web:0e4297294794a5aadeb260"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+const COLLECTION = "wikizerikey";
+const FILE_NAME  = "firebase-applet-config.json";
+
+// ============================================
+// HELPERS
+// ============================================
+const $ = (id) => document.getElementById(id);
+
+function setStatus(el, type, msg) {
+  el.className = "status show " + type;
+  el.textContent = msg;
+}
+
+function copyText(inputId, btn) {
+  const input = $(inputId);
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = "✓ Copiado";
+    setTimeout(() => (btn.textContent = orig), 1500);
+  });
+}
+window.copyText = copyText;
+
+/** Gera UID de 20 caracteres alfanuméricos (estilo Firebase) */
+function generateUid() {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let uid = "";
+  const arr = new Uint8Array(20);
+  crypto.getRandomValues(arr);
+  for (const b of arr) uid += chars[b % chars.length];
+  return uid;
+}
+
+/** Lê e valida um arquivo JSON */
+function readJsonFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try { resolve(JSON.parse(e.target.result)); }
+      catch (err) { reject(new Error(`JSON inválido em "${file.name}": ${err.message}`)); }
+    };
+    reader.onerror = () => reject(new Error(`Falha ao ler "${file.name}"`));
+    reader.readAsText(file);
+  });
+}
+
+// ============================================
+// UPLOAD
+// ============================================
+let appletData = null;
+
+$("appletFile").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    appletData = await readJsonFile(file);
+    setStatus($("uploadStatus"), "info", `✓ "${file.name}" carregado.`);
+  } catch (err) {
+    appletData = null;
+    setStatus($("uploadStatus"), "err", err.message);
+  }
+  $("submitBtn").disabled = !appletData;
+});
+
+// ============================================
+// GRAVAÇÃO NO FIRESTORE
+// ============================================
+$("submitBtn").addEventListener("click", async () => {
+  const btn = $("submitBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ Gravando…";
+
+  try {
+    const uid = generateUid();
+
+    await setDoc(doc(db, COLLECTION, uid), {
+      uid,
+      appletConfig: appletData,
+      createdAt: serverTimestamp()
+    });
+
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?uid=${uid}`;
+
+    $("uidDisplay").value = uid;
+    $("urlDisplay").value = shareUrl;
+    $("resultCard").classList.add("show");
+    $("uploadCard").style.display = "none";
+
+    history.replaceState(null, "", `?uid=${uid}`);
+    renderDownload({ uid, appletConfig: appletData, createdAt: new Date() });
+
+  } catch (err) {
+    console.error(err);
+    setStatus($("uploadStatus"), "err", "Erro ao gravar: " + err.message);
+    btn.disabled = false;
+    btn.textContent = "🔐 Registrar e gerar UID";
+  }
+});
+
+// ============================================
+// RENDERIZAÇÃO — MODO DOWNLOAD
+// ============================================
+function renderDownload(data) {
+  const prettyJson = JSON.stringify(data.appletConfig, null, 2);
+
+  $("viewUid").textContent = data.uid;
+  $("viewDate").textContent = data.createdAt
+    ? new Date(data.createdAt.seconds ? data.createdAt.seconds * 1000 : data.createdAt)
+        .toLocaleString("pt-BR")
+    : "—";
+  $("codePreview").textContent = prettyJson;
+
+  // Prepara blob para download
+  const blob = new Blob([prettyJson], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const link = $("downloadLink");
+  link.href = url;
+
+  // Ajusta cabeçalho da página
+  $("pageTitle").textContent = "📥 Download de Configuração";
+  $("pageSubtitle").textContent =
+    "O arquivo firebase-applet-config.json está pronto. O download deve iniciar automaticamente.";
+
+  $("downloadCard").classList.add("show");
+
+  // Dispara download automático (com pequeno delay para o render terminar)
+  setTimeout(() => {
+    const auto = document.createElement("a");
+    auto.href = url;
+    auto.download = FILE_NAME;
+    document.body.appendChild(auto);
+    auto.click();
+    document.body.removeChild(auto);
+  }, 600);
+
+  // Cleanup do blob ao sair
+  window.addEventListener("beforeunload", () => URL.revokeObjectURL(url));
+}
+
+// ============================================
+// CARREGAMENTO POR ?uid=
+// ============================================
+async function loadByUid(uid) {
+  $("uploadCard").style.display = "none";
+  $("pageTitle").textContent = "🔎 Buscando configuração…";
+  $("pageSubtitle").textContent = `UID: ${uid}`;
+
+  try {
+    const snap = await getDoc(doc(db, COLLECTION, uid));
+
+    if (!snap.exists()) {
+      $("pageTitle").textContent = "❌ UID não encontrado";
+      $("pageSubtitle").textContent =
+        "Nenhum registro corresponde a este UID. Verifique se o link está correto.";
+      return;
+    }
+
+    renderDownload(snap.data());
+
+  } catch (err) {
+    console.error(err);
+    $("pageTitle").textContent = "❌ Erro ao carregar";
+    $("pageSubtitle").textContent = err.message;
+  }
+}
+
+// ============================================
+// BOOTSTRAP
+// ============================================
+const uidParam = new URLSearchParams(window.location.search).get("uid");
+if (uidParam) {
+  loadByUid(uidParam);
+}
+</script>
+</body>
+</html>
